@@ -15,6 +15,10 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
+
+constexpr float width = 100.0f;
+constexpr float height = 100.0f;
+constexpr float depth = 100.0f;
 constexpr int cellWidth = 2;
 constexpr int cellHeight = 2;
 constexpr int cellDepth = 2;
@@ -66,7 +70,7 @@ int main()
     // Add vectors in parallel.
     createUniformGrid(positionX, positionY, positionZ, particleCount);
 
-    // cudaiceReset must be called before exiting in order for profiling and
+    // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
 
     cudaFree(positionX);
@@ -146,8 +150,8 @@ void createUniformGrid(const float* positionX, const float* positionY, const flo
     unsigned int* cellStarts = 0;
     unsigned int* cellEnds = 0;
 
-    HANDLE_ERROR(cudaMalloc((void**)&cellStarts, particleCount * sizeof(unsigned int)));
-    HANDLE_ERROR(cudaMalloc((void**)&cellEnds, particleCount * sizeof(unsigned int)));
+    HANDLE_ERROR(cudaMalloc((void**)&cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+    HANDLE_ERROR(cudaMalloc((void**)&cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
 
     // 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
     calculateCellIdKernel << <blocks, threadsPerBlock >> >
@@ -159,6 +163,7 @@ void createUniformGrid(const float* positionX, const float* positionY, const flo
     thrust::device_ptr<unsigned int> values = thrust::device_pointer_cast<unsigned int>(particleIds);
 
     thrust::stable_sort_by_key(keys, keys + particleCount, values);
+    thrust::sort(keys, keys + particleCount);
 
     // 3. Find the start and end of every cell
 
@@ -195,6 +200,20 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
     unsigned int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id >= particleCount)
         return;
+
+    unsigned int currentCellId = cellIds[id];
+
+    // Check if the previous cell id was different - it would mean we found the start of a cell
+    if (id > 0 && currentCellId != cellIds[id - 1])
+    {
+        cellStarts[currentCellId] = id;
+    }
+
+    // Check if the next cell id was different - it would mean we found the end of a cell
+    if (id < particleCount - 1 && currentCellId != cellIds[id + 1])
+    {
+        cellEnds[currentCellId] = id;
+    }
 
     if (id < 5) printf("%d. particle id: %d, cell: %d\n", id, particleIds[id], cellIds[id]);
 
