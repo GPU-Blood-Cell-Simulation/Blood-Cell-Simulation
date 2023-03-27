@@ -102,10 +102,17 @@
     </CudaLink>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="src\grid.cu" />
     <CudaCompile Include="src\main.cu" />
+    <CudaCompile Include="src\simulation.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\glad.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\defines.cuh" />
+    <ClInclude Include="src\grid.cuh" />
+    <ClInclude Include="src\simulation.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
