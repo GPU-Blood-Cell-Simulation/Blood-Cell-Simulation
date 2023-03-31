@@ -1,4 +1,5 @@
 ﻿#include "simulation.cuh"
+#include "objects.cuh"
 #include "defines.cuh"
 
 #include <glad/glad.h>
@@ -11,15 +12,11 @@
 
 int main()
 {
-    constexpr unsigned int particleCount = 500;
-
-    float* positionX = 0;
-    float* positionY = 0;
-    float* positionZ = 0;
     unsigned int* cellIds = 0;
     unsigned int* particleIds = 0;
     unsigned int* cellStarts = 0;
     unsigned int* cellEnds = 0;
+
 
     // Choose which GPU to run on, change this on a multi-GPU system.
     HANDLE_ERROR(cudaSetDevice(0));
@@ -27,17 +24,19 @@ int main()
     // TODO : OpenGL setup
 
     // Allocate memory
-    sim::allocateMemory(&positionX, &positionY, &positionZ, &cellIds, &particleIds, &cellStarts, &cellEnds, particleCount);
+    sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, max_particles_count);
 
     // Generate random positions
-    sim::generateRandomPositions(positionX, positionY, positionZ, particleCount);
+    //sim::generateRandomPositions(positionX, positionY, positionZ, max_particles_count);
+    sim::generateInitialPositionsInLayers(max_particles_count, 3);
 
     // MAIN LOOP HERE - probably dictaded by glfw
 
     // while(true)
     //{
         // 1.
-        sim::calculateNextFrame(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
+        sim::calculateNextFrame(globalParticles.position.x, globalParticles.position.y, globalParticles.position.z, 
+            cellIds, particleIds, cellStarts, cellEnds, real_particles_count);
 
         // 2.
         // OpenGL render
@@ -46,9 +45,9 @@ int main()
     // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
 
-    cudaFree(positionX);
-    cudaFree(positionY);
-    cudaFree(positionZ);
+    /*
+    *   A lot more cleaning in structs and classes here
+    */
     cudaFree(cellIds);
     cudaFree(particleIds);
     cudaFree(cellStarts);

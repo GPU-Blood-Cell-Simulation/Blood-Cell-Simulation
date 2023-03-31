@@ -20,7 +20,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -110,9 +110,12 @@
     <ClCompile Include="src\glad.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\objects.cuh" />
     <ClInclude Include="src\defines.cuh" />
     <ClInclude Include="src\grid.cuh" />
+    <ClInclude Include="src\physics.cuh" />
     <ClInclude Include="src\simulation.cuh" />
+    <ClInclude Include="src\structs.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
