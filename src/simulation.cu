@@ -73,7 +73,7 @@ namespace sim
         createUniformGrid(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
         // 2. TODO: detections
-        physics::propagateParticles << </*TODO*/ >> > (globalParticles);
+        physics::propagateParticles << < /*TODO*/ >> > (globalParticles);
     }
 
 

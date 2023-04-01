@@ -104,7 +104,9 @@
   <ItemGroup>
     <CudaCompile Include="src\grid.cu" />
     <CudaCompile Include="src\main.cu" />
+    <CudaCompile Include="src\objects.cu" />
     <CudaCompile Include="src\simulation.cu" />
+    <CudaCompile Include="src\structs.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\glad.c" />
