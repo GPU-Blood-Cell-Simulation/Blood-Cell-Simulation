@@ -37,7 +37,6 @@ namespace sim
         thrust::device_ptr<unsigned int> values = thrust::device_pointer_cast<unsigned int>(particleIds);
 
         thrust::stable_sort_by_key(keys, keys + particleCount, values);
-        thrust::sort(keys, keys + particleCount);
 
         // 3. Find the start and end of every cell
 
