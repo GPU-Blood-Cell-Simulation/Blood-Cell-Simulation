@@ -6,7 +6,7 @@
 #include <assimp/scene.h>
 
 #include "shader.hpp"
-#include "mesh.cuh"
+#include "mesh.hpp"
 class Model
 {
 public:

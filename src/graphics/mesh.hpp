@@ -13,7 +13,7 @@ struct Vertex {
     // normal
     glm::vec3 Normal;
     // offset - filled by CUDA
-    glm::vec3 Offset = glm::vec3(0,0,0);
+    glm::vec3 Offset = glm::vec3(0, 0, 0);
 };
 
 

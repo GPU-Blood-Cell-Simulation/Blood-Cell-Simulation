@@ -1,4 +1,4 @@
-#include "mesh.cuh"
+#include "mesh.hpp"
 
 #include <glad/glad.h>
 #include <memory>

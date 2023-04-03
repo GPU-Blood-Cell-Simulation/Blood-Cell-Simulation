@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model.cuh"
+#include "model.hpp"
 #include "../defines.cuh"
 
 #include <memory>

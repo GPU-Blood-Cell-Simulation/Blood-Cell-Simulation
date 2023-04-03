@@ -1,4 +1,4 @@
-#include "model.cuh"
+#include "model.hpp"
 
 #include <iostream>
 #include <vector>
