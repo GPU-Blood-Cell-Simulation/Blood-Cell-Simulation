@@ -20,11 +20,16 @@ static void HandleError(cudaError_t err, const char* file, int line)
     }
 }
 
+// TODO: zmieniæ to, bo makra s¹ brzydkie
+
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ));
 
-constexpr float width = 100.0f;
-constexpr float height = 100.0f;
-constexpr float depth = 100.0f;
-constexpr int cellWidth = 2;
-constexpr int cellHeight = 2;
-constexpr int cellDepth = 2;
+inline constexpr float windowWidth = 800;
+inline constexpr float windowHeight = 800;
+
+inline constexpr float width = 100.0f;
+inline constexpr float height = 100.0f;
+inline constexpr float depth = 100.0f;
+inline constexpr int cellWidth = 2;
+inline constexpr int cellHeight = 2;
+inline constexpr int cellDepth = 2;

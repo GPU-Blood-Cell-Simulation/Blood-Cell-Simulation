@@ -85,7 +85,7 @@ namespace sim
         }
 
         // debug
-        if (id < 5) printf("%d. particle id: %d, cell: %d\n", id, particleIds[id], cellIds[id]);
+        //if (id < 5) printf("%d. particle id: %d, cell: %d\n", id, particleIds[id], cellIds[id]);
 
     }
 }
