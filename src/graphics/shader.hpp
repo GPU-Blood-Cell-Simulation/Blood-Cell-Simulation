@@ -16,8 +16,8 @@ public:
     // utility uniform functions
     void setFloat(const char* name, float value) const;
     void setInt(const char* name, int value) const;
-    void setVector(const char* name, glm::vec3 vector) const;
-    void setMatrix(const char* name, glm::mat4 matrix) const;
+    void setVector(const char* name, glm::vec3& vector) const;
+    void setMatrix(const char* name, glm::mat4& matrix) const;
 protected:
     // constructor reads and builds the shader
     Shader(const char* vertexPath, const char* fragmentPath);

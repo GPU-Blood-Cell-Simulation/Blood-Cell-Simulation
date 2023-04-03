@@ -1,4 +1,7 @@
-﻿#include "simulation.cuh"
+﻿#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+#include "simulation.cuh"
 #include "defines.cuh"
 #include "graphics/glcontroller.cuh"
 
@@ -6,8 +9,6 @@
 #include <GLFW/glfw3.h>
 #include <sstream>
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
 #include <curand.h>
 #include <curand_kernel.h>
 
@@ -37,7 +38,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(windowWidth, windowHeight, "Boids", NULL, NULL);
+    window = glfwCreateWindow(windowWidth, windowHeight, "Blood Cell Simualtion", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -48,8 +49,10 @@ int main()
     glfwMakeContextCurrent(window);
 
     // Load GL and set the viewport to match window size
-    gladLoadGL();;
+    gladLoadGL();
     glViewport(0, 0, windowWidth, windowHeight);
+
+    glEnable(GL_DEPTH_TEST);
 
     double lastTime = glfwGetTime();
     int frameCount = 0;
@@ -70,13 +73,17 @@ int main()
     {
         // Clear 
         glClearColor(1.00f, 0.75f, 0.80f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
+        //sim::calculateNextFrame(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
-#pragma region rendering
+        // Pass positions to OpenGL
+        glController.calculateOffsets(positionX, positionY, positionZ, particleCount);
+
         // OpenGL render
+#pragma region rendering
+        
         glController.draw();
         glfwSwapBuffers(window);
 
@@ -87,14 +94,11 @@ int main()
         {
             double fps = double(frameCount) / delta;
             std::stringstream ss;
-            ss << "Boids" << " " << " [" << fps << " FPS]";
+            ss << "Blood Cell Simulation" << " " << " [" << fps << " FPS]";
 
             glfwSetWindowTitle(window, ss.str().c_str());
             lastTime = currentTime;
             frameCount = 0;
-            /*seconds++;
-            if (seconds >= 5)
-                exit(0);*/
         }
         else
         {

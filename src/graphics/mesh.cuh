@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <memory>
-#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 
@@ -13,8 +12,8 @@ struct Vertex {
     glm::vec3 Position;
     // normal
     glm::vec3 Normal;
-    // texCoords
-    glm::vec2 TexCoords;
+    // offset - filled by CUDA
+    glm::vec3 Offset = glm::vec3(0,0,0);
 };
 
 
@@ -26,6 +25,7 @@ public:
 
     Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices);
     void draw(const std::shared_ptr<Shader> shader);
+    unsigned int getVBO();
 private:
     //  render data
     unsigned int VAO, VBO, EBO;

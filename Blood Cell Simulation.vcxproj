@@ -641,6 +641,8 @@
     <None Include="Libraries\include\glm\gtx\vector_query.inl" />
     <None Include="Libraries\include\glm\gtx\wrap.inl" />
     <None Include="Libraries\lib\assimp-vc143-mt.exp" />
+    <None Include="Shaders\solidcolor.frag" />
+    <None Include="Shaders\solidcolor.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Libraries\lib\assimp-vc143-mt.lib" />

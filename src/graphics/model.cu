@@ -14,17 +14,15 @@ Model::Model(const char* path)
 
 void Model::draw(const std::shared_ptr<Shader> shader) const
 {
-    shader->setMatrix("modelMatrix", modelMatrix);
-    shader->setFloat("material.shininess", 32.0);
-
     for (Mesh mesh : meshes)
         mesh.draw(shader);
 }
 
-void Model::setModelMatrix(glm::mat4 modelMatrix)
+unsigned int Model::getVBO()
 {
-    this->modelMatrix = modelMatrix;
+    return meshes[0].getVBO();
 }
+
 
 void Model::loadModel(std::string path)
 {

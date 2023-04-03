@@ -102,13 +102,13 @@ void Shader::setInt(const char* name, int value) const
     glUniform1i(location, value);
 }
 
-void Shader::setVector(const char* name, glm::vec3 vector) const
+void Shader::setVector(const char* name, glm::vec3& vector) const
 {
     int location = glGetUniformLocation(ID, name);
     glUniform3f(location, vector.x, vector.y, vector.z);
 }
 
-void Shader::setMatrix(const char* name, glm::mat4 matrix) const
+void Shader::setMatrix(const char* name, glm::mat4& matrix) const
 {
     int location = glGetUniformLocation(ID, name);
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));

@@ -13,10 +13,9 @@ public:
     Model(const char* path);
 
     void draw(const std::shared_ptr<Shader> shader) const;
-    void setModelMatrix(glm::mat4 modelMatrix);
+    unsigned int getVBO();
 
 protected:
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
 
     std::string directory;
     std::vector<Mesh> meshes;
