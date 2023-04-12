@@ -24,24 +24,8 @@ namespace sim
         HANDLE_ERROR(cudaMalloc((void**)cellEnds, dimension.x / cellWidth * dimension.y / cellHeight * dimension.z / cellDepth * sizeof(unsigned int)));
     }
 
-    // initial position approach
-    // arg_0 should be a^2 * arg_1
-    // but it is no necessary
-    void generateInitialPositionsInLayers(const int particleCount, const int layersCount)
-    {
-        int model_par_cnt = 2; /*cell model particles count*/
-        int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
-        int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
-        real_particles_count = layerDim * layerDim * layersCount;
 
-        int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
-        int blDim = std::ceil(layerDim / threadsPerBlock);
-        dim3 blocks = dim3(blDim, blDim, layersCount);
-        generateInitialPositionsKernel << <blocks, threadsPerBlock >> >
-            (globalParticle, corps, make_float3(dimension.x, dimension.y, dimension.z * layers / 100));
-    }
-
-    __global__ void generateInitialPositionsKernel(particles& par, corpuscle* crps, float3 dims)
+    __global__ void generateInitialPositionsKernel(particles& par, corpuscle* crps, float3 dims, int par_cnt)
     {
         int blockId = blockIdx.x + blockIdx.y * gridDim.x
             + gridDim.x * gridDim.y * blockIdx.z;
@@ -55,7 +39,7 @@ namespace sim
         float y = ((tid % (w*h)) / w) * dims.y/h;
         float z = (tid / (w * h)    ) * dims.z/d;
 
-        crps[tid].createCorpuscle(tid, make_float3(x, y, z));
+        crps[tid].createCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
 
         // maybe we should set initial velocity here (or in another kernel)?
         // as for now it is done in createCorpuscle call
@@ -63,6 +47,22 @@ namespace sim
         {
             par.velocity.set(crps[tid].particles_indices[i], make_float3(0, 0, v0));
         }*/
+    }
+
+    // initial position approach
+    // arg_0 should be a^2 * arg_1
+    // but it is no necessary
+    void generateInitialPositionsInLayers(const int particleCount, const int layersCount)
+    {
+        int model_par_cnt = 2; /*cell model particles count*/
+        int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
+        int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
+        real_particles_count = layerDim * layerDim * layersCount;
+
+        int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
+        int blDim = std::ceil(layerDim / threadsPerBlock);
+        dim3 blocks = dim3(blDim, blDim, layersCount);
+        generateInitialPositionsKernel <<<blocks, threadsPerBlock >>>(globalParticles, corps, float(3)/*layers*/ /100 * make_float3(dimension.x, dimension.y, dimension.z)  , real_particles_count);
     }
 
     void calculateNextFrame(float* positionX, float* positionY, float* positionZ,
@@ -73,7 +73,7 @@ namespace sim
         createUniformGrid(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
         // 2. TODO: detections
-        physics::propagateParticles << < /*TODO*/ >> > (globalParticles);
+        physics::propagateParticles << < /*TODO*/ 1,1 >> > (globalParticles, corps);
     }
 
 

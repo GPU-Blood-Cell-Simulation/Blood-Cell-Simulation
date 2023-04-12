@@ -12,6 +12,7 @@ struct particles
 	cudaVec3 position;
 	cudaVec3 velocity;
 	cudaVec3 force;
+	particles() {}
 
 } globalParticles;
 
@@ -31,8 +32,8 @@ struct spring_graph
 	spring_graph() {}
 	spring_graph(int n);
 
-	void set_spring(int a, int b, float l);
-	void flush();
+	__host__ __device__ void set_spring(int a, int b, float l);
+	__host__ __device__ void flush();
 
 	__device__ float* getSpringPtr(int index);
 };
@@ -51,7 +52,7 @@ public:
 
 	corpuscle(int n);
 
-	virtual __device__ void createCorpuscle(int i, float3 center) = 0;
+	virtual __device__ void createCorpuscle(int i, float3 center, particles& p, int p_cnt) = 0;
 };
 
 class dipol : public corpuscle
@@ -59,7 +60,7 @@ class dipol : public corpuscle
 public:
 	dipol() : corpuscle(2) {}
 
-	virtual __device__ void createCorpuscle(int i, float3 center) override;
+	virtual __device__ void createCorpuscle(int i, float3 center, particles& p, int p_cnt) override;
 };
 
 

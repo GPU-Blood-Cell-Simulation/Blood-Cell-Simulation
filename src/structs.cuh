@@ -7,6 +7,7 @@ struct cudaVec3
 	float* z;
 	int size;
 
+	cudaVec3() {}
 	cudaVec3(int n);
 
 	__device__ float3 get(int index);

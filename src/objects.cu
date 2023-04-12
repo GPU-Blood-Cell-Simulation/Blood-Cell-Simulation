@@ -60,20 +60,20 @@ corpuscle::corpuscle(int n)
 
 // dipol
 	
-void dipol::createCorpuscle(int i, float3 center)
+void dipol::createCorpuscle(int i, float3 center, particles& particls, int p_cnt)
 {
-	if (2 * i < real_particles_count)
+	if (2 * i < p_cnt)
 	{
 		this->center = center;
 		radius = 0.25f;
-		globalParticles.position.set(2 * i,		make_float3(0, 0, -0.25f) + center);
-		globalParticles.position.set(2 * i + 1, make_float3(0, 0,  0.25f) + center);
+		particls.position.set(2 * i,		make_float3(0, 0, -0.25f) + center);
+		particls.position.set(2 * i + 1, make_float3(0, 0,  0.25f) + center);
 
-		globalParticles.velocity.set(2 * i,		make_float3(0, 0, v0));
-		globalParticles.velocity.set(2 * i + 1, make_float3(0, 0, v0));
+		particls.velocity.set(2 * i,		make_float3(0, 0, v0));
+		particls.velocity.set(2 * i + 1, make_float3(0, 0, v0));
 
-		globalParticles.force.set(2 * i,	 make_float3(0, 0, 0));
-		globalParticles.force.set(2 * i + 1, make_float3(0, 0, 0));
+		particls.force.set(2 * i,	 make_float3(0, 0, 0));
+		particls.force.set(2 * i + 1, make_float3(0, 0, 0));
 
 		particles_count = 2;
 		spr_map.set_spring(0, 1, 0.5f);
