@@ -9,6 +9,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+#include <iostream>
 #include <glad/glad.h>
 #include "cudaGL.h"
 #include "cuda_gl_interop.h"
@@ -26,10 +27,64 @@ namespace graphics
 		devVBO[9 * id + 8] = positionZ[id];
 	}
 
-	graphics::GLController::GLController() : particleModel("Models/Sphere.obj"), solidColorShader(std::make_shared<Shader>(SolidColorShader()))
+	graphics::GLController::GLController() : particleModel("Models/Sphere.obj"),
+		solidColorShader(std::make_shared<Shader>(SolidColorShader())),
+		phongLightingShader(std::make_shared<Shader>(PhongLightingShader()))
 	{
 		// register OpenGL buffer in CUDA
 		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&VBOresource, particleModel.getVBO(), cudaGraphicsRegisterFlagsNone));
+
+		// Create a directional light
+		directionalLight = DirLight
+		{
+			{
+				vec3(0.4f, 0.4f, 0.4f), vec3(1, 1, 1), vec3(1, 1, 1)
+			},
+			vec3(0, 0, 1.0f)
+		};
+
+		// Set up deferred shading
+		// Set up OpenGL frame buffers
+		glGenFramebuffers(1, &gBuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+		unsigned int gPosition, gNormal, gAlbedoSpec;
+		// position color buffer
+		glGenTextures(1, &gPosition);
+		glBindTexture(GL_TEXTURE_2D, gPosition);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 900, 900, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+		// normal color buffer
+		glGenTextures(1, &gNormal);
+		glBindTexture(GL_TEXTURE_2D, gNormal);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 900, 900, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+		// color + specular color buffer
+		glGenTextures(1, &gAlbedoSpec);
+		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 900, 900, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
+		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
+		unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		glDrawBuffers(3, attachments);
+		// create and attach depth buffer (renderbuffer)
+		unsigned int rboDepth;
+		glGenRenderbuffers(1, &rboDepth);
+		glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 900, 900);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+		// finally check if framebuffer is complete
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			std::cout << "Framebuffer not complete!" << std::endl;
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// Create the geometry pass shader
+		geometryPassShader = std::make_shared<Shader>(GeometryPassShader(gBuffer));
 	}
 
 	void graphics::GLController::calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
@@ -51,9 +106,75 @@ namespace graphics
 
 	void graphics::GLController::draw()
 	{
-		solidColorShader->use();
-		solidColorShader->setMatrix("view", view);
-		solidColorShader->setMatrix("projection", projection);
-		particleModel.draw(solidColorShader);
+		if constexpr (!useLighting)
+		{
+			solidColorShader->use();
+			solidColorShader->setMatrix("view", view);
+			solidColorShader->setMatrix("projection", projection);
+			particleModel.draw(solidColorShader);
+			return;
+		}
+
+		// Geometry pass
+		glDepthMask(GL_TRUE);
+		glEnable(GL_DEPTH_TEST);
+
+		geometryPassShader->use();
+		geometryPassShader->setMatrix("view", view);
+		geometryPassShader->setMatrix("projection", projection);
+
+		particleModel.draw(geometryPassShader);
+
+		// Phong Lighting Pass
+
+		glDisable(GL_DEPTH_TEST);
+
+		phongLightingShader->use();
+		phongLightingShader->setVector("viewPos", cameraPosition);
+		phongLightingShader->setVector("Diffuse", particleDiffuse);
+		phongLightingShader->setFloat("Specular", particleSpecular);
+		phongLightingShader->setFloat("Shininess", 32);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gPosition);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, gNormal);
+		phongLightingShader->setLighting(directionalLight);
+
+		// copy content of geometry's depth buffer to default framebuffer's depth buffer
+		// ----------------------------------------------------------------------------------
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+		// blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
+		// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
+		// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
+		glBlitFramebuffer(0, 0, 900, 900, 0, 0, 900, 900, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// Render quad
+		unsigned int quadVAO = 0;
+		unsigned int quadVBO = 0;
+
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+				1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+				1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glBindVertexArray(0);
+		return;
 	}
 }

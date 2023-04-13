@@ -486,6 +486,7 @@
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
     <ClInclude Include="src\defines.cuh" />
     <ClInclude Include="src\graphics\glcontroller.cuh" />
+    <ClInclude Include="src\graphics\light.hpp" />
     <ClInclude Include="src\graphics\mesh.hpp" />
     <ClInclude Include="src\graphics\model.hpp" />
     <ClInclude Include="src\graphics\shader.hpp" />
@@ -641,6 +642,10 @@
     <None Include="Libraries\include\glm\gtx\vector_query.inl" />
     <None Include="Libraries\include\glm\gtx\wrap.inl" />
     <None Include="Libraries\lib\assimp-vc143-mt.exp" />
+    <None Include="Shaders\geometry.frag" />
+    <None Include="Shaders\geometry.vert" />
+    <None Include="Shaders\phong.frag" />
+    <None Include="Shaders\phong.vert" />
     <None Include="Shaders\solidcolor.frag" />
     <None Include="Shaders\solidcolor.vert" />
   </ItemGroup>
