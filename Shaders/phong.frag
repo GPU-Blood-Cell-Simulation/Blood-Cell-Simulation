@@ -1,6 +1,8 @@
 #version 410 core
 out vec4 FragColor;
 
+in vec2 TexCoords;
+
 struct DirLight {
     vec3 direction;
 	
@@ -25,14 +27,16 @@ void main()
 {    
 
     // properties
-    vec3 FragPos = texture(gPosition, vec2(0, 0)).rgb;
-    vec3 Normal = texture(gNormal, vec2(0, 0)).rgb;
+    vec3 FragPos = texture(gPosition, TexCoords).rgb;
+    vec3 Normal = texture(gNormal, TexCoords).rgb;
 
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 
     
     // directional lighting
+
+    //FragColor = vec4(1, 0, 0, 1);
     FragColor = vec4(CalcDirLight(dirLight, norm, viewDir, Diffuse, Specular), 1.0);
 
 }

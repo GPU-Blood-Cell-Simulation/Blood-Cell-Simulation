@@ -34,4 +34,4 @@ inline constexpr int cellWidth = 2;
 inline constexpr int cellHeight = 2;
 inline constexpr int cellDepth = 2;
 
-inline constexpr bool useLighting = true;
+inline constexpr bool useLighting = false;

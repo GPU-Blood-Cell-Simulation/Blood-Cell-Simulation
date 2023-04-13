@@ -53,6 +53,10 @@ int main()
     glViewport(0, 0, windowWidth, windowHeight);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
+    // debug
+    glEnable(GL_DEBUG_OUTPUT);
 
     double lastTime = glfwGetTime();
     int frameCount = 0;

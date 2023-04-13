@@ -21,9 +21,12 @@ namespace graphics
 
 		glm::vec3 particleDiffuse = glm::vec3(0.8f, 0.2f, 0.2f);
 		float particleSpecular = 0.6f;
-		glm::vec3 cameraPosition = glm::vec3(0, 0, 50);
-		glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-		glm::mat4 projection = glm::perspective(60.0f, windowWidth/windowHeight, 0.1f,  200.0f);
+
+		glm::vec3 cameraPosition = glm::vec3(5, 5, 20);
+
+		glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(5, 5, 5));
+		glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(5, 5, 5), glm::vec3(0, 1, 0));
+		glm::mat4 projection = glm::perspective(60.0f, windowWidth/windowHeight, 0.1f,  100.0f);
 
 		Model particleModel;
 		DirLight directionalLight;

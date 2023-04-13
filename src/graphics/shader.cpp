@@ -125,8 +125,29 @@ void Shader::setLighting(DirLight dirLight) const
 SolidColorShader::SolidColorShader() : Shader("Shaders\\solidcolor.vert", "Shaders\\solidcolor.frag")
 {}
 
-GeometryPassShader::GeometryPassShader(unsigned int gBuffer) : Shader("Shaders\\geometry.vert", "Shaders\\geometry.frag"), gBuffer(gBuffer)
+GeometryPassShader::GeometryPassShader(unsigned int gBuffer) : Shader("Shaders\\geometry.vert", "Shaders\\geometry.frag"),
+gBuffer(gBuffer)
 {}
 
-PhongLightingShader::PhongLightingShader() : Shader("Shaders\\phong.vert", "Shaders\\phong.frag")
+void GeometryPassShader::use()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    Shader::use();
+}
+
+PhongLightingShader::PhongLightingShader(unsigned int gPosition, unsigned int gNormal) : Shader("Shaders\\phong.vert", "Shaders\\phong.frag"),
+gPosition(gPosition), gNormal(gNormal)
 {}
+
+void PhongLightingShader::use()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    Shader::use();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gPosition);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, gNormal);
+}

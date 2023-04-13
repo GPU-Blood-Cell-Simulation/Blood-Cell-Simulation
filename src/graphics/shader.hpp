@@ -35,6 +35,7 @@ class GeometryPassShader : public Shader
 {
 public:
     GeometryPassShader(unsigned int gBuffer);
+    void use() override;
 private:
     unsigned int gBuffer;
 };
@@ -42,5 +43,9 @@ private:
 class PhongLightingShader : public Shader
 {
 public:
-    PhongLightingShader();
+    PhongLightingShader(unsigned int gPosition, unsigned int gNormal);
+    void use() override;
+private:
+    unsigned int gPosition;
+    unsigned int gNormal;
 };
