@@ -34,4 +34,6 @@ inline constexpr int cellWidth = 2;
 inline constexpr int cellHeight = 2;
 inline constexpr int cellDepth = 2;
 
+inline constexpr unsigned int particleCount = 500;
+
 inline constexpr bool useLighting = false;

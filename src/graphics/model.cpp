@@ -7,6 +7,7 @@
 #include "textures/texture_loading.hpp"
 
 #include <glad/glad.h>
+#include "../defines.cuh"
 
 Model::Model(const char* path)
 {
@@ -15,13 +16,13 @@ Model::Model(const char* path)
 
 void Model::draw(const std::shared_ptr<Shader> shader) const
 {
-    for (Mesh mesh : meshes)
+    for (const Mesh& mesh : meshes)
         mesh.draw(shader);
 }
 
-unsigned int Model::getVBO()
+unsigned int Model::getCudaOffsetBuffer()
 {
-    return meshes[0].getVBO();
+    return cudaOffsetBuffer;
 }
 
 
@@ -37,7 +38,25 @@ void Model::loadModel(std::string path)
     }
     directory = path.substr(0, path.find_last_of('/'));
 
+    // Process assimp nodes to load all Meshes
     processNode(scene->mRootNode, scene);
+
+    // Set up offset buffer for the model
+    glm::vec3* modelMatrices = new glm::vec3[particleCount];
+    for (unsigned int i = 0; i < particleCount; i++)
+    {
+        modelMatrices[i] = glm::vec3((i % 4), 0, 0);
+    }
+
+    glGenBuffers(1, &cudaOffsetBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
+    glBufferData(GL_ARRAY_BUFFER, particleCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+
+    // Set up vertex attrubute
+    for (Mesh& mesh : meshes)
+    {
+        mesh.setVertexOffsetAttribute();
+    }
 
 }
 

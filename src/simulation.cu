@@ -65,9 +65,9 @@ namespace sim
         if (id >= particleCount)
             return;
 
-        positionX[id] = curand_uniform(&states[id]) * 10;
-        positionY[id] = curand_uniform(&states[id]) * 10;
-        positionZ[id] = curand_uniform(&states[id]) * 10;
+        positionX[id] = curand_uniform(&states[id]) * width;
+        positionY[id] = curand_uniform(&states[id]) * height;
+        positionZ[id] = curand_uniform(&states[id]) * depth;
     }
 
     void calculateNextFrame(float* positionX, float* positionY, float* positionZ,

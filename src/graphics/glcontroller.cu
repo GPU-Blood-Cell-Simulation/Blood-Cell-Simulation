@@ -17,23 +17,23 @@
 
 namespace graphics
 {
-	__global__ void calculateOffsetsKernel(float* devVBO, float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
+	__global__ void calculateOffsetsKernel(float* devCudaOffsetBuffer, float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= particleCount)
 			return;
 
-		positionX[id] += 0.1;
+		positionX[id] += id % 2 == 0 ? 0.1 : -0.1;
 
-		devVBO[11 * id + 8] = positionX[id];
-		devVBO[11 * id + 9] = positionY[id];
-		devVBO[11 * id + 11] = positionZ[id];
+		devCudaOffsetBuffer[3 *id] = positionX[id];
+		devCudaOffsetBuffer[3 * id + 1] = positionY[id];
+		devCudaOffsetBuffer[3 * id + 2] = positionZ[id];
 	}
 
 	graphics::GLController::GLController() : particleModel("Models/Earth/low_poly_earth.fbx")
 	{
 		// register OpenGL buffer in CUDA
-		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&VBOresource, particleModel.getVBO(), cudaGraphicsRegisterFlagsNone));
+		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaOffsetResource, particleModel.getCudaOffsetBuffer(), cudaGraphicsRegisterFlagsNone));
 
 		// Create a directional light
 		directionalLight = DirLight
@@ -90,18 +90,18 @@ namespace graphics
 	void graphics::GLController::calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
 	{
 		// get CUDA a pointer to openGL buffer
-		float* devVBO = 0;
+		float* devCudaOffsetBuffer = 0;
 		size_t numBytes;
 
-		HANDLE_ERROR(cudaGraphicsMapResources(1, &VBOresource, 0));
-		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devVBO, &numBytes, VBOresource));
+		HANDLE_ERROR(cudaGraphicsMapResources(1, &cudaOffsetResource, 0));
+		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devCudaOffsetBuffer, &numBytes, cudaOffsetResource));
 		
 		// translate our CUDA positions into Vertex offsets
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
-		calculateOffsetsKernel << <blocks, threadsPerBlock >> > (devVBO, positionX, positionY, positionZ, particleCount);
+		calculateOffsetsKernel << <blocks, threadsPerBlock >> > (devCudaOffsetBuffer, positionX, positionY, positionZ, particleCount);
 
-		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &VBOresource, 0));
+		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
 	}
 
 	void graphics::GLController::draw()
@@ -112,8 +112,6 @@ namespace graphics
 			solidColorShader->setMatrix("model", model);
 			solidColorShader->setMatrix("view", view);
 			solidColorShader->setMatrix("projection", projection);
-
-			glEnable(GL_DEPTH_TEST);
 
 			particleModel.draw(solidColorShader);
 			return;

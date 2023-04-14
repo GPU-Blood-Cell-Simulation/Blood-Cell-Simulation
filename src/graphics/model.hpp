@@ -13,9 +13,11 @@ public:
     Model(const char* path);
 
     void draw(const std::shared_ptr<Shader> shader) const;
-    unsigned int getVBO();
+    unsigned int getCudaOffsetBuffer();
 
 protected:
+    // Array of translation vectors for each instance - cuda writes to this
+    unsigned int cudaOffsetBuffer;
 
     std::vector<Texture> textures_loaded;
     std::string directory;
