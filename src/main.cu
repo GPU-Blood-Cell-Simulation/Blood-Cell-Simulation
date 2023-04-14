@@ -12,15 +12,14 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
-// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
-extern "C"
-{
-    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-}
+//// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
+//extern "C"
+//{
+//    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+//}
 
 int main()
 {
-
     float* positionX = 0;
     float* positionY = 0;
     float* positionZ = 0;

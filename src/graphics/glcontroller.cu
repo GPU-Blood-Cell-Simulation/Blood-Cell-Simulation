@@ -23,7 +23,7 @@ namespace graphics
 		if (id >= particleCount)
 			return;
 
-		positionX[id] += id % 2 == 0 ? 0.1 : -0.1;
+		// Insert any debug position changes here
 
 		devCudaOffsetBuffer[3 *id] = positionX[id];
 		devCudaOffsetBuffer[3 * id + 1] = positionY[id];
@@ -32,7 +32,7 @@ namespace graphics
 
 	graphics::GLController::GLController() : particleModel("Models/Earth/low_poly_earth.fbx")
 	{
-		// register OpenGL buffer in CUDA
+		// Register OpenGL buffer in CUDA
 		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaOffsetResource, particleModel.getCudaOffsetBuffer(), cudaGraphicsRegisterFlagsNone));
 
 		// Create a directional light
@@ -106,7 +106,7 @@ namespace graphics
 
 	void graphics::GLController::draw()
 	{
-		if constexpr (!useLighting)
+		if constexpr (!useLighting) // solidcolor
 		{
 			solidColorShader->use();
 			solidColorShader->setMatrix("model", model);
@@ -151,6 +151,7 @@ namespace graphics
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		// Render quad
+		// TODO: optimization - don't generate buffers each frame
 		unsigned int quadVAO = 0;
 		unsigned int quadVBO = 0;
 

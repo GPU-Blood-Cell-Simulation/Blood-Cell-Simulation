@@ -146,6 +146,7 @@ void PhongLightingShader::use()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     Shader::use();
 
+    // Activate textures that have been written to by the geometry pass shader
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gPosition);
     glActiveTexture(GL_TEXTURE1);
