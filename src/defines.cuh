@@ -33,3 +33,8 @@ inline constexpr float depth = 100.0f;
 inline constexpr int cellWidth = 2;
 inline constexpr int cellHeight = 2;
 inline constexpr int cellDepth = 2;
+
+inline constexpr unsigned int particleCount = 500;
+
+// Lighting does not work yet
+inline constexpr bool useLighting = false;

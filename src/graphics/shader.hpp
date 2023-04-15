@@ -1,4 +1,5 @@
 #pragma once
+#include "light.hpp"
 
 #include <string>
 #include <vector>
@@ -18,6 +19,7 @@ public:
     void setInt(const char* name, int value) const;
     void setVector(const char* name, glm::vec3& vector) const;
     void setMatrix(const char* name, glm::mat4& matrix) const;
+    void setLighting(DirLight dirLight) const;
 protected:
     // constructor reads and builds the shader
     Shader(const char* vertexPath, const char* fragmentPath);
@@ -27,4 +29,23 @@ class SolidColorShader : public Shader
 {
 public:
     SolidColorShader();
+};
+
+class GeometryPassShader : public Shader
+{
+public:
+    GeometryPassShader(unsigned int gBuffer);
+    void use() override;
+private:
+    unsigned int gBuffer;
+};
+
+class PhongLightingShader : public Shader
+{
+public:
+    PhongLightingShader(unsigned int gPosition, unsigned int gNormal);
+    void use() override;
+private:
+    unsigned int gPosition;
+    unsigned int gNormal;
 };

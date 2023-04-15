@@ -12,8 +12,14 @@ struct Vertex {
     glm::vec3 Position;
     // normal
     glm::vec3 Normal;
-    // offset - filled by CUDA
-    glm::vec3 Offset = glm::vec3(0, 0, 0);
+    // texCoords
+    glm::vec2 TexCoords;
+};
+
+struct Texture {
+    unsigned int id;
+    std::string type;
+    std::string path;
 };
 
 
@@ -22,10 +28,12 @@ public:
     // mesh data
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    std::vector<Texture> textures;
 
-    Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices);
-    void draw(const std::shared_ptr<Shader> shader);
+    Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures);
+    void draw(const std::shared_ptr<Shader> shader) const;
     unsigned int getVBO();
+    void setVertexOffsetAttribute();
 private:
     //  render data
     unsigned int VAO, VBO, EBO;

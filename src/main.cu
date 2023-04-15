@@ -12,10 +12,14 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
+//// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
+//extern "C"
+//{
+//    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+//}
+
 int main()
 {
-    constexpr unsigned int particleCount = 500;
-
     float* positionX = 0;
     float* positionY = 0;
     float* positionZ = 0;
@@ -53,6 +57,10 @@ int main()
     glViewport(0, 0, windowWidth, windowHeight);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
+    // debug
+    glEnable(GL_DEBUG_OUTPUT);
 
     double lastTime = glfwGetTime();
     int frameCount = 0;

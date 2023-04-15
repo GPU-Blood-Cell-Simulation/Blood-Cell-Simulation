@@ -114,4 +114,41 @@ void Shader::setMatrix(const char* name, glm::mat4& matrix) const
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-SolidColorShader::SolidColorShader() : Shader("Shaders\\solidcolor.vert", "Shaders\\solidcolor.frag") {}
+void Shader::setLighting(DirLight dirLight) const
+{
+    setVector("dirLight.direction", dirLight.direction);
+    setVector("dirLight.ambient", dirLight.ambient);
+    setVector("dirLight.diffuse", dirLight.diffuse);
+    setVector("dirLight.specular", dirLight.specular);
+}
+
+SolidColorShader::SolidColorShader() : Shader("Shaders\\solidcolor.vert", "Shaders\\solidcolor.frag")
+{}
+
+GeometryPassShader::GeometryPassShader(unsigned int gBuffer) : Shader("Shaders\\geometry.vert", "Shaders\\geometry.frag"),
+gBuffer(gBuffer)
+{}
+
+void GeometryPassShader::use()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    Shader::use();
+}
+
+PhongLightingShader::PhongLightingShader(unsigned int gPosition, unsigned int gNormal) : Shader("Shaders\\phong.vert", "Shaders\\phong.frag"),
+gPosition(gPosition), gNormal(gNormal)
+{}
+
+void PhongLightingShader::use()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    Shader::use();
+
+    // Activate textures that have been written to by the geometry pass shader
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gPosition);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, gNormal);
+}
