@@ -1,5 +1,36 @@
 #include "objects.cuh"
+#include <cmath>
+#include <map>
+#include <utility>
 
+
+__device__ __host__ void cudaVec3::createVec(int n)
+{
+	size = n;
+	// allocate
+	HANDLE_ERROR(cudaMalloc((void**)&x, n * sizeof(float)));
+	HANDLE_ERROR(cudaMalloc((void**)&y, n * sizeof(float)));
+	HANDLE_ERROR(cudaMalloc((void**)&z, n * sizeof(float)));
+}
+
+__device__ __host__ float3 cudaVec3::get(int index)
+{
+	return make_float3(x[index], y[index], z[index]);
+}
+
+__device__ __host__ void cudaVec3::set(int index, float3 v)
+{
+	x[index] = v.x;
+	y[index] = v.y;
+	z[index] = v.z;
+}
+
+__device__ __host__ void cudaVec3::add(int index, float3 v)
+{
+	x[index] += v.x;
+	y[index] += v.y;
+	z[index] += v.z;
+}
 
 /// spring array
 
@@ -9,14 +40,14 @@ spring_graph::spring_graph(int n)
 	lengths = new std::vector<float>[n];
 }
 
-void spring_graph::set_spring(int a, int b, float l)
+__host__ __device__ void spring_graph::set_spring(int a, int b, float l)
 {
 	lengths[a].push_back(b);
 	lengths[a].push_back(l);
 	spring_cntr++;
 }
 
-void spring_graph::flush()
+__host__ __device__ void spring_graph::flush()
 {
 	int totalS = par_cnt + 2 * spring_cntr;
 
@@ -60,7 +91,7 @@ corpuscle::corpuscle(int n)
 
 // dipol
 	
-void dipol::createCorpuscle(int i, float3 center, particles& particls, int p_cnt)
+__device__ void dipol::createCorpuscle(int i, float3 center, particles& particls, int p_cnt)
 {
 	if (2 * i < p_cnt)
 	{

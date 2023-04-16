@@ -1,7 +1,7 @@
 #include "simulation.cuh"
 #include "grid.cuh"
 #include "physics.cuh"
-
+#include "objects.cuh"
 #include <ctime>
 #include <cmath>
 
@@ -11,9 +11,9 @@ namespace sim
     void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
         const unsigned int particleCount)
     {
-        globalParticles.position = cudaVec3(particleCount);
-        globalParticles.velocity = cudaVec3(particleCount);
-        globalParticles.force = cudaVec3(particleCount);
+        globalParticles.position.createVec(particleCount);
+        globalParticles.velocity.createVec(particleCount);
+        globalParticles.force.createVec(particleCount);
 
         corps = new dipol[particleCount / 2];
 

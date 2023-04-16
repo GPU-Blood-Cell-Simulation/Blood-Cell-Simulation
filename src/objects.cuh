@@ -1,10 +1,20 @@
-#include "structs.cuh"
-#include "defines.cuh"
-#include <cmath>
-#include <map>
-#include <utility>
 #include <vector>
+#include "defines.cuh"
 
+struct cudaVec3
+{
+	float* x;
+	float* y;
+	float* z;
+	int size;
+
+	__device__ __host__ cudaVec3() {}
+	__device__ __host__ void createVec(int n);
+
+	__device__ __host__ float3 get(int index);
+	__device__ __host__ void set(int index, float3 v);
+	__device__ __host__ void add(int index, float3 v);
+};
 
 // Global structure of particles
 struct particles
@@ -65,4 +75,4 @@ public:
 
 
 // global corpuscle array
-corpuscle* corps;
+dipol* corps;
