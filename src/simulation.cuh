@@ -2,6 +2,7 @@
 
 #include <curand.h>
 #include <curand_kernel.h>
+#include "objects.cuh"
 
 namespace sim
 {
@@ -9,9 +10,8 @@ namespace sim
 		const unsigned int particleCount);
 
 	void generateRandomPositions(float* positionX, float* positionY, float* positionZ, const int particleCount);
-	void generateInitialPositionsInLayers(particles& p, corpuscles& c, const int particleCount, const int layersCount);
+	void generateInitialPositionsInLayers(particles& p, corpuscles& c, int particleCount, int layersCount);
 
-	void calculateNextFrame(float* positionX,float* positionY, float* positionZ,
-		unsigned int* cellIds, unsigned int* particleIds,
+	void calculateNextFrame(particles& p, corpuscles& c, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount);
 }

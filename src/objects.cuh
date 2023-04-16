@@ -1,6 +1,7 @@
 #include <vector>
 #include "defines.cuh"
 
+#ifndef CUDA_VEC_3
 struct cudaVec3
 {
 	float* x;
@@ -17,9 +18,12 @@ struct cudaVec3
 	__device__ void set(int index, float3 v);
 	__device__ void add(int index, float3 v);
 };
+#define CUDA_VEC_3
+#endif
 
 
 // Global structure of particles
+#ifndef PARTICLS
 struct particles
 {
 	cudaVec3 position;
@@ -32,25 +36,34 @@ struct particles
 	}
 
 };
+#define PARTICLS
+#endif
 
+#ifndef CORPSCLS
 class corpuscles
 {
-	corpuscles(int n);
-
+protected:
 	cudaVec3 centers;
+	corpuscles(int n);
 public:
 	virtual __device__ void propagateForces(particles& gp, int particleInd) = 0;
 	virtual __device__ void setCorpuscle(int index, float3 center, particles& particls, int p_cnt) = 0;
-}
+};
+#define CORPSCLS
+#endif
 
-class dipols: public corpuscles
+#ifndef DIPLS
+class dipols : public corpuscles
 {
 	float L0;
+
 public:
-	dipol(int n, int initialLength): corpuscles(n) {
+	dipols(int n, int initialLength = 0.5f) : corpuscles(n) {
 		L0 = initialLength;
 	}
 
 	virtual __device__ void propagateForces(particles& gp, int particleInd) override;
 	virtual __device__ void setCorpuscle(int index, float3 center, particles& particls, int p_cnt) override;
-}
+};
+#define DIPLS
+#endif

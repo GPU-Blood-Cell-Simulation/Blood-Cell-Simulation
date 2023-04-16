@@ -1,7 +1,8 @@
 #include "simulation.cuh"
 #include "grid.cuh"
 #include "defines.cuh"
-
+#include "physics.cuh"
+#include <cmath>
 #include <ctime>
 
 namespace sim
@@ -14,8 +15,7 @@ namespace sim
     __global__ void generateInitialPositionsKernel(particles& par, corpuscles& crps, float3 dims, int par_cnt);
 
     // Allocate GPU buffers for the position vectors
-    void allocateMemory(particles& parts, float** positionX, float** positionY, float** positionZ,
-        unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
+    void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
         const unsigned int particleCount)
     {
         HANDLE_ERROR(cudaMalloc((void**)cellIds, particleCount * sizeof(unsigned int)));
@@ -33,14 +33,15 @@ namespace sim
         int model_par_cnt = 2; /*cell model particles count, 2 for dipol*/
         int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
         int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
-        real_particles_count = layerDim * layerDim * layersCount;
+
+        //real_particles_count = layerDim * layerDim * layersCount;
 
         int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
         int blDim = std::ceil(layerDim / threadsPerBlock);
         dim3 blocks = dim3(blDim, blDim, layersCount);
 
         generateInitialPositionsKernel <<<blocks, threadsPerBlock >>>(p, c, 
-            float(layersCount)/100 * make_float3(dimension.x, dimension.y, dimension.z)  , particleCount);
+            float(layersCount)/100 * make_float3(width, height, depth)  , particleCount);
     }
 
     // Generate initial positions and velocities of particles
@@ -99,7 +100,7 @@ namespace sim
         float y = ((tid % (w*h)) / w) * dims.y/h;
         float z = (tid / (w * h)    ) * dims.z/d;
 
-        crps.setCorpuscle(tid, center, par, p_cnt);
+        crps.setCorpuscle(tid, make_float3(x,y,z), par, par_cnt);
         // TODO
         /////crps[tid].createCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
 
@@ -111,16 +112,16 @@ namespace sim
         }*/
     }
 
-    void calculateNextFrame(float* positionX, float* positionY, float* positionZ,
-        unsigned int* cellIds, unsigned int* particleIds,
+    void calculateNextFrame(particles& particls, corpuscles& corpuscls, unsigned int* cellIds, unsigned int* particleIds,
         unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
     {
         // 1. calculate grid
-        createUniformGrid(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
+        createUniformGrid(particls.position.x, particls.position.y, particls.position.z, 
+            cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
         int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
         int blDim = std::ceil(float(particleCount)/ threadsPerBlock);
         // 2. TODO: detections
-        physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (globalParticles, corps);
+        physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls);
     }
 }

@@ -1,8 +1,8 @@
 #include "objects.cuh"
 #include "defines.cuh"
+#include "utilities.cuh"
 
 // cudaVec3
-
 void cudaVec3::createVec(int n)
 {
     size = n;
@@ -35,12 +35,12 @@ __device__ void cudaVec3::add(int index, float3 v)
 
 corpuscles::corpuscles(int n)
 {
-    centers.createVec3(n);
+    centers.createVec(n);
 }
 
 // dipols 
 
-__device__ void dipol::propagateForces(particles& gp, int particleInd)
+__device__ void dipols::propagateForces(particles& gp, int particleInd)
 {
     int secondParticle = particleInd%2 == 0 ? particleInd + 1 : particleInd - 1;
 	float3 p1 = gp.position.get(particleInd);
@@ -50,22 +50,22 @@ __device__ void dipol::propagateForces(particles& gp, int particleInd)
     
 	float Fr = (length(p1 - p2) - L0) * k_sniff + dot(normalize(p1 - p2), (v1 - v2)) * d_fact;
     
-	gp.force.add(part_index, Fr * normalize(p2 - p1));
-	gp.force.add(oth_part, Fr * normalize(p1 - p2));
+	gp.force.add(particleInd, Fr * normalize(p2 - p1));
+	gp.force.add(secondParticle, Fr * normalize(p1 - p2));
 }
 
-__device__ void dipol::setCorpuscle(int index, float3 center, particles& particls, int p_cnt)
+__device__ void dipols::setCorpuscle(int index, float3 center, particles& particls, int p_cnt)
 {
-	if(2*i < p_cnt)
+	if(2*index < p_cnt)
 	{
 		centers.set(index, center);
-		particls.position.set(2 * i,		make_float3(0, 0, -0.25f) + center);
-		particls.position.set(2 * i + 1, make_float3(0, 0,  0.25f) + center);
+		particls.position.set(2 * index,	 make_float3(0, 0, -L0) + center);
+		particls.position.set(2 * index + 1, make_float3(0, 0,  L0) + center);
 
-		particls.velocity.set(2 * i,		make_float3(0, 0, v0));
-		particls.velocity.set(2 * i + 1, make_float3(0, 0, v0));
+		particls.velocity.set(2 * index,	 make_float3(0, 0, v0));
+		particls.velocity.set(2 * index + 1, make_float3(0, 0, v0));
 
-		particls.force.set(2 * i,	 make_float3(0, 0, 0));
-		particls.force.set(2 * i + 1, make_float3(0, 0, 0));
+		particls.force.set(2 * index,	  make_float3(0, 0, 0));
+		particls.force.set(2 * index + 1, make_float3(0, 0, 0));
 	}
 }

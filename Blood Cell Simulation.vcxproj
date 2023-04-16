@@ -20,7 +20,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -69,6 +69,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)Libraries\include</Include>
       <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" %(AdditionalOptions)</AdditionalOptions>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CudaToolkitBinDir)/crt;$(SolutionDir)Libraries\lib</AdditionalLibraryDirectories>
@@ -107,7 +108,9 @@
     <CudaCompile Include="src\graphics\glcontroller.cu" />
     <CudaCompile Include="src\grid.cu" />
     <CudaCompile Include="src\main.cu" />
+    <CudaCompile Include="src\objects.cu" />
     <CudaCompile Include="src\simulation.cu" />
+    <CudaCompile Include="src\utilities.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Libraries\include\glm\detail\glm.cpp" />
@@ -494,7 +497,10 @@
     <ClInclude Include="src\graphics\textures\stb_image.h" />
     <ClInclude Include="src\graphics\textures\texture_loading.hpp" />
     <ClInclude Include="src\grid.cuh" />
+    <ClInclude Include="src\objects.cuh" />
+    <ClInclude Include="src\physics.cuh" />
     <ClInclude Include="src\simulation.cuh" />
+    <ClInclude Include="src\utilities.cuh" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\include\assimp\color4.inl" />

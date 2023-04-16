@@ -1,3 +1,7 @@
+#include "objects.cuh"
+#include "utilities.cuh"
+#include <cmath>
+
 namespace physics
 {
 	__global__ void propagateParticles(particles& gp, corpuscles& c)
@@ -31,7 +35,7 @@ namespace physics
 		/// must sync here probably
 		__syncthreads();
 
-		c.propagateForces(gp, part_ind);
+		c.propagateForces(gp, part_index);
 		// propagate positions into spring forces
 
 		// foreach spring TODO

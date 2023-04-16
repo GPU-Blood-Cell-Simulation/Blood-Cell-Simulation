@@ -71,10 +71,10 @@ int main()
     graphics::GLController glController;
 
     // Allocate memory
-    particles particls(particleCount);
-    dipols corpscls(particleCount/2);
+    particles particls(PARTICLE_COUNT);
+    dipols corpscls(PARTICLE_COUNT /2);
 
-    sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, max_particles_count);
+    sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, PARTICLE_COUNT);
 
     // Generate random positions
     //sim::generateRandomPositions(positionX, positionY, positionZ, particleCount);
@@ -92,7 +92,7 @@ int main()
         //sim::calculateNextFrame(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(positionX, positionY, positionZ, particleCount);
+        glController.calculateOffsets(positionX, positionY, positionZ, PARTICLE_COUNT);
 
         // OpenGL render
 #pragma region rendering

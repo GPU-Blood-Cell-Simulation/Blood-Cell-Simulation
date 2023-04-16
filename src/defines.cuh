@@ -28,10 +28,15 @@ static void HandleError(cudaError_t err, const char* file, int line)
 void __syncthreads();
 #endif
 
+
+#ifndef GLBL_N_CNSTS
 inline constexpr float windowWidth = 800;
 inline constexpr float windowHeight = 800;
 
-constexpr float3 dimension {100,100,100};
+inline constexpr float width = 100.0f;
+inline constexpr float height = 100.0f;
+inline constexpr float depth = 100.0f;
+//constexpr float3 dimension {100,100,100};
 
 inline constexpr int cellWidth = 2;
 inline constexpr int cellHeight = 2;
@@ -41,23 +46,25 @@ inline constexpr unsigned int PARTICLE_COUNT = 60000;
 
 // ! this value should be determined experimentally !
 // one frame simulation time span
-__device__ constexpr float dt = 0.1f;
+__device__ inline constexpr float dt = 0.1f;
 
 // initial particle velocity value
-__device__ constexpr float v0 = 0.1f;
+__device__ inline constexpr float v0 = 0.1f;
 
 /// used in allocating new particles in array
-unsigned int new_cell_index = 0;
+//inline unsigned int new_cell_index = 0;
 
 /// PHYSICS CONST
 
 // ! this value should be determined experimentally !
 // Hooks law k factor from F = k*x
-__device__ constexpr float k_sniff = 0.1f;
+__device__ inline constexpr float k_sniff = 0.1f;
 
 // ! this value should be determined experimentally !
 // Damping factor 
-__device__ constexpr float d_fact = 0.1f;
+__device__ inline constexpr float d_fact = 0.1f;
 
 // Lighting does not work yet
 inline constexpr bool useLighting = false;
+#define GLBL_N_CNSTS
+#endif
