@@ -3,6 +3,7 @@
 
 #include "simulation.cuh"
 #include "defines.cuh"
+#include "objects.cuh"
 #include "graphics/glcontroller.cuh"
 
 #include <glad/glad.h>
@@ -70,10 +71,14 @@ int main()
     graphics::GLController glController;
 
     // Allocate memory
-    sim::allocateMemory(&positionX, &positionY, &positionZ, &cellIds, &particleIds, &cellStarts, &cellEnds, particleCount);
+    particles particls(particleCount);
+    dipols corpscls(particleCount/2);
+
+    sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, max_particles_count);
 
     // Generate random positions
-    sim::generateRandomPositions(positionX, positionY, positionZ, particleCount);
+    //sim::generateRandomPositions(positionX, positionY, positionZ, particleCount);
+    sim::generateInitialPositionsInLayers(particls, corpscls, PARTICLE_COUNT, 3);
 
     // MAIN LOOP HERE - probably dictaded by glfw
 
