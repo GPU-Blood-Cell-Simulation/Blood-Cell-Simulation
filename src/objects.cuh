@@ -1,6 +1,10 @@
 #include <vector>
 #include "defines.cuh"
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
+
 #ifndef CUDA_VEC_3
 struct cudaVec3
 {

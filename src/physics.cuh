@@ -2,6 +2,11 @@
 #include "utilities.cuh"
 #include <cmath>
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include <device_functions.h>
+
+
 namespace physics
 {
 	__global__ void propagateParticles(particles& gp, corpuscles& c)

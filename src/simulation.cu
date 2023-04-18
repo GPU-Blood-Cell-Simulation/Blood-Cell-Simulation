@@ -5,6 +5,9 @@
 #include <cmath>
 #include <ctime>
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
 namespace sim
 {
 
@@ -12,7 +15,7 @@ namespace sim
 
     __global__ void generateRandomPositionsKernel(curandState* states, float* positionX, float* positionY, float* positionZ, const int particleCount);
 
-    __global__ void generateInitialPositionsKernel(particles& par, corpuscles& crps, float3 dims, int par_cnt);
+    __global__ void generateInitialPositionsKernel(particles par, corpuscles* crps, float3 dims, int par_cnt);
 
     // Allocate GPU buffers for the position vectors
     void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
@@ -40,7 +43,7 @@ namespace sim
         int blDim = std::ceil(layerDim / threadsPerBlock);
         dim3 blocks = dim3(blDim, blDim, layersCount);
 
-        generateInitialPositionsKernel <<<blocks, threadsPerBlock >>>(p, c, 
+        generateInitialPositionsKernel <<<blocks, threadsPerBlock >>>(p, &c, 
             float(layersCount)/100 * make_float3(width, height, depth)  , particleCount);
     }
 
@@ -86,7 +89,7 @@ namespace sim
 
     
 
-    __global__ void generateInitialPositionsKernel(particles& par, corpuscles& crps, float3 dims, int par_cnt)
+    __global__ void generateInitialPositionsKernel(particles par, corpuscles* crps, float3 dims, int par_cnt)
     {
         int blockId = blockIdx.x + blockIdx.y * gridDim.x
             + gridDim.x * gridDim.y * blockIdx.z;
@@ -100,7 +103,7 @@ namespace sim
         float y = ((tid % (w*h)) / w) * dims.y/h;
         float z = (tid / (w * h)    ) * dims.z/d;
 
-        crps.setCorpuscle(tid, make_float3(x,y,z), par, par_cnt);
+        crps->setCorpuscle(tid, make_float3(x,y,z), par, par_cnt);
         // TODO
         /////crps[tid].createCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
 

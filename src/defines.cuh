@@ -42,14 +42,14 @@ inline constexpr int cellWidth = 2;
 inline constexpr int cellHeight = 2;
 inline constexpr int cellDepth = 2;
 
-inline constexpr unsigned int PARTICLE_COUNT = 60000;
+inline constexpr unsigned int PARTICLE_COUNT = 10;
 
 // ! this value should be determined experimentally !
 // one frame simulation time span
-__device__ inline constexpr float dt = 0.1f;
+inline constexpr float dt = 0.1f;
 
 // initial particle velocity value
-__device__ inline constexpr float v0 = 0.1f;
+inline constexpr float v0 = 0.1f;
 
 /// used in allocating new particles in array
 //inline unsigned int new_cell_index = 0;
@@ -58,11 +58,11 @@ __device__ inline constexpr float v0 = 0.1f;
 
 // ! this value should be determined experimentally !
 // Hooks law k factor from F = k*x
-__device__ inline constexpr float k_sniff = 0.1f;
+inline constexpr float k_sniff = 0.1f;
 
 // ! this value should be determined experimentally !
 // Damping factor 
-__device__ inline constexpr float d_fact = 0.1f;
+inline constexpr float d_fact = 0.1f;
 
 // Lighting does not work yet
 inline constexpr bool useLighting = false;

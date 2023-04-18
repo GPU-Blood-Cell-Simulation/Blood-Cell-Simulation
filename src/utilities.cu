@@ -1,5 +1,7 @@
 #include "utilities.cuh"
 
+#include <cmath>
+
 __host__ __device__ float3 operator*(float a, float3 v)
 {
 	return make_float3(a * v.x, a * v.y, a * v.z);

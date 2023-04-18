@@ -2,6 +2,9 @@
 #include "defines.cuh"
 #include "utilities.cuh"
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
 // cudaVec3
 void cudaVec3::createVec(int n)
 {

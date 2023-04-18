@@ -21,9 +21,6 @@
 
 int main()
 {
-    float* positionX = 0;
-    float* positionY = 0;
-    float* positionZ = 0;
     unsigned int* cellIds = 0;
     unsigned int* particleIds = 0;
     unsigned int* cellStarts = 0;
@@ -89,10 +86,10 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        //sim::calculateNextFrame(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
+        sim::calculateNextFrame(particls, corpscls, cellIds, particleIds, cellStarts, cellEnds, PARTICLE_COUNT);
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(positionX, positionY, positionZ, PARTICLE_COUNT);
+        glController.calculateOffsets(particls.position.x, particls.position.y, particls.position.z, PARTICLE_COUNT);
 
         // OpenGL render
 #pragma region rendering
@@ -123,9 +120,15 @@ int main()
     }
 
     // Cleanup
-    cudaFree(positionX);
-    cudaFree(positionY);
-    cudaFree(positionZ);
+    cudaFree(particls.position.x);
+    cudaFree(particls.position.y);
+    cudaFree(particls.position.z);
+    cudaFree(particls.velocity.x);
+    cudaFree(particls.velocity.y);
+    cudaFree(particls.velocity.z);
+    cudaFree(particls.force.x);
+    cudaFree(particls.force.y);
+    cudaFree(particls.force.z);
     cudaFree(cellIds);
     cudaFree(particleIds);
     cudaFree(cellStarts);
