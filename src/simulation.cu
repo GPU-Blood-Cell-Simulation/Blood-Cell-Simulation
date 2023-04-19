@@ -39,12 +39,13 @@ namespace sim
 
         //real_particles_count = layerDim * layerDim * layersCount;
 
-        int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
-        int blDim = std::ceil(layerDim / threadsPerBlock);
+        int threadsPerBlockDim = std::min(layerDim, 32);
+        int blDim = std::ceil(float(corpusclesPerLayer) / threadsPerBlockDim);
         dim3 blocks = dim3(blDim, blDim, layersCount);
+        dim3 threads = dim3(threadsPerBlockDim, threadsPerBlockDim, 1);
 
-        generateInitialPositionsKernel <<<blocks, threadsPerBlock >>>(p, &c, 
-            float(layersCount)/100 * make_float3(width, height, depth)  , particleCount);
+        generateInitialPositionsKernel <<<blocks, threads >>>(p, &c,
+            make_float3(width, height, float(layersCount * depth) / 100 )  , particleCount);
     }
 
     // Generate initial positions and velocities of particles
@@ -91,17 +92,14 @@ namespace sim
 
     __global__ void generateInitialPositionsKernel(particles par, corpuscles* crps, float3 dims, int par_cnt)
     {
-        int blockId = blockIdx.x + blockIdx.y * gridDim.x
-            + gridDim.x * gridDim.y * blockIdx.z;
-        int tid = blockId * blockDim.x + threadIdx.x;
+        int thCnt = blockDim.x * blockDim.y;
+        int blCnt2d = gridDim.x * gridDim.y;
+        int tid = (blockIdx.z - 1) * blCnt2d * thCnt + (blockIdx.y - 1) * gridDim.x * thCnt 
+            + (blockIdx.x - 1) * thCnt + (threadIdx.y - 1) * blockDim.x + threadIdx.x;
 
-        int w = gridDim.x * blockDim.x;
-        int h = gridDim.y * blockDim.y;
-        int d = gridDim.z * blockDim.z;
-
-        float x = ((tid % (w*h)) % w) * dims.x/w;
-        float y = ((tid % (w*h)) / w) * dims.y/h;
-        float z = (tid / (w * h)    ) * dims.z/d;
+        float x = float(((blockIdx.x - 1) * blockDim.x + threadIdx.x) * dims.x) / (blockDim.x * gridDim.x);
+        float x = float(((blockIdx.y - 1) * blockDim.y + threadIdx.y) * dims.y) / (blockDim.y * gridDim.y);
+        float x = float(((blockIdx.z - 1) * blockDim.z + threadIdx.z) * dims.z * blockDim.z) / (blockDim.z * gridDim.z*100);
 
         crps->setCorpuscle(tid, make_float3(x,y,z), par, par_cnt);
         // TODO
