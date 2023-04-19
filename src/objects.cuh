@@ -59,7 +59,7 @@ class dipols : public corpuscles
 	float L0;
 
 public:
-	dipols(int n, int initialLength = 0.5f){
+	dipols(int initialLength = 0.5f){
 		L0 = initialLength;
 	}
 

@@ -69,7 +69,7 @@ int main()
 
     // Allocate memory
     particles particls(PARTICLE_COUNT);
-    dipols corpscls(PARTICLE_COUNT /2);
+    dipols corpscls = dipols();
 
     sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, PARTICLE_COUNT);
 
