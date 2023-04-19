@@ -37,4 +37,4 @@ inline constexpr int cellDepth = 2;
 inline constexpr unsigned int particleCount = 500;
 
 // Lighting does not work yet
-inline constexpr bool useLighting = false;
+inline constexpr bool useLighting = true;
