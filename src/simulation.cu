@@ -98,10 +98,14 @@ namespace sim
             + (blockIdx.x - 1) * thCnt + (threadIdx.y - 1) * blockDim.x + threadIdx.x;
 
         float x = float(((blockIdx.x - 1) * blockDim.x + threadIdx.x) * dims.x) / (blockDim.x * gridDim.x);
-        float x = float(((blockIdx.y - 1) * blockDim.y + threadIdx.y) * dims.y) / (blockDim.y * gridDim.y);
-        float x = float(((blockIdx.z - 1) * blockDim.z + threadIdx.z) * dims.z * blockDim.z) / (blockDim.z * gridDim.z*100);
+        float y = float(((blockIdx.y - 1) * blockDim.y + threadIdx.y) * dims.y) / (blockDim.y * gridDim.y);
+        float z = float(((blockIdx.z - 1) * blockDim.z + threadIdx.z) * dims.z * blockDim.z) / (blockDim.z * gridDim.z*100);
 
-        crps->setCorpuscle(tid, make_float3(x,y,z), par, par_cnt);
+        if (x < dims.x && y < dims.y)
+        {
+            crps->setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
+        }
+
         // TODO
         /////crps[tid].createCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
 
