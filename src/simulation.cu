@@ -15,7 +15,7 @@ namespace sim
 
     __global__ void generateRandomPositionsKernel(curandState* states, float* positionX, float* positionY, float* positionZ, const int particleCount);
 
-    __global__ void generateInitialPositionsKernel(particles par, corpuscles* crps, float3 dims, int par_cnt);
+    __global__ void generateInitialPositionsKernel(particles par, corpuscles crps, float3 dims, int par_cnt);
 
     // Allocate GPU buffers for the position vectors
     void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
@@ -44,7 +44,7 @@ namespace sim
         dim3 blocks = dim3(blDim, blDim, layersCount);
         dim3 threads = dim3(threadsPerBlockDim, threadsPerBlockDim, 1);
 
-        generateInitialPositionsKernel <<<blocks, threads >>>(p, &c,
+        generateInitialPositionsKernel <<<blocks, threads >>>(p, c,
             make_float3(width, height, float(layersCount * depth) / 100 )  , particleCount);
     }
 
@@ -90,7 +90,7 @@ namespace sim
 
     
 
-    __global__ void generateInitialPositionsKernel(particles par, corpuscles* crps, float3 dims, int par_cnt)
+    __global__ void generateInitialPositionsKernel(particles par, corpuscles crps, float3 dims, int par_cnt)
     {
         int thCnt = blockDim.x * blockDim.y;
         int blCnt2d = gridDim.x * gridDim.y;
@@ -103,7 +103,7 @@ namespace sim
 
         if (x < dims.x && y < dims.y)
         {
-            crps->setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
+            crps.setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
         }
 
         // TODO

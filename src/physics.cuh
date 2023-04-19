@@ -9,7 +9,7 @@
 
 namespace physics
 {
-	__global__ void propagateParticles(particles& gp, corpuscles& c, int particleCount)
+	__global__ void propagateParticles(particles gp, corpuscles c, int particleCount)
 	{
 		// depends on which cell model we use, for dipol 2
 		int cell_size = 2;

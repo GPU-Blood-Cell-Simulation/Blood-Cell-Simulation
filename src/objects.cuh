@@ -47,8 +47,8 @@ struct particles
 class corpuscles
 {
 public:
-	virtual __device__ void propagateForces(particles& gp, int particleInd) = 0;
-	virtual __device__ void setCorpuscle(int index, float3 center, particles& particls, int p_cnt) = 0;
+	virtual __device__ void propagateForces(particles& gp, int particleInd) {}
+	virtual __device__ void setCorpuscle(int index, float3 center, particles& particls, int p_cnt) {}
 };
 #define CORPSCLS
 #endif
