@@ -46,9 +46,6 @@ struct particles
 #ifndef CORPSCLS
 class corpuscles
 {
-protected:
-	cudaVec3 centers;
-	corpuscles(int n);
 public:
 	virtual __device__ void propagateForces(particles& gp, int particleInd) = 0;
 	virtual __device__ void setCorpuscle(int index, float3 center, particles& particls, int p_cnt) = 0;
@@ -62,7 +59,7 @@ class dipols : public corpuscles
 	float L0;
 
 public:
-	dipols(int n, int initialLength = 0.5f) : corpuscles(n) {
+	dipols(int n, int initialLength = 0.5f){
 		L0 = initialLength;
 	}
 

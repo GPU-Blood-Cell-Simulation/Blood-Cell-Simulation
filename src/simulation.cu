@@ -127,6 +127,6 @@ namespace sim
         int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
         int blDim = std::ceil(float(particleCount)/ threadsPerBlock);
         // 2. TODO: detections
-        physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls);
+        physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, PARTICLE_COUNT);
     }
 }
