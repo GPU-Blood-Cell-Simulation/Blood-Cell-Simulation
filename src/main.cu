@@ -74,8 +74,8 @@ int main()
     sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, PARTICLE_COUNT);
 
     // Generate random positions
-    //sim::generateRandomPositions(positionX, positionY, positionZ, particleCount);
-    sim::generateInitialPositionsInLayers(particls, corpscls, PARTICLE_COUNT, 3);
+    sim::generateRandomPositions(particls, PARTICLE_COUNT);
+    //sim::generateInitialPositionsInLayers(particls, corpscls, PARTICLE_COUNT, 3);
 
     // MAIN LOOP HERE - probably dictaded by glfw
 

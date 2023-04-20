@@ -13,7 +13,7 @@ namespace sim
 
 	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount);
 
-	__global__ void generateRandomPositionsKernel(curandState* states, float* positionX, float* positionY, float* positionZ, const int particleCount);
+	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount);
 
 	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt);
 
@@ -49,7 +49,7 @@ namespace sim
 	}
 
 	// Generate initial positions and velocities of particles
-	void generateRandomPositions(float* positionX, float* positionY, float* positionZ, const int particleCount)
+	void generateRandomPositions(particles p, const int particleCount)
 	{
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
@@ -63,7 +63,7 @@ namespace sim
 
 		// Generate random positions and velocity vectors
 
-		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, positionX, positionY, positionZ, particleCount);
+		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, p, particleCount);
 
 		cudaFree(devStates);
 	}
@@ -77,15 +77,23 @@ namespace sim
 	}
 
 	// Generate random positions and velocities at the beginning
-	__global__ void generateRandomPositionsKernel(curandState* states, float* positionX, float* positionY, float* positionZ, const int particleCount)
+	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= particleCount)
 			return;
 
-		positionX[id] = curand_uniform(&states[id]) * width;
-		positionY[id] = curand_uniform(&states[id]) * height;
-		positionZ[id] = curand_uniform(&states[id]) * depth;
+		p.position.x[id] = curand_uniform(&states[id]) * width;
+		p.position.y[id] = curand_uniform(&states[id]) * height;
+		p.position.z[id] = curand_uniform(&states[id]) * depth;
+
+		p.position.x[id] = curand_uniform(&states[id]) * width;
+		p.position.y[id] = curand_uniform(&states[id]) * height;
+		p.position.z[id] = curand_uniform(&states[id]) * depth;
+
+		p.force.x[id] = 0;
+		p.force.y[id] = 0;
+		p.force.z[id] = 0;
 	}
 
 
@@ -106,7 +114,6 @@ namespace sim
 		if (x <= dims.x && y <= dims.y)
 		{
 			crps.setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
-
 		}
 	}
 

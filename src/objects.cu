@@ -52,7 +52,7 @@ __device__ void dipols::propagateForces(particles  gp, int particleInd)
 
 __device__ void dipols::setCorpuscle(int index, float3 center, particles particls, int p_cnt)
 {
-	printf("index: %d\n", index);
+	//printf("index: %d\n", index);
 	if(2*index < p_cnt)
 	{
 		particls.position.set(2 * index,	 make_float3(0, -L0 / 2, 0) + center);
