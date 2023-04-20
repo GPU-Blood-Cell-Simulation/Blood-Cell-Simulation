@@ -136,11 +136,11 @@ void GeometryPassShader::use()
     Shader::use();
 }
 
-PhongLightingShader::PhongLightingShader(unsigned int gPosition, unsigned int gNormal) : Shader("Shaders\\phong.vert", "Shaders\\phong.frag"),
+PhongDeferredShader::PhongDeferredShader(unsigned int gPosition, unsigned int gNormal) : Shader("Shaders\\phong_deferred.vert", "Shaders\\phong_deferred.frag"),
 gPosition(gPosition), gNormal(gNormal)
 {}
 
-void PhongLightingShader::use()
+void PhongDeferredShader::use()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -152,3 +152,6 @@ void PhongLightingShader::use()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, gNormal);
 }
+
+PhongForwardShader::PhongForwardShader() : Shader("Shaders\\phong_forward.vert", "Shaders\\phong_forward.frag")
+{}

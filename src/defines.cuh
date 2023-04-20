@@ -20,7 +20,7 @@ static void HandleError(cudaError_t err, const char* file, int line)
     }
 }
 
-// TODO: zmieni� to, bo makra s� brzydkie
+// TODO: zmienić to, bo makra są brzydkie
 
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ));
 
@@ -66,7 +66,7 @@ inline constexpr float k_sniff = 0.1f;
 // Damping factor 
 inline constexpr float d_fact = 0.1f;
 
-// Lighting does not work yet
+
 inline constexpr bool useLighting = false;
 #define GLBL_N_CNSTS
 #endif

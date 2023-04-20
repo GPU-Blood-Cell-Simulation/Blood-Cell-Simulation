@@ -654,8 +654,10 @@
     <None Include="Libraries\lib\assimp-vc143-mt.exp" />
     <None Include="Shaders\geometry.frag" />
     <None Include="Shaders\geometry.vert" />
-    <None Include="Shaders\phong.frag" />
-    <None Include="Shaders\phong.vert" />
+    <None Include="Shaders\phong_deferred.frag" />
+    <None Include="Shaders\phong_deferred.vert" />
+    <None Include="Shaders\phong_forward.frag" />
+    <None Include="Shaders\phong_forward.vert" />
     <None Include="Shaders\solidcolor.frag" />
     <None Include="Shaders\solidcolor.vert" />
   </ItemGroup>
