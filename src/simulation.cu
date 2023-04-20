@@ -1,82 +1,155 @@
 #include "simulation.cuh"
 #include "grid.cuh"
 #include "defines.cuh"
-
+#include "physics.cuh"
+#include <cmath>
 #include <ctime>
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 namespace sim
 {
 
-    __global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount);
+	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount);
 
-    __global__ void generateRandomPositionsKernel(curandState* states, float* positionX, float* positionY, float* positionZ, const int particleCount);
+	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount);
+
+	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt);
+
+	// Allocate GPU buffers for the position vectors
+	void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
+		const unsigned int particleCount)
+	{
+		HANDLE_ERROR(cudaMalloc((void**)cellIds, particleCount * sizeof(unsigned int)));
+		HANDLE_ERROR(cudaMalloc((void**)particleIds, particleCount * sizeof(unsigned int)));
+
+		HANDLE_ERROR(cudaMalloc((void**)cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+		HANDLE_ERROR(cudaMalloc((void**)cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+	}
+
+	// initial position approach
+	// arg_0 should be a^2 * arg_1
+	// but it is no necessary
+	void generateInitialPositionsInLayers(particles p, dipols c, const int particleCount, const int layersCount)
+	{
+		int model_par_cnt = 2; /*cell model particles count, 2 for dipol*/
+		int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
+		int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
+
+		//real_particles_count = layerDim * layerDim * layersCount;
+
+		int threadsPerBlockDim = std::min(layerDim, 32);
+		int blDim = std::ceil(float(corpusclesPerLayer) / threadsPerBlockDim);
+		dim3 blocks = dim3(blDim, blDim, layersCount);
+		dim3 threads = dim3(threadsPerBlockDim, threadsPerBlockDim, 1);
+
+		generateInitialPositionsKernel << <blocks, threads >> > (p, c,
+			make_float3(width, height, float(layersCount * depth) / 100), particleCount);
+	}
+
+	// Generate initial positions and velocities of particles
+	void generateRandomPositions(particles p, const int particleCount)
+	{
+		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
+		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
+
+		// Set up random seeds
+		curandState* devStates;
+		cudaMalloc(&devStates, particleCount * sizeof(curandState));
+		srand(static_cast<unsigned int>(time(0)));
+		int seed = rand();
+		setupCurandStatesKernel << <blocks, threadsPerBlock >> > (devStates, seed, particleCount);
+
+		// Generate random positions and velocity vectors
+
+		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, p, particleCount);
+
+		cudaFree(devStates);
+	}
+
+	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount)
+	{
+		int id = blockIdx.x * blockDim.x + threadIdx.x;
+		if (id >= particleCount)
+			return;
+		curand_init(seed, id, 0, &states[id]);
+	}
+
+	// Generate random positions and velocities at the beginning
+	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount)
+	{
+		int id = blockIdx.x * blockDim.x + threadIdx.x;
+		if (id >= particleCount)
+			return;
+
+		p.position.x[id] = curand_uniform(&states[id])* width;
+		p.position.y[id] = curand_uniform(&states[id])* height;
+		p.position.z[id] = curand_uniform(&states[id])* depth;
+
+		p.force.x[id] = 0;
+		p.force.y[id] = 0;
+		p.force.z[id] = 0;
+	}
 
 
-    // Allocate GPU buffers for the position vectors
-    void allocateMemory(float** positionX, float** positionY, float** positionZ,
-        unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
-        const unsigned int particleCount)
-    {
-        HANDLE_ERROR(cudaMalloc((void**)positionX, particleCount * sizeof(float)));
 
-        HANDLE_ERROR(cudaMalloc((void**)positionY, particleCount * sizeof(float)));
+	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt)
+	{
+		int thCnt = blockDim.x * blockDim.y;
+		int blCnt2d = gridDim.x * gridDim.y;
 
-        HANDLE_ERROR(cudaMalloc((void**)positionZ, particleCount * sizeof(float)));
+		int tid = blockIdx.z * blCnt2d * thCnt + blockIdx.y * gridDim.x * thCnt
+			+ blockIdx.x * thCnt + threadIdx.y * blockDim.x + threadIdx.x;
 
-        HANDLE_ERROR(cudaMalloc((void**)cellIds, particleCount * sizeof(unsigned int)));
-        HANDLE_ERROR(cudaMalloc((void**)particleIds, particleCount * sizeof(unsigned int)));
+		float x = float((blockIdx.x * blockDim.x + threadIdx.x) * dims.x) / (blockDim.x * gridDim.x);
+		float y = float((blockIdx.y * blockDim.y + threadIdx.y) * dims.y) / (blockDim.y * gridDim.y);
+		float z = float((blockIdx.z * blockDim.z + threadIdx.z) * dims.z * blockDim.z) / (blockDim.z * gridDim.z * 100);
 
-        HANDLE_ERROR(cudaMalloc((void**)cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
-        HANDLE_ERROR(cudaMalloc((void**)cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
-    }
+		//printf("id: %d, x: %f, y: %f, z: %f\n", tid, x, y, z);
+		if (x <= dims.x && y <= dims.y)
+		{
+			crps.setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
+		}
+	}
 
-    // Generate initial positions and velocities of particles
-    void generateRandomPositions(float* positionX, float* positionY, float* positionZ, const int particleCount)
-    {
-        int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
-        int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
 
-        // Set up random seeds
-        curandState* devStates;
-        cudaMalloc(&devStates, particleCount * sizeof(curandState));
-        srand(static_cast<unsigned int>(time(0)));
-        int seed = rand();
-        setupCurandStatesKernel <<<blocks, threadsPerBlock >>>(devStates, seed, particleCount);
+	__global__ void detectCollisions(particles particles, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
+		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+	{
+		int id = blockIdx.x * blockDim.x + threadIdx.x;
+		if (id >= particleCount)
+			return;
 
-        // Generate random positions and velocity vectors
+		float3 p1 = particles.position.get(id);
+		int secondParticle = -1; // id % 2 == 0 ? id + 1 : id - 1;
 
-        generateRandomPositionsKernel <<<blocks, threadsPerBlock >>>(devStates, positionX, positionY, positionZ, particleCount);
+		for (int i = 0; i < particleCount; i++) {
+			if (id == i || i == secondParticle)
+				continue;
 
-        cudaFree(devStates);
-    }
+			float3 p2 = particles.position.get(i);
+			if (length(p1 - p2) <= 5.0f) {
+				particles.force.set(id, 50.0f * normalize(p1 - p2));
+			}
+		}
+	}
 
-    __global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount)
-    {
-        int id = blockIdx.x * blockDim.x + threadIdx.x;
-        if (id >= particleCount)
-            return;
-        curand_init(seed, id, 0, &states[id]);
-    }
 
-    // Generate random positions and velocities at the beginning
-    __global__ void generateRandomPositionsKernel(curandState* states, float* positionX, float* positionY, float* positionZ, const int particleCount)
-    {
-        int id = blockIdx.x * blockDim.x + threadIdx.x;
-        if (id >= particleCount)
-            return;
+	void calculateNextFrame(particles particls, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
+		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+	{
+		// 1. calculate grid
+		createUniformGrid(particls.position.x, particls.position.y, particls.position.z,
+			cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
-        positionX[id] = curand_uniform(&states[id]) * width;
-        positionY[id] = curand_uniform(&states[id]) * height;
-        positionZ[id] = curand_uniform(&states[id]) * depth;
-    }
+		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
+		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
+		// 2. TODO: detections
+		
+		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, cellIds, particleIds,
+			cellStarts, cellEnds, particleCount);
 
-    void calculateNextFrame(float* positionX, float* positionY, float* positionZ,
-        unsigned int* cellIds, unsigned int* particleIds,
-        unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
-    {
-        // 1. calculate grid
-        createUniformGrid(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
-
-        // 2. TODO: detections
-    }
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, PARTICLE_COUNT);
+	}
 }

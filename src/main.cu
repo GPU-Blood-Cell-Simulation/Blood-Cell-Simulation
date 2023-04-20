@@ -3,6 +3,7 @@
 
 #include "simulation.cuh"
 #include "defines.cuh"
+#include "objects.cuh"
 #include "graphics/glcontroller.cuh"
 
 #include <glad/glad.h>
@@ -20,9 +21,6 @@
 
 int main()
 {
-    float* positionX = 0;
-    float* positionY = 0;
-    float* positionZ = 0;
     unsigned int* cellIds = 0;
     unsigned int* particleIds = 0;
     unsigned int* cellStarts = 0;
@@ -70,10 +68,14 @@ int main()
     graphics::GLController glController;
 
     // Allocate memory
-    sim::allocateMemory(&positionX, &positionY, &positionZ, &cellIds, &particleIds, &cellStarts, &cellEnds, particleCount);
+    particles particls(PARTICLE_COUNT);
+    dipols corpscls = dipols(10);
+
+    sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, PARTICLE_COUNT);
 
     // Generate random positions
-    sim::generateRandomPositions(positionX, positionY, positionZ, particleCount);
+    sim::generateRandomPositions(particls, PARTICLE_COUNT);
+    //sim::generateInitialPositionsInLayers(particls, corpscls, PARTICLE_COUNT, 3);
 
     // MAIN LOOP HERE - probably dictaded by glfw
 
@@ -84,10 +86,10 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        //sim::calculateNextFrame(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, particleCount);
+        sim::calculateNextFrame(particls, corpscls, cellIds, particleIds, cellStarts, cellEnds, PARTICLE_COUNT);
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(positionX, positionY, positionZ, particleCount);
+        glController.calculateOffsets(particls.position.x, particls.position.y, particls.position.z, PARTICLE_COUNT);
 
         // OpenGL render
 #pragma region rendering
@@ -118,9 +120,15 @@ int main()
     }
 
     // Cleanup
-    cudaFree(positionX);
-    cudaFree(positionY);
-    cudaFree(positionZ);
+    cudaFree(particls.position.x);
+    cudaFree(particls.position.y);
+    cudaFree(particls.position.z);
+    cudaFree(particls.velocity.x);
+    cudaFree(particls.velocity.y);
+    cudaFree(particls.velocity.z);
+    cudaFree(particls.force.x);
+    cudaFree(particls.force.y);
+    cudaFree(particls.force.z);
     cudaFree(cellIds);
     cudaFree(particleIds);
     cudaFree(cellStarts);
