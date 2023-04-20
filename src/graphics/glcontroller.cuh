@@ -34,7 +34,8 @@ namespace graphics
 		DirLight directionalLight;
 		std::shared_ptr<Shader> solidColorShader;
 		std::shared_ptr<Shader> geometryPassShader;
-		std::shared_ptr<Shader> phongLightingShader;
+		std::shared_ptr<Shader> phongDeferredShader;
+		std::shared_ptr<Shader> phongForwardShader;
 		
 		unsigned int gBuffer;
 

@@ -31,6 +31,12 @@ public:
     SolidColorShader();
 };
 
+class PhongForwardShader : public Shader
+{
+public:
+    PhongForwardShader();
+};
+
 class GeometryPassShader : public Shader
 {
 public:
@@ -40,10 +46,10 @@ private:
     unsigned int gBuffer;
 };
 
-class PhongLightingShader : public Shader
+class PhongDeferredShader : public Shader
 {
 public:
-    PhongLightingShader(unsigned int gPosition, unsigned int gNormal);
+    PhongDeferredShader(unsigned int gPosition, unsigned int gNormal);
     void use() override;
 private:
     unsigned int gPosition;

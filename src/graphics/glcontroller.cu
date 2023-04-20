@@ -41,7 +41,7 @@ namespace graphics
 			{
 				vec3(0.4f, 0.4f, 0.4f), vec3(1, 1, 1), vec3(1, 1, 1)
 			},
-			vec3(0, 0, 1.0f)
+			vec3(0, 0, -1.0f)
 		};
 
 		// Set up deferred shading
@@ -83,8 +83,9 @@ namespace graphics
 
 		// Create the shaders
 		solidColorShader = std::make_shared<Shader>(SolidColorShader());
+		phongForwardShader = std::make_shared<Shader>(PhongForwardShader());
 		geometryPassShader = std::make_shared<Shader>(GeometryPassShader(gBuffer));
-		phongLightingShader = std::make_shared<Shader>(PhongLightingShader(gPosition, gNormal));
+		phongDeferredShader = std::make_shared<Shader>(PhongDeferredShader(gPosition, gNormal));
 	}
 
 	void graphics::GLController::calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
@@ -116,6 +117,24 @@ namespace graphics
 			particleModel.draw(solidColorShader);
 			return;
 		}
+		else
+		{
+			phongForwardShader->use();
+			phongForwardShader->setMatrix("model", model);
+			phongForwardShader->setMatrix("view", view);
+			phongForwardShader->setMatrix("projection", projection);
+
+			phongForwardShader->setVector("viewPos", cameraPosition);
+			phongForwardShader->setVector("Diffuse", particleDiffuse);
+			phongForwardShader->setFloat("Specular", particleSpecular);
+			phongForwardShader->setFloat("Shininess", 32);
+
+			phongForwardShader->setLighting(directionalLight);
+
+			particleModel.draw(phongForwardShader);
+			return;
+		}
+		// Deferred shading - not working yet
 
 		// Geometry pass
 
@@ -132,13 +151,13 @@ namespace graphics
 
 		glDisable(GL_DEPTH_TEST);
 
-		phongLightingShader->use();
-		phongLightingShader->setVector("viewPos", cameraPosition);
-		phongLightingShader->setVector("Diffuse", particleDiffuse);
-		phongLightingShader->setFloat("Specular", particleSpecular);
-		phongLightingShader->setFloat("Shininess", 32);
+		phongDeferredShader->use();
+		phongDeferredShader->setVector("viewPos", cameraPosition);
+		phongDeferredShader->setVector("Diffuse", particleDiffuse);
+		phongDeferredShader->setFloat("Specular", particleSpecular);
+		phongDeferredShader->setFloat("Shininess", 32);
 
-		phongLightingShader->setLighting(directionalLight);
+		phongDeferredShader->setLighting(directionalLight);
 
 		// copy content of geometry's depth buffer to default framebuffer's depth buffer
 		// ----------------------------------------------------------------------------------
@@ -175,6 +194,7 @@ namespace graphics
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
+		glEnable(GL_DEPTH_TEST);
 		return;
 	}
 }
