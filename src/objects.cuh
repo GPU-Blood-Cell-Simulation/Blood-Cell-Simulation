@@ -47,14 +47,14 @@ struct particles
 class corpuscles
 {
 public:
-	virtual __device__ void propagateForces(particles& gp, int particleInd) {}
-	virtual __device__ void setCorpuscle(int index, float3 center, particles& particls, int p_cnt) {}
+	virtual __device__ void propagateForces(particles gp, int particleInd) {}
+	virtual __device__ void setCorpuscle(int index, float3 center, particles particls, int p_cnt) {}
 };
 #define CORPSCLS
 #endif
 
 #ifndef DIPLS
-class dipols : public corpuscles
+class dipols
 {
 	float L0;
 
@@ -63,8 +63,8 @@ public:
 		L0 = initialLength;
 	}
 
-	virtual __device__ void propagateForces(particles& gp, int particleInd) override;
-	virtual __device__ void setCorpuscle(int index, float3 center, particles& particls, int p_cnt) override;
+	__device__ void propagateForces(particles gp, int particleInd);
+	__device__ void setCorpuscle(int index, float3 center, particles particls, int p_cnt);
 };
 #define DIPLS
 #endif

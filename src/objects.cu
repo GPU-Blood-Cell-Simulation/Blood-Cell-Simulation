@@ -36,7 +36,7 @@ __device__ void cudaVec3::add(int index, float3 v)
 
 // dipols 
 
-__device__ void dipols::propagateForces(particles& gp, int particleInd)
+__device__ void dipols::propagateForces(particles  gp, int particleInd)
 {
     int secondParticle = particleInd%2 == 0 ? particleInd + 1 : particleInd - 1;
 	float3 p1 = gp.position.get(particleInd);
@@ -50,15 +50,16 @@ __device__ void dipols::propagateForces(particles& gp, int particleInd)
 	gp.force.add(secondParticle, Fr * normalize(p1 - p2));
 }
 
-__device__ void dipols::setCorpuscle(int index, float3 center, particles& particls, int p_cnt)
+__device__ void dipols::setCorpuscle(int index, float3 center, particles particls, int p_cnt)
 {
+	printf("index: %d\n", index);
 	if(2*index < p_cnt)
 	{
-		particls.position.set(2 * index,	 make_float3(0, 0, -L0/2) + center);
-		particls.position.set(2 * index + 1, make_float3(0, 0,  L0/2) + center);
+		particls.position.set(2 * index,	 make_float3(0, -L0 / 2, 0) + center);
+		particls.position.set(2 * index + 1, make_float3(0, L0 / 2, 0) + center);
 
-		particls.velocity.set(2 * index,	 make_float3(0, 0, v0));
-		particls.velocity.set(2 * index + 1, make_float3(0, 0, v0));
+		particls.velocity.set(2 * index,	 make_float3(v0, 0, 0));
+		particls.velocity.set(2 * index + 1, make_float3(v0, 0, 0));
 
 		particls.force.set(2 * index,	  make_float3(0, 0, 0));
 		particls.force.set(2 * index + 1, make_float3(0, 0, 0));

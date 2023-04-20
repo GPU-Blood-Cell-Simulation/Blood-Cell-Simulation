@@ -10,8 +10,8 @@ namespace sim
 		const unsigned int particleCount);
 
 	void generateRandomPositions(float* positionX, float* positionY, float* positionZ, const int particleCount);
-	void generateInitialPositionsInLayers(particles& p, corpuscles& c, int particleCount, int layersCount);
+	void generateInitialPositionsInLayers(particles p, dipols c, int particleCount, int layersCount);
 
-	void calculateNextFrame(particles& p, corpuscles& c, unsigned int* cellIds, unsigned int* particleIds,
+	void calculateNextFrame(particles p, dipols c, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount);
 }

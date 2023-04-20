@@ -9,7 +9,7 @@
 
 namespace physics
 {
-	__global__ void propagateParticles(particles gp, corpuscles c, int particleCount)
+	__global__ void propagateParticles(particles gp, dipols c, int particleCount)
 	{
 		// depends on which cell model we use, for dipol 2
 		int cell_size = 2;
@@ -20,6 +20,7 @@ namespace physics
 		if (part_index + 1 >= particleCount)
 			return;
 
+		printf("part_index: %d, x: %d, y:%d, z:%d\n", part_index, gp.position.x, gp.position.y, gp.position.z);
 
 		// propagate force into velocities
 		float3 F = gp.force.get(part_index);

@@ -15,7 +15,7 @@ namespace sim
 
 	__global__ void generateRandomPositionsKernel(curandState* states, float* positionX, float* positionY, float* positionZ, const int particleCount);
 
-	__global__ void generateInitialPositionsKernel(particles par, corpuscles crps, float3 dims, int par_cnt);
+	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt);
 
 	// Allocate GPU buffers for the position vectors
 	void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
@@ -31,7 +31,7 @@ namespace sim
 	// initial position approach
 	// arg_0 should be a^2 * arg_1
 	// but it is no necessary
-	void generateInitialPositionsInLayers(particles& p, corpuscles& c, const int particleCount, const int layersCount)
+	void generateInitialPositionsInLayers(particles p, dipols c, const int particleCount, const int layersCount)
 	{
 		int model_par_cnt = 2; /*cell model particles count, 2 for dipol*/
 		int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
@@ -90,7 +90,7 @@ namespace sim
 
 
 
-	__global__ void generateInitialPositionsKernel(particles par, corpuscles crps, float3 dims, int par_cnt)
+	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt)
 	{
 		int thCnt = blockDim.x * blockDim.y;
 		int blCnt2d = gridDim.x * gridDim.y;
@@ -102,13 +102,15 @@ namespace sim
 		float y = float((blockIdx.y * blockDim.y + threadIdx.y) * dims.y) / (blockDim.y * gridDim.y);
 		float z = float((blockIdx.z * blockDim.z + threadIdx.z) * dims.z * blockDim.z) / (blockDim.z * gridDim.z * 100);
 
+		//printf("id: %d, x: %f, y: %f, z: %f\n", tid, x, y, z);
 		if (x <= dims.x && y <= dims.y)
 		{
 			crps.setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
+
 		}
 	}
 
-	void calculateNextFrame(particles& particls, corpuscles& corpuscls, unsigned int* cellIds, unsigned int* particleIds,
+	void calculateNextFrame(particles particls, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
 	{
 		// 1. calculate grid
