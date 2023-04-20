@@ -17,10 +17,8 @@ namespace physics
 		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
 		int cell_index = part_index / cell_size;
 
-		if (part_index + 1 >= particleCount)
+		if (part_index >= particleCount)
 			return;
-
-		printf("part_index: %d, x: %d, y:%d, z:%d\n", part_index, gp.position.x, gp.position.y, gp.position.z);
 
 		// propagate force into velocities
 		float3 F = gp.force.get(part_index);

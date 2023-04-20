@@ -44,7 +44,7 @@ inline constexpr int cellDepth = 2;
 
 // 96 = 3*2*4*4
 // three layers of 2 particle dipols, each layer is 4x4
-inline constexpr unsigned int PARTICLE_COUNT = 96; 
+inline constexpr unsigned int PARTICLE_COUNT = 90; 
 
 // ! this value should be determined experimentally !
 // one frame simulation time span

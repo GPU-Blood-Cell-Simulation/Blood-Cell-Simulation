@@ -83,13 +83,9 @@ namespace sim
 		if (id >= particleCount)
 			return;
 
-		p.position.x[id] = curand_uniform(&states[id]) * width;
-		p.position.y[id] = curand_uniform(&states[id]) * height;
-		p.position.z[id] = curand_uniform(&states[id]) * depth;
-
-		p.position.x[id] = curand_uniform(&states[id]) * width;
-		p.position.y[id] = curand_uniform(&states[id]) * height;
-		p.position.z[id] = curand_uniform(&states[id]) * depth;
+		p.position.x[id] = curand_uniform(&states[id])* width;
+		p.position.y[id] = curand_uniform(&states[id])* height;
+		p.position.z[id] = curand_uniform(&states[id])* depth;
 
 		p.force.x[id] = 0;
 		p.force.y[id] = 0;
@@ -117,6 +113,29 @@ namespace sim
 		}
 	}
 
+
+	__global__ void detectCollisions(particles particles, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
+		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+	{
+		int id = blockIdx.x * blockDim.x + threadIdx.x;
+		if (id >= particleCount)
+			return;
+
+		float3 p1 = particles.position.get(id);
+		int secondParticle = -1; // id % 2 == 0 ? id + 1 : id - 1;
+
+		for (int i = 0; i < particleCount; i++) {
+			if (id == i || i == secondParticle)
+				continue;
+
+			float3 p2 = particles.position.get(i);
+			if (length(p1 - p2) <= 5.0f) {
+				particles.force.set(id, 50.0f * normalize(p1 - p2));
+			}
+		}
+	}
+
+
 	void calculateNextFrame(particles particls, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
 	{
@@ -127,6 +146,10 @@ namespace sim
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
 		// 2. TODO: detections
+		
+		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, cellIds, particleIds,
+			cellStarts, cellEnds, particleCount);
+
 		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, PARTICLE_COUNT);
 	}
 }

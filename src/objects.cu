@@ -36,7 +36,7 @@ __device__ void cudaVec3::add(int index, float3 v)
 
 // dipols 
 
-__device__ void dipols::propagateForces(particles  gp, int particleInd)
+__device__ void dipols::propagateForces(particles gp, int particleInd)
 {
     int secondParticle = particleInd%2 == 0 ? particleInd + 1 : particleInd - 1;
 	float3 p1 = gp.position.get(particleInd);
