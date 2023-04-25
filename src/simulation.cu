@@ -33,7 +33,7 @@ namespace sim
 	// but it is no necessary
 	void generateInitialPositionsInLayers(particles p, dipols c, const int particleCount, const int layersCount)
 	{
-		int model_par_cnt = 2; /*cell model particles count, 2 for dipol*/
+		int model_par_cnt = 2; /* cell model particles count, 2 for dipole */
 		int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
 		int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
 

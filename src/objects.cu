@@ -34,7 +34,7 @@ __device__ void cudaVec3::add(int index, float3 v)
 	z[index] += v.z;
 }
 
-// dipols 
+// dipoles 
 
 __device__ void dipols::propagateForces(particles gp, int particleInd)
 {

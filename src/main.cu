@@ -40,7 +40,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(windowWidth, windowHeight, "Blood Cell Simualtion", NULL, NULL);
+    window = glfwCreateWindow(windowWidth, windowHeight, "Blood Cell Simulation", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -77,7 +77,7 @@ int main()
     sim::generateRandomPositions(particls, PARTICLE_COUNT);
     //sim::generateInitialPositionsInLayers(particls, corpscls, PARTICLE_COUNT, 3);
 
-    // MAIN LOOP HERE - probably dictaded by glfw
+    // MAIN LOOP HERE - probably dictated by glfw
 
     while (!glfwWindowShouldClose(window))
     {
