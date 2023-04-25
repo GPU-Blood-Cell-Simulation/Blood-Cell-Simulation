@@ -11,7 +11,7 @@ namespace physics
 {
 	__global__ void propagateParticles(particles gp, dipols c, int particleCount)
 	{
-		// depends on which cell model we use, for dipol 2
+		// depends on which cell model we use, for dipole 2
 		int cell_size = 2;
 
 		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
