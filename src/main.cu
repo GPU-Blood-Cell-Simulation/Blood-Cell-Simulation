@@ -129,10 +129,7 @@ int main()
     cudaFree(particls.force.x);
     cudaFree(particls.force.y);
     cudaFree(particls.force.z);
-    cudaFree(cellIds);
-    cudaFree(particleIds);
-    cudaFree(cellStarts);
-    cudaFree(cellEnds);
+    sim::deallocateMemory(cellIds, particleIds, cellStarts, cellEnds);
 
     glfwTerminate();
 
