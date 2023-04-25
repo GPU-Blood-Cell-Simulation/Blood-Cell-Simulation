@@ -120,15 +120,7 @@ int main()
     }
 
     // Cleanup
-    cudaFree(particls.position.x);
-    cudaFree(particls.position.y);
-    cudaFree(particls.position.z);
-    cudaFree(particls.velocity.x);
-    cudaFree(particls.velocity.y);
-    cudaFree(particls.velocity.z);
-    cudaFree(particls.force.x);
-    cudaFree(particls.force.y);
-    cudaFree(particls.force.z);
+    particls.freeParticles();
     sim::deallocateMemory(cellIds, particleIds, cellStarts, cellEnds);
 
     glfwTerminate();
