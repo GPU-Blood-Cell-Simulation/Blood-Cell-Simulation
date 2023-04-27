@@ -120,6 +120,7 @@
     <ClCompile Include="src\graphics\model.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\graphics\textures\texture_loading.cpp" />
+    <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\assimp\aabb.h" />
@@ -502,6 +503,7 @@
     <ClInclude Include="src\physics.cuh" />
     <ClInclude Include="src\simulation.cuh" />
     <ClInclude Include="src\utilities.cuh" />
+    <ClInclude Include="src\window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\include\assimp\color4.inl" />

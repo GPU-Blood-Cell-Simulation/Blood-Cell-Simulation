@@ -4,11 +4,7 @@
 #include "simulation.cuh"
 #include "defines.cuh"
 #include "objects.cuh"
-#include "graphics/glcontroller.cuh"
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <sstream>
+#include "window.h"
 
 #include <curand.h>
 #include <curand_kernel.h>
@@ -29,43 +25,7 @@ int main()
     // Choose which GPU to run on, change this on a multi-GPU system.
     HANDLE_ERROR(cudaSetDevice(0));
 
-    // OpenGL setup
-#pragma region OpenGLsetup
-    GLFWwindow* window;
-
-    if (!glfwInit())
-        return -1;
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(windowWidth, windowHeight, "Blood Cell Simulation", NULL, NULL);
-    if (!window)
-    {
-        glfwTerminate();
-        return -1;
-    }
-
-    // Make the window's context current
-    glfwMakeContextCurrent(window);
-
-    // Load GL and set the viewport to match window size
-    gladLoadGL();
-    glViewport(0, 0, windowWidth, windowHeight);
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-
-    // debug
-    glEnable(GL_DEBUG_OUTPUT);
-
-    double lastTime = glfwGetTime();
-    int frameCount = 0;
-#pragma endregion
-
-    // Create a graphics controller
-    graphics::GLController glController;
+    Window window(windowWidth, windowHeight);
 
     // Allocate memory
     particles particls(PARTICLE_COUNT);
@@ -79,44 +39,17 @@ int main()
 
     // MAIN LOOP HERE - probably dictated by glfw
 
-    while (!glfwWindowShouldClose(window))
+    while (!window.shouldClose())
     {
-        // Clear 
-        glClearColor(1.00f, 0.75f, 0.80f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        window.clear();
 
         // Calculate particle positions using CUDA
         sim::calculateNextFrame(particls, corpscls, cellIds, particleIds, cellStarts, cellEnds, PARTICLE_COUNT);
 
-        // Pass positions to OpenGL
-        glController.calculateOffsets(particls.position.x, particls.position.y, particls.position.z, PARTICLE_COUNT);
+        window.updateParticles(particls);
+        window.calculateFPS();
 
-        // OpenGL render
-#pragma region rendering
-        
-        glController.draw();
-        glfwSwapBuffers(window);
-
-        // Show FPS in the title bar
-        double currentTime = glfwGetTime();
-        double delta = currentTime - lastTime;
-        if (delta >= 1.0)
-        {
-            double fps = double(frameCount) / delta;
-            std::stringstream ss;
-            ss << "Blood Cell Simulation" << " " << " [" << fps << " FPS]";
-
-            glfwSetWindowTitle(window, ss.str().c_str());
-            lastTime = currentTime;
-            frameCount = 0;
-        }
-        else
-        {
-            frameCount++;
-        }
-
-        glfwPollEvents();
-#pragma endregion
+        window.handleEvents();
     }
 
     // Cleanup
@@ -133,8 +66,6 @@ int main()
     cudaFree(particleIds);
     cudaFree(cellStarts);
     cudaFree(cellEnds);
-
-    glfwTerminate();
 
     HANDLE_ERROR(cudaDeviceReset());
 
