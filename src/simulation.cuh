@@ -14,4 +14,6 @@ namespace sim
 
 	void calculateNextFrame(particles p, dipols c, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount);
+
+	void deallocateMemory(unsigned int* cellIds, unsigned int* particleIds, unsigned int* cellStarts, unsigned int* cellEnds);
 }

@@ -16,6 +16,7 @@ struct cudaVec3
 	// allocated on host
 	cudaVec3() {}
 	void createVec(int n);
+	void freeVec();
 
 	// to use only on device
 	__device__ float3 get(int index);
@@ -33,10 +34,17 @@ struct particles
 	cudaVec3 position;
 	cudaVec3 velocity;
 	cudaVec3 force;
+
 	particles(int n) {
 		position.createVec(n);
 		velocity.createVec(n);
 		force.createVec(n);
+	}
+
+	void freeParticles() {
+		position.freeVec();
+		velocity.freeVec();
+		force.freeVec();
 	}
 
 };

@@ -152,4 +152,13 @@ namespace sim
 
 		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, PARTICLE_COUNT);
 	}
+
+
+	void sim::deallocateMemory(unsigned int* cellIds, unsigned int* particleIds, unsigned int* cellStarts, unsigned int* cellEnds)
+	{
+		cudaFree(cellIds);
+		cudaFree(particleIds);
+		cudaFree(cellStarts);
+		cudaFree(cellEnds);
+	}
 }
