@@ -111,7 +111,7 @@ namespace graphics
 		{
 			solidColorShader->use();
 			solidColorShader->setMatrix("model", model);
-			solidColorShader->setMatrix("view", view);
+			solidColorShader->setMatrix("view", camera.getView());
 			solidColorShader->setMatrix("projection", projection);
 
 			particleModel.draw(solidColorShader);
@@ -121,10 +121,10 @@ namespace graphics
 		{
 			phongForwardShader->use();
 			phongForwardShader->setMatrix("model", model);
-			phongForwardShader->setMatrix("view", view);
+			phongForwardShader->setMatrix("view", camera.getView());
 			phongForwardShader->setMatrix("projection", projection);
 
-			phongForwardShader->setVector("viewPos", cameraPosition);
+			phongForwardShader->setVector("viewPos", camera.getPosition());
 			phongForwardShader->setVector("Diffuse", particleDiffuse);
 			phongForwardShader->setFloat("Specular", particleSpecular);
 			phongForwardShader->setFloat("Shininess", 32);
@@ -140,7 +140,7 @@ namespace graphics
 
 		geometryPassShader->use();
 		geometryPassShader->setMatrix("model", model);
-		geometryPassShader->setMatrix("view", view);
+		geometryPassShader->setMatrix("view", camera.getView());
 		geometryPassShader->setMatrix("projection", projection);
 
 		glEnable(GL_DEPTH_TEST);
@@ -152,7 +152,7 @@ namespace graphics
 		glDisable(GL_DEPTH_TEST);
 
 		phongDeferredShader->use();
-		phongDeferredShader->setVector("viewPos", cameraPosition);
+		phongDeferredShader->setVector("viewPos", camera.getPosition());
 		phongDeferredShader->setVector("Diffuse", particleDiffuse);
 		phongDeferredShader->setFloat("Specular", particleSpecular);
 		phongDeferredShader->setFloat("Shininess", 32);

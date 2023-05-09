@@ -66,7 +66,12 @@ inline constexpr float k_sniff = 0.1f;
 // Damping factor 
 inline constexpr float d_fact = 0.1f;
 
+// Lighting
+inline constexpr bool useLighting = true;
 
-inline constexpr bool useLighting = false;
+// Camera movement constants
+inline constexpr float cameraMovementSpeed = width / 100;
+inline constexpr float cameraRotationSpeed = 0.1f;
+
 #define GLBL_N_CNSTS
 #endif
