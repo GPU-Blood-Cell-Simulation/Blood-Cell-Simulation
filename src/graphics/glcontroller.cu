@@ -1,3 +1,5 @@
+#include <glad/glad.h>
+
 #include "glcontroller.cuh"
 
 #ifdef _WIN32
@@ -10,7 +12,7 @@
 #include "device_launch_parameters.h"
 
 #include <iostream>
-#include <glad/glad.h>
+
 #include "cudaGL.h"
 #include "cuda_gl_interop.h"
 
@@ -30,8 +32,12 @@ namespace graphics
 		devCudaOffsetBuffer[3 * id + 2] = positionZ[id];
 	}
 
-	graphics::GLController::GLController() : particleModel("Models/Earth/low_poly_earth.fbx")
+	graphics::GLController::GLController(GLFWwindow* window)
 	{
+		// Set up GLFW to work with inputController
+		glfwSetWindowUserPointer(window, &inputController);
+		glfwSetKeyCallback(window, InputController::handleUserInput);
+
 		// Register OpenGL buffer in CUDA
 		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaOffsetResource, particleModel.getCudaOffsetBuffer(), cudaGraphicsRegisterFlagsNone));
 

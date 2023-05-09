@@ -117,6 +117,7 @@
     <ClCompile Include="Libraries\include\glm\detail\glm.cpp" />
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\graphics\camera.cpp" />
+    <ClCompile Include="src\graphics\inputcontroller.cpp" />
     <ClCompile Include="src\graphics\mesh.cpp" />
     <ClCompile Include="src\graphics\model.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
@@ -493,6 +494,7 @@
     <ClInclude Include="src\defines.cuh" />
     <ClInclude Include="src\graphics\camera.hpp" />
     <ClInclude Include="src\graphics\glcontroller.cuh" />
+    <ClInclude Include="src\graphics\inputcontroller.hpp" />
     <ClInclude Include="src\graphics\light.hpp" />
     <ClInclude Include="src\graphics\mesh.hpp" />
     <ClInclude Include="src\graphics\model.hpp" />

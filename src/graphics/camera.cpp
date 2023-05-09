@@ -10,33 +10,40 @@ graphics::Camera::Camera()
 void graphics::Camera::moveLeft()
 {
 	position -= right * cameraMovementSpeed;
+	calculateView();
 }
 
 void graphics::Camera::moveRight()
 {
 	position += right * cameraMovementSpeed;
+	calculateView();
 }
 
 void graphics::Camera::moveForward()
 {
 	position += front * cameraMovementSpeed;
+	calculateView();
 }
 
 void graphics::Camera::moveBack()
 {
 	position -= front * cameraMovementSpeed;
+	calculateView();
 }
 
 void graphics::Camera::ascend()
 {
 	position += up * cameraMovementSpeed;
+	calculateView();
 }
 
 void graphics::Camera::descend()
 {
 	position -= up * cameraMovementSpeed;
+	calculateView();
 }
 
+// TODO
 void graphics::Camera::rotateLeft()
 {}
 

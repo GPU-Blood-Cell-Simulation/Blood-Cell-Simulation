@@ -1,4 +1,6 @@
-﻿#include "cuda_runtime.h"
+﻿#include <glad/glad.h>
+
+#include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
 #include "simulation.cuh"
@@ -6,7 +8,6 @@
 #include "objects.cuh"
 #include "graphics/glcontroller.cuh"
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <sstream>
 
@@ -65,7 +66,7 @@ int main()
 #pragma endregion
 
     // Create a graphics controller
-    graphics::GLController glController;
+    graphics::GLController glController(window);
 
     // Allocate memory
     particles particls(PARTICLE_COUNT);
@@ -114,9 +115,11 @@ int main()
         {
             frameCount++;
         }
-
-        glfwPollEvents();
 #pragma endregion
+
+        // Handle user input
+        glfwPollEvents();
+        glController.handleInput();
     }
 
     // Cleanup
