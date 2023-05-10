@@ -55,3 +55,9 @@ private:
     unsigned int gPosition;
     unsigned int gNormal;
 };
+
+class CylinderSolidColorShader : public Shader
+{
+public:
+    CylinderSolidColorShader();
+};
