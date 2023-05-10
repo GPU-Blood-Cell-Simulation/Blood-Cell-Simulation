@@ -71,7 +71,7 @@ inline constexpr bool useLighting = true;
 
 // Camera movement constants
 inline constexpr float cameraMovementSpeed = width / 100;
-inline constexpr float cameraRotationSpeed = 0.1f;
+inline constexpr float cameraRotationSpeed = 0.02f;
 
 #define GLBL_N_CNSTS
 #endif

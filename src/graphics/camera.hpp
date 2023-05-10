@@ -22,7 +22,7 @@ namespace graphics
 		void rotateLeft();
 		void rotateRight();
 		void rotateUp();
-		void rotatateDown();
+		void rotateDown();
 
 		glm::mat4 getView() const;
 		glm::vec3 getPosition() const;

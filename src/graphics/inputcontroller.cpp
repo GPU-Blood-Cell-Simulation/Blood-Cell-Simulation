@@ -98,15 +98,13 @@ namespace graphics
 			camera.ascend();
 		if (pressedKeys.SHIFT)
 			camera.descend();
-
-		// TODO
-		/*if (pressedKeys.UP)
+		if (pressedKeys.UP)
 			camera.rotateUp();
 		if (pressedKeys.DOWN)
-			camera.rotatateDown();
+			camera.rotateDown();
 		if (pressedKeys.LEFT)
 			camera.rotateLeft();
 		if (pressedKeys.RIGHT)
-			camera.rotateRight();*/
+			camera.rotateRight();
 	}
 }

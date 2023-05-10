@@ -45,16 +45,36 @@ void graphics::Camera::descend()
 
 // TODO
 void graphics::Camera::rotateLeft()
-{}
+{
+	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), cameraRotationSpeed, up);
+	front = rotation * glm::vec4(front, 1.0f);
+	right = rotation * glm::vec4(right, 1.0f);
+	calculateView();
+}
 
 void graphics::Camera::rotateRight()
-{}
+{
+	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), -cameraRotationSpeed, up);
+	front = rotation * glm::vec4(front, 1.0f);
+	right = rotation * glm::vec4(right, 1.0f);
+	calculateView();
+}
 
 void graphics::Camera::rotateUp()
-{}
+{
+	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), cameraRotationSpeed, right);
+	front = rotation * glm::vec4(front, 1.0f);
+	up = rotation * glm::vec4(up, 1.0f);
+	calculateView();
+}
 
-void graphics::Camera::rotatateDown()
-{}
+void graphics::Camera::rotateDown()
+{
+	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), -cameraRotationSpeed, right);
+	front = rotation * glm::vec4(front, 1.0f);
+	up = rotation * glm::vec4(up, 1.0f);
+	calculateView();
+}
 
 glm::mat4 graphics::Camera::getView() const
 {
