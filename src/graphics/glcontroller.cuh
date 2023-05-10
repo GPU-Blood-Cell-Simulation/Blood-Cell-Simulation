@@ -12,6 +12,7 @@
 
 namespace graphics
 {
+	// Controls rendering of the particles
 	class GLController {
 	public:
 
@@ -25,11 +26,11 @@ namespace graphics
 
 	private:
 
-		// particle color
+		// Particle color
 		glm::vec3 particleDiffuse = glm::vec3(0.8f, 0.2f, 0.2f);
 		float particleSpecular = 0.6f;
 
-		// uniform matrices
+		// Uniform matrices
 		glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), windowWidth / windowHeight, 0.1f, depth * 10);
 

@@ -43,7 +43,6 @@ void graphics::Camera::descend()
 	calculateView();
 }
 
-// TODO
 void graphics::Camera::rotateLeft()
 {
 	glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), cameraRotationSpeed, up);

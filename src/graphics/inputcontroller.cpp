@@ -2,13 +2,15 @@
 
 namespace graphics
 {
+	// GLFW keyboard callback function
 	void InputController::handleUserInput(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
+		// Get the InputController instance from a custom GLFW pointer
 		InputController* controller = static_cast<InputController*>(glfwGetWindowUserPointer(window));
 
 		if (action == GLFW_PRESS)
 		{
-			// movement
+			// Movement
 			switch (key)
 			{
 			case GLFW_KEY_W:
@@ -29,7 +31,7 @@ namespace graphics
 			case GLFW_KEY_LEFT_SHIFT:
 				controller->pressedKeys.SHIFT = true;
 				break;
-				// rotation
+			// Rotation
 			case GLFW_KEY_UP:
 				controller->pressedKeys.UP = true;
 				break;
@@ -48,7 +50,7 @@ namespace graphics
 		{
 			switch (key)
 			{
-				// movement
+			// Movement
 			case GLFW_KEY_W:
 				controller->pressedKeys.W = false;
 				break;
@@ -67,7 +69,7 @@ namespace graphics
 			case GLFW_KEY_LEFT_SHIFT:
 				controller->pressedKeys.SHIFT = false;
 				break;
-				// rotation
+			// Rotation
 			case GLFW_KEY_UP:
 				controller->pressedKeys.UP = false;
 				break;
@@ -84,6 +86,7 @@ namespace graphics
 		}
 	}
 
+	// Check pressed keys every frame
 	void InputController::adjustParametersUsingInput(Camera& camera)
 	{
 		if (pressedKeys.W)

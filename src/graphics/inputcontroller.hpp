@@ -6,6 +6,7 @@
 
 namespace graphics
 {
+	// Handles keyboard input and passes it to the camera
 	class InputController
 	{
 	public:
