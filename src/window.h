@@ -21,7 +21,7 @@ public:
 
 	inline void updateParticles(const particles& p) {
 		glController.calculateOffsets(p.position.x, p.position.y, p.position.z, p.position.size);
-	}
+ 	}
 
 	void draw();
 
@@ -35,8 +35,9 @@ private:
 	GLFWwindow* window;
 	graphics::GLController glController;
 
-	float lastTime;
+	double lastTime;
 	int frameCount = 0;
 
-	void initiateGlfw();
+	static void initiateGlfw();
+	static GLFWwindow* GetWindow(int width, int height);
 };

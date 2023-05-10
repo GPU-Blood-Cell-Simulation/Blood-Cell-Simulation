@@ -4,12 +4,12 @@
 #include <sstream>
 
 
-Window::Window(int width, int height)
+GLFWwindow* Window::GetWindow(int width, int height)
 {
     initiateGlfw();
 
     // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(width, height, "Blood Cell Simulation", NULL, NULL);
+    GLFWwindow*  window = glfwCreateWindow(width, height, "Blood Cell Simulation", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -29,7 +29,13 @@ Window::Window(int width, int height)
     // debug
     glEnable(GL_DEBUG_OUTPUT);
 
-    lastTime = glfwGetTime();
+    return window;
+}
+
+
+Window::Window(int width, int height):
+    window{ GetWindow(width, height) }, glController{}, lastTime{glfwGetTime()}
+{
 }
 
 
