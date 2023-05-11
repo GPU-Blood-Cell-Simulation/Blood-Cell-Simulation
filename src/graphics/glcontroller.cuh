@@ -35,6 +35,7 @@ namespace graphics
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), windowWidth / windowHeight, 0.1f, depth * 10);
 
 		Model particleModel = Model("Models/Earth/low_poly_earth.fbx");
+    Model veinModel = Model("Models/Cylinder/cylinder.obj");
 
 		Camera camera;
 		InputController inputController;
@@ -45,6 +46,7 @@ namespace graphics
 		std::shared_ptr<Shader> geometryPassShader;
 		std::shared_ptr<Shader> phongDeferredShader;
 		std::shared_ptr<Shader> phongForwardShader;
+		std::shared_ptr<Shader> cylinderSolidColorShader;
 		
 		unsigned int gBuffer;
 

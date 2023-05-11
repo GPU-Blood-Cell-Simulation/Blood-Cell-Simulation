@@ -22,12 +22,24 @@ namespace physics
 
 		// propagate force into velocities
 		float3 F = gp.force.get(part_index);
-		gp.velocity.add(part_index, dt * F);
+		float3 velocity = gp.velocity.get(part_index);
+		float3 pos = gp.position.get(part_index);
+
+		velocity = velocity + dt * F;
+
+		// collisions with vein cylinder
+		if ((pos.x - width/2) * (pos.x - width/2)+ (pos.z - depth/2) * (pos.z - depth/2) >= 
+			cylinderScaleX * cylinderScaleX * cylinderRadius * cylinderRadius)
+		{
+			velocity.x *= -1;
+			velocity.z *= -1;
+		}
+
+		gp.velocity.set(part_index, velocity);
 
 		// propagate velocities into positions
-		float3 v = gp.velocity.get(part_index);
-		float3 dpos = dt * v - gp.position.get(part_index);
-		gp.position.add(part_index, dt * v);
+		float3 dpos = dt * velocity - gp.position.get(part_index);
+		gp.position.add(part_index, dt * velocity);
 
 		// zero forces
 		gp.force.set(part_index, make_float3(0, 0, 0));

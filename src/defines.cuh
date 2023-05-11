@@ -38,6 +38,15 @@ inline constexpr float height = 100.0f;
 inline constexpr float depth = 100.0f;
 //constexpr float3 dimension {100,100,100};
 
+
+// cylinder model data:
+// min_x = -1.00156, max_x = 0.998437, min_y = -0.130239, max_y = 5.14687
+inline constexpr float cylinderRadius = 1.0f;
+inline constexpr float cylinderHeight = 5.27716f; // scale = glm::vec3(width / 2, 2 * width, width / 2);
+inline constexpr float cylinderScaleX = width / 2;
+inline constexpr float cylinderScaleY = 2 * height;
+inline constexpr float cylinderScaleZ = depth / 2;
+
 inline constexpr int cellWidth = 2;
 inline constexpr int cellHeight = 2;
 inline constexpr int cellDepth = 2;

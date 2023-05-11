@@ -155,3 +155,7 @@ void PhongDeferredShader::use()
 
 PhongForwardShader::PhongForwardShader() : Shader("Shaders\\phong_forward.vert", "Shaders\\phong_forward.frag")
 {}
+
+CylinderSolidColorShader::CylinderSolidColorShader() : Shader("Shaders\\cylindersolidcolor.vert", "Shaders\\cylindersolidcolor.frag")
+{}
+
