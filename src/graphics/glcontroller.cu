@@ -30,11 +30,11 @@ namespace graphics
 		devCudaOffsetBuffer[3 * id + 2] = positionZ[id];
 	}
 
-	graphics::GLController::GLController() : particleModel("Models/Earth/low_poly_earth.fbx")
+	graphics::GLController::GLController() : particleModel("Models/Earth/low_poly_earth.fbx"), veinModel("Models/Cylinder/cylinder.obj")
 	{
 		// Register OpenGL buffer in CUDA
 		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaOffsetResource, particleModel.getCudaOffsetBuffer(), cudaGraphicsRegisterFlagsNone));
-
+		
 		// Create a directional light
 		directionalLight = DirLight
 		{
@@ -81,11 +81,15 @@ namespace graphics
 			std::cout << "Framebuffer not complete!" << std::endl;
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		// Create the shaders
 		solidColorShader = std::make_shared<Shader>(SolidColorShader());
 		phongForwardShader = std::make_shared<Shader>(PhongForwardShader());
 		geometryPassShader = std::make_shared<Shader>(GeometryPassShader(gBuffer));
 		phongDeferredShader = std::make_shared<Shader>(PhongDeferredShader(gPosition, gNormal));
+		cylinderSolidColorShader = std::make_shared<Shader>(CylinderSolidColorShader());
 	}
 
 	void graphics::GLController::calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
@@ -105,6 +109,21 @@ namespace graphics
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
 	}
 
+	glm::mat4 scaleCylinderToCenter(glm::mat4 model, glm::vec3 scale)
+	{
+		return glm::scale(
+				glm::translate(
+					glm::translate(
+						glm::scale(
+							model, 
+							glm::vec3(2,2,2)), 
+						glm::vec3(-cylinderRadius, -cylinderHeight / 2, -cylinderRadius)
+					), 
+					glm::vec3(width / 2, -height / 2, depth/2)
+				), 
+				scale);
+	}
+
 	void graphics::GLController::draw()
 	{
 		if constexpr (!useLighting) // solidcolor
@@ -113,9 +132,7 @@ namespace graphics
 			solidColorShader->setMatrix("model", model);
 			solidColorShader->setMatrix("view", view);
 			solidColorShader->setMatrix("projection", projection);
-
 			particleModel.draw(solidColorShader);
-			return;
 		}
 		else
 		{
@@ -132,8 +149,18 @@ namespace graphics
 			phongForwardShader->setLighting(directionalLight);
 
 			particleModel.draw(phongForwardShader);
-			return;
 		}
+
+		cylinderSolidColorShader->use();
+		cylinderSolidColorShader->setMatrix("model", scaleCylinderToCenter(model, glm::vec3(cylinderScaleX, cylinderScaleY, cylinderScaleZ)));
+		cylinderSolidColorShader->setMatrix("view", view);
+		cylinderSolidColorShader->setMatrix("projection", projection);
+
+		veinModel.draw(cylinderSolidColorShader);
+
+		return;
+
+
 		// Deferred shading - not working yet
 
 		// Geometry pass

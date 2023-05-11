@@ -31,11 +31,13 @@ namespace graphics
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), windowWidth / windowHeight, 0.1f, depth * 10);
 
 		Model particleModel;
+		Model veinModel;
 		DirLight directionalLight;
 		std::shared_ptr<Shader> solidColorShader;
 		std::shared_ptr<Shader> geometryPassShader;
 		std::shared_ptr<Shader> phongDeferredShader;
 		std::shared_ptr<Shader> phongForwardShader;
+		std::shared_ptr<Shader> cylinderSolidColorShader;
 		
 		unsigned int gBuffer;
 
