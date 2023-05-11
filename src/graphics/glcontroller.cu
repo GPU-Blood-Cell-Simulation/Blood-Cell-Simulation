@@ -159,7 +159,7 @@ namespace graphics
 
 		cylinderSolidColorShader->use();
 		cylinderSolidColorShader->setMatrix("model", scaleCylinderToCenter(model, glm::vec3(cylinderScaleX, cylinderScaleY, cylinderScaleZ)));
-		cylinderSolidColorShader->setMatrix("view", view);
+		cylinderSolidColorShader->setMatrix("view", camera.getView());
 		cylinderSolidColorShader->setMatrix("projection", projection);
 
 		veinModel.draw(cylinderSolidColorShader);
