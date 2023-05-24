@@ -136,21 +136,21 @@ namespace sim
 	}
 
 
-	void calculateNextFrame(Particles particls, Corpuscles corpuscls, unsigned int* cellIds, unsigned int* particleIds,
+	void calculateNextFrame(Particles particles, Corpuscles corpuscles, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
 	{
 		// 1. calculate grid
-		createUniformGrid(particls.position.x, particls.position.y, particls.position.z,
+		createUniformGrid(particles.position.x, particles.position.y, particles.position.z,
 			cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
 		// 2. TODO: detections
 		
-		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, cellIds, particleIds,
+		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, cellIds, particleIds,
 			cellStarts, cellEnds, particleCount);
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, PARTICLE_COUNT);
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, PARTICLE_COUNT);
 	}
 
 
