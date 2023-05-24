@@ -9,10 +9,10 @@ namespace sim
 	void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
 		const unsigned int particleCount);
 
-	void generateRandomPositions(particles p, const int particleCount);
-	void generateInitialPositionsInLayers(particles p, dipols c, int particleCount, int layersCount);
+	void generateRandomPositions(Particles p, const int particleCount);
+	void generateInitialPositionsInLayers(Particles p, Corpuscles c, int particleCount, int layersCount);
 
-	void calculateNextFrame(particles p, dipols c, unsigned int* cellIds, unsigned int* particleIds,
+	void calculateNextFrame(Particles p, Corpuscles c, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount);
 
 	void deallocateMemory(unsigned int* cellIds, unsigned int* particleIds, unsigned int* cellStarts, unsigned int* cellEnds);

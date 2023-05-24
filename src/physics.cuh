@@ -1,3 +1,4 @@
+#pragma once
 #include "objects.cuh"
 #include "utilities.cuh"
 #include <cmath>
@@ -9,7 +10,7 @@
 
 namespace physics
 {
-	__global__ void propagateParticles(particles gp, dipols c, int particleCount)
+	__global__ void propagateParticles(Particles gp, Corpuscles c, int particleCount)
 	{
 		// depends on which cell model we use, for dipole 2
 		int cell_size = 2;

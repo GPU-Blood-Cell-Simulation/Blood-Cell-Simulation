@@ -43,7 +43,7 @@ __device__ void cudaVec3::add(int index, float3 v)
 
 // dipoles 
 
-__device__ void dipols::propagateForces(particles gp, int particleInd)
+__device__ void Corpuscles::propagateForces(Particles gp, int particleInd)
 {
     int secondParticle = particleInd%2 == 0 ? particleInd + 1 : particleInd - 1;
 	float3 p1 = gp.position.get(particleInd);
@@ -57,7 +57,7 @@ __device__ void dipols::propagateForces(particles gp, int particleInd)
 	gp.force.add(secondParticle, Fr * normalize(p1 - p2));
 }
 
-__device__ void dipols::setCorpuscle(int index, float3 center, particles particls, int p_cnt)
+__device__ void Corpuscles::setCorpuscle(int index, float3 center, Particles particls, int p_cnt)
 {
 	//printf("index: %d\n", index);
 	if(2*index < p_cnt)

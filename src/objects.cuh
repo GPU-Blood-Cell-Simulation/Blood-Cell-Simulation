@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include "defines.cuh"
 
@@ -5,7 +6,6 @@
 #include "device_launch_parameters.h"
 
 
-#ifndef CUDA_VEC_3
 struct cudaVec3
 {
 	float* x;
@@ -23,19 +23,16 @@ struct cudaVec3
 	__device__ void set(int index, float3 v);
 	__device__ void add(int index, float3 v);
 };
-#define CUDA_VEC_3
-#endif
 
 
 // Global structure of particles
-#ifndef PARTICLS
-struct particles
+struct Particles
 {
 	cudaVec3 position;
 	cudaVec3 velocity;
 	cudaVec3 force;
 
-	particles(int n) {
+	Particles(int n) {
 		position.createVec(n);
 		velocity.createVec(n);
 		force.createVec(n);
@@ -48,31 +45,17 @@ struct particles
 	}
 
 };
-#define PARTICLS
-#endif
 
-#ifndef CORPSCLS
-class corpuscles
-{
-public:
-	virtual __device__ void propagateForces(particles gp, int particleInd) {}
-	virtual __device__ void setCorpuscle(int index, float3 center, particles particls, int p_cnt) {}
-};
-#define CORPSCLS
-#endif
 
-#ifndef DIPLS
-class dipols
+class Corpuscles
 {
 	float L0;
 
 public:
-	dipols(int initialLength = 0.5f){
+	Corpuscles(int initialLength = 0.5f){
 		L0 = initialLength;
 	}
 
-	__device__ void propagateForces(particles gp, int particleInd);
-	__device__ void setCorpuscle(int index, float3 center, particles particls, int p_cnt);
+	__device__ void propagateForces(Particles particles, int particleId);
+	__device__ void setCorpuscle(int index, float3 center, Particles particles, int particleCount);
 };
-#define DIPLS
-#endif
