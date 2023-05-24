@@ -2,6 +2,7 @@
 #include "grid.cuh"
 #include "defines.cuh"
 #include "physics.cuh"
+
 #include <cmath>
 #include <ctime>
 
@@ -13,43 +14,33 @@ namespace sim
 
 	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount);
 
-	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount);
+	__global__ void generateRandomPositionsKernel(curandState* states, Particles p, const int particleCount);
 
-	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt);
-
-	// Allocate GPU buffers for the position vectors
-	void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
-		const unsigned int particleCount)
-	{
-		HANDLE_ERROR(cudaMalloc((void**)cellIds, particleCount * sizeof(unsigned int)));
-		HANDLE_ERROR(cudaMalloc((void**)particleIds, particleCount * sizeof(unsigned int)));
-
-		HANDLE_ERROR(cudaMalloc((void**)cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
-		HANDLE_ERROR(cudaMalloc((void**)cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
-	}
+	__global__ void generateInitialPositionsKernel(BloodCells cells);
 
 	// initial position approach
 	// arg_0 should be a^2 * arg_1
 	// but it is no necessary
-	void generateInitialPositionsInLayers(particles p, dipols c, const int particleCount, const int layersCount)
-	{
-		int model_par_cnt = 2; /* cell model particles count, 2 for dipole */
-		int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
-		int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
+	//void generateInitialPositionsInLayers(Particles p, dipols c, const int particleCount, const int layersCount)
+	//{
+	//	int model_par_cnt = 2; /* cell model particles count, 2 for dipole */
+	//	int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
+	//	int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
 
-		//real_particles_count = layerDim * layerDim * layersCount;
+	//	//real_particles_count = layerDim * layerDim * layersCount;
 
-		int threadsPerBlockDim = std::min(layerDim, 32);
-		int blDim = std::ceil(float(corpusclesPerLayer) / threadsPerBlockDim);
-		dim3 blocks = dim3(blDim, blDim, layersCount);
-		dim3 threads = dim3(threadsPerBlockDim, threadsPerBlockDim, 1);
+	//	int threadsPerBlockDim = std::min(layerDim, 32);
+	//	int blDim = std::ceil(float(corpusclesPerLayer) / threadsPerBlockDim);
+	//	dim3 blocks = dim3(blDim, blDim, layersCount);
+	//	dim3 threads = dim3(threadsPerBlockDim, threadsPerBlockDim, 1);
 
-		generateInitialPositionsKernel << <blocks, threads >> > (p, c,
-			make_float3(width, height, float(layersCount * depth) / 100), particleCount);
-	}
+	//	generateInitialPositionsKernel << <blocks, threads >> > (p, c,
+	//		make_float3(width, height, float(layersCount * depth) / 100), particleCount);
+	//}
+
 
 	// Generate initial positions and velocities of particles
-	void generateRandomPositions(particles p, const int particleCount)
+	void generateRandomPositions(Particles p, const int particleCount)
 	{
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
@@ -77,7 +68,7 @@ namespace sim
 	}
 
 	// Generate random positions and velocities at the beginning
-	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount)
+	__global__ void generateRandomPositionsKernel(curandState* states, Particles p, const int particleCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= particleCount)
@@ -93,8 +84,8 @@ namespace sim
 	}
 
 
-
-	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt)
+/*
+	__global__ void generateInitialPositionsKernel(Particles par, dipols crps, float3 dims, int par_cnt)
 	{
 		int thCnt = blockDim.x * blockDim.y;
 		int blCnt2d = gridDim.x * gridDim.y;
@@ -112,53 +103,37 @@ namespace sim
 			crps.setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
 		}
 	}
+*/
 
-
-	__global__ void detectCollisions(particles particles, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
-		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+	__global__ void detectCollisions(BloodCells cells)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
-		if (id >= particleCount)
+		if (id >= cells.particlesCnt)
 			return;
 
-		float3 p1 = particles.position.get(id);
-		int secondParticle = -1; // id % 2 == 0 ? id + 1 : id - 1;
+		float3 p1 = cells.particles.position.get(id);
 
-		for (int i = 0; i < particleCount; i++) {
-			if (id == i || i == secondParticle)
+		for (int i = 0; i < cells.particlesCnt; i++) {
+			if (id == i)
 				continue;
 
-			float3 p2 = particles.position.get(i);
+			float3 p2 = cells.particles.position.get(i);
 			if (length(p1 - p2) <= 5.0f) {
-				particles.force.set(id, 50.0f * normalize(p1 - p2));
+				cells.particles.force.set(id, 10.0f * normalize(p1 - p2));
 			}
 		}
 	}
 
 
-	void calculateNextFrame(particles particls, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
-		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+	void calculateNextFrame(BloodCells cells)
 	{
-		// 1. calculate grid
-		createUniformGrid(particls.position.x, particls.position.y, particls.position.z,
-			cellIds, particleIds, cellStarts, cellEnds, particleCount);
-
-		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
-		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
-		// 2. TODO: detections
+		int threadsPerBlock = cells.particlesCnt > 1024 ? 1024 : cells.particlesCnt;
+		int blDim = std::ceil(float(cells.particlesCnt) / threadsPerBlock);
 		
-		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, cellIds, particleIds,
-			cellStarts, cellEnds, particleCount);
+		detectCollisions << < dim3(blDim), threadsPerBlock >> > (cells);
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, PARTICLE_COUNT);
-	}
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (cells);
 
-
-	void sim::deallocateMemory(unsigned int* cellIds, unsigned int* particleIds, unsigned int* cellStarts, unsigned int* cellEnds)
-	{
-		cudaFree(cellIds);
-		cudaFree(particleIds);
-		cudaFree(cellStarts);
-		cudaFree(cellEnds);
+		cells.PropagateForces();
 	}
 }

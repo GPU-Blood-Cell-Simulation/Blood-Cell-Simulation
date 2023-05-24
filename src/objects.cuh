@@ -29,13 +29,13 @@ struct cudaVec3
 
 // Global structure of particles
 #ifndef PARTICLS
-struct particles
+struct Particles
 {
 	cudaVec3 position;
 	cudaVec3 velocity;
 	cudaVec3 force;
 
-	particles(int n) {
+	Particles(int n) {
 		position.createVec(n);
 		velocity.createVec(n);
 		force.createVec(n);
@@ -55,24 +55,8 @@ struct particles
 class corpuscles
 {
 public:
-	virtual __device__ void propagateForces(particles gp, int particleInd) {}
-	virtual __device__ void setCorpuscle(int index, float3 center, particles particls, int p_cnt) {}
+	virtual __device__ void propagateForces(Particles gp, int particleInd) {}
+	virtual __device__ void setCorpuscle(int index, float3 center, Particles particls, int p_cnt) {}
 };
 #define CORPSCLS
-#endif
-
-#ifndef DIPLS
-class dipols
-{
-	float L0;
-
-public:
-	dipols(int initialLength = 0.5f){
-		L0 = initialLength;
-	}
-
-	__device__ void propagateForces(particles gp, int particleInd);
-	__device__ void setCorpuscle(int index, float3 center, particles particls, int p_cnt);
-};
-#define DIPLS
 #endif

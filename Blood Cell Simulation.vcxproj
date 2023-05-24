@@ -106,6 +106,7 @@
     </CudaLink>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="src\BloodCell\BloodCells.cu" />
     <CudaCompile Include="src\graphics\glcontroller.cu" />
     <CudaCompile Include="src\grid.cu" />
     <CudaCompile Include="src\main.cu" />
@@ -491,6 +492,7 @@
     <ClInclude Include="Libraries\include\glm\vec3.hpp" />
     <ClInclude Include="Libraries\include\glm\vec4.hpp" />
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
+    <ClInclude Include="src\BloodCell\BloodCells.cuh" />
     <ClInclude Include="src\defines.cuh" />
     <ClInclude Include="src\graphics\camera.hpp" />
     <ClInclude Include="src\graphics\glcontroller.cuh" />

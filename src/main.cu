@@ -8,25 +8,17 @@
 #include "objects.cuh"
 #include "graphics/glcontroller.cuh"
 
+#include "BloodCell/BloodCells.cuh"
+
 #include <GLFW/glfw3.h>
 #include <sstream>
 
 #include <curand.h>
 #include <curand_kernel.h>
 
-//// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
-//extern "C"
-//{
-//    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-//}
 
 int main()
 {
-    unsigned int* cellIds = 0;
-    unsigned int* particleIds = 0;
-    unsigned int* cellStarts = 0;
-    unsigned int* cellEnds = 0;
-
     // Choose which GPU to run on, change this on a multi-GPU system.
     HANDLE_ERROR(cudaSetDevice(0));
 
@@ -68,15 +60,11 @@ int main()
     // Create a graphics controller
     graphics::GLController glController(window);
 
-    // Allocate memory
-    particles particls(PARTICLE_COUNT);
-    dipols corpscls = dipols(10);
-
-    sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, PARTICLE_COUNT);
+    float graph[]{ 0, 5, 5, 5, 0, 5, 5, 5, 0 };
+    BloodCells cells(1, 3, graph);
 
     // Generate random positions
-    sim::generateRandomPositions(particls, PARTICLE_COUNT);
-    //sim::generateInitialPositionsInLayers(particls, corpscls, PARTICLE_COUNT, 3);
+    sim::generateRandomPositions(cells.particles, cells.particlesCnt);
 
     // MAIN LOOP HERE - probably dictated by glfw
 
@@ -87,10 +75,13 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(particls, corpscls, cellIds, particleIds, cellStarts, cellEnds, PARTICLE_COUNT);
+        sim::calculateNextFrame(cells);
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(particls.position.x, particls.position.y, particls.position.z, PARTICLE_COUNT);
+        glController.calculateOffsets(cells.particles.position.x,
+                                      cells.particles.position.y,
+                                      cells.particles.position.z,
+                                      cells.particlesCnt);
 
         // OpenGL render
 #pragma region rendering
@@ -123,8 +114,7 @@ int main()
     }
 
     // Cleanup
-    particls.freeParticles();
-    sim::deallocateMemory(cellIds, particleIds, cellStarts, cellEnds);
+    cells.Deallocate();
 
     glfwTerminate();
 
