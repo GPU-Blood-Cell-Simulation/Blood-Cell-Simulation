@@ -116,6 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Libraries\include\glm\detail\glm.cpp" />
+    <ClCompile Include="src\BloodCell\BloodCellsFactory.cpp" />
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\graphics\camera.cpp" />
     <ClCompile Include="src\graphics\inputcontroller.cpp" />
@@ -492,6 +493,7 @@
     <ClInclude Include="Libraries\include\glm\vec3.hpp" />
     <ClInclude Include="Libraries\include\glm\vec4.hpp" />
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
+    <ClInclude Include="src\BloodCell\BloodCellsFactory.h" />
     <ClInclude Include="src\BloodCell\BloodCells.cuh" />
     <ClInclude Include="src\defines.cuh" />
     <ClInclude Include="src\graphics\camera.hpp" />

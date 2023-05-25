@@ -15,6 +15,7 @@ public:
 	float* springsGrah;
 
 	BloodCells(int cellsCnt, int particlsInCells, float* graphDesc);
+
 	void Deallocate();
 
 	void PropagateForces();

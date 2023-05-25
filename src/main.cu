@@ -9,12 +9,15 @@
 #include "graphics/glcontroller.cuh"
 
 #include "BloodCell/BloodCells.cuh"
+#include "BloodCell/BloodCellsFactory.h"
 
 #include <GLFW/glfw3.h>
 #include <sstream>
 
 #include <curand.h>
 #include <curand_kernel.h>
+
+#include <cstdio>
 
 
 int main()
@@ -60,8 +63,11 @@ int main()
     // Create a graphics controller
     graphics::GLController glController(window);
 
-    float graph[]{ 0, 5, 5, 5, 0, 5, 5, 5, 0 };
-    BloodCells cells(1, 3, graph);
+    BloodCellsFactory cellsFactory(1, 3);
+    cellsFactory.AddSpring(0, 1, 10);
+    cellsFactory.AddSpring(0, 2, 10);
+
+    BloodCells cells = cellsFactory.CreateBloodCells();
 
     // Generate random positions
     sim::generateRandomPositions(cells.particles, cells.particlesCnt);
