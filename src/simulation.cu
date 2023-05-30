@@ -13,9 +13,9 @@ namespace sim
 
 	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount);
 
-	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount);
+	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const int particleCount);
 
-	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt);
+	__global__ void generateInitialPositionsKernel(Particles particles, Corpuscles corpuscles, float3 dims, int particleCount);
 
 	// Allocate GPU buffers for the position vectors
 	void allocateMemory(unsigned int** cellIds, unsigned int** particleIds, unsigned int** cellStarts, unsigned int** cellEnds,
@@ -31,10 +31,10 @@ namespace sim
 	// initial position approach
 	// arg_0 should be a^2 * arg_1
 	// but it is no necessary
-	void generateInitialPositionsInLayers(particles p, dipols c, const int particleCount, const int layersCount)
+	void generateInitialPositionsInLayers(Particles particles, Corpuscles corspuscles, const int particleCount, const int layersCount)
 	{
-		int model_par_cnt = 2; /* cell model particles count, 2 for dipole */
-		int corpusclesPerLayer = particleCount / layersCount / model_par_cnt;
+		int modelParticleCount = 2; /* cell model particles count, 2 for dipole */
+		int corpusclesPerLayer = particleCount / layersCount / modelParticleCount;
 		int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
 
 		//real_particles_count = layerDim * layerDim * layersCount;
@@ -44,12 +44,12 @@ namespace sim
 		dim3 blocks = dim3(blDim, blDim, layersCount);
 		dim3 threads = dim3(threadsPerBlockDim, threadsPerBlockDim, 1);
 
-		generateInitialPositionsKernel << <blocks, threads >> > (p, c,
+		generateInitialPositionsKernel << <blocks, threads >> > (particles, corspuscles,
 			make_float3(width, height, float(layersCount * depth) / 100), particleCount);
 	}
 
 	// Generate initial positions and velocities of particles
-	void generateRandomPositions(particles p, const int particleCount)
+	void generateRandomPositions(Particles particles, const int particleCount)
 	{
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
@@ -63,7 +63,7 @@ namespace sim
 
 		// Generate random positions and velocity vectors
 
-		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, p, particleCount);
+		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, particles, particleCount);
 
 		cudaFree(devStates);
 	}
@@ -77,7 +77,7 @@ namespace sim
 	}
 
 	// Generate random positions and velocities at the beginning
-	__global__ void generateRandomPositionsKernel(curandState* states, particles p, const int particleCount)
+	__global__ void generateRandomPositionsKernel(curandState* states, Particles p, const int particleCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= particleCount)
@@ -94,7 +94,7 @@ namespace sim
 
 
 
-	__global__ void generateInitialPositionsKernel(particles par, dipols crps, float3 dims, int par_cnt)
+	__global__ void generateInitialPositionsKernel(Particles particles, Corpuscles corpuscles, float3 dims, int particleCount)
 	{
 		int thCnt = blockDim.x * blockDim.y;
 		int blCnt2d = gridDim.x * gridDim.y;
@@ -109,12 +109,12 @@ namespace sim
 		//printf("id: %d, x: %f, y: %f, z: %f\n", tid, x, y, z);
 		if (x <= dims.x && y <= dims.y)
 		{
-			crps.setCorpuscle(tid, make_float3(x, y, z), par, par_cnt);
+			corpuscles.setCorpuscle(tid, make_float3(x, y, z), particles, particleCount);
 		}
 	}
 
 
-	__global__ void detectCollisions(particles particles, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
+	__global__ void detectCollisions(Particles particles, Corpuscles corpuscls, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -136,21 +136,21 @@ namespace sim
 	}
 
 
-	void calculateNextFrame(particles particls, dipols corpuscls, unsigned int* cellIds, unsigned int* particleIds,
+	void calculateNextFrame(Particles particles, Corpuscles corpuscles, unsigned int* cellIds, unsigned int* particleIds,
 		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
 	{
 		// 1. calculate grid
-		createUniformGrid(particls.position.x, particls.position.y, particls.position.z,
+		createUniformGrid(particles.position.x, particles.position.y, particles.position.z,
 			cellIds, particleIds, cellStarts, cellEnds, particleCount);
 
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
 		// 2. TODO: detections
 		
-		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, cellIds, particleIds,
+		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, cellIds, particleIds,
 			cellStarts, cellEnds, particleCount);
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particls, corpuscls, PARTICLE_COUNT);
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, PARTICLE_COUNT);
 	}
 
 

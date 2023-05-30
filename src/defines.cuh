@@ -29,7 +29,6 @@ void __syncthreads();
 #endif
 
 
-#ifndef GLBL_N_CNSTS
 inline constexpr float windowWidth = 800;
 inline constexpr float windowHeight = 800;
 
@@ -81,6 +80,3 @@ inline constexpr bool useLighting = true;
 // Camera movement constants
 inline constexpr float cameraMovementSpeed = width / 100;
 inline constexpr float cameraRotationSpeed = 0.02f;
-
-#define GLBL_N_CNSTS
-#endif

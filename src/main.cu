@@ -69,8 +69,8 @@ int main()
     graphics::GLController glController(window);
 
     // Allocate memory
-    particles particls(PARTICLE_COUNT);
-    dipols corpscls = dipols(10);
+    Particles particls(PARTICLE_COUNT);
+    Corpuscles corpscls = Corpuscles(10);
 
     sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, PARTICLE_COUNT);
 
