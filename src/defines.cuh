@@ -46,13 +46,13 @@ inline constexpr float cylinderScaleX = width / 2;
 inline constexpr float cylinderScaleY = 2 * height;
 inline constexpr float cylinderScaleZ = depth / 2;
 
-inline constexpr int cellWidth = 2;
-inline constexpr int cellHeight = 2;
-inline constexpr int cellDepth = 2;
+inline constexpr int cellWidth = 5;
+inline constexpr int cellHeight = 5;
+inline constexpr int cellDepth = 5;
 
 // 96 = 3*2*4*4
 // three layers of 2 particle dipoles, each layer is 4x4
-inline constexpr unsigned int PARTICLE_COUNT = 90; 
+inline constexpr unsigned int PARTICLE_COUNT = 200; 
 
 // ! this value should be determined experimentally !
 // one frame simulation time span

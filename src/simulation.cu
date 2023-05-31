@@ -71,15 +71,14 @@ namespace sim
 		if (id >= particleCount)
 			return;
 
-		p.position.x[id] = curand_uniform(&states[id]) * width;
-		p.position.y[id] = curand_uniform(&states[id]) * height;
-		p.position.z[id] = curand_uniform(&states[id]) * depth;
+		p.position.x[id] = curand_uniform(&states[id]) * width / 3 + width/6;
+		p.position.y[id] = curand_uniform(&states[id]) * height / 3 + height/6;
+		p.position.z[id] = curand_uniform(&states[id]) * depth / 3 + depth/6;
 
 		p.force.x[id] = 0;
 		p.force.y[id] = 0;
 		p.force.z[id] = 0;
 	}
-
 
 
 	__global__ void generateInitialPositionsKernel(Particles particles, Corpuscles corpuscles, float3 dims, int particleCount)
@@ -112,12 +111,28 @@ namespace sim
 		float3 p1 = particles.position.get(id);
 		int secondParticle = -1; // id % 2 == 0 ? id + 1 : id - 1;
 
-		for (int i = 0; i < particleCount; i++)
+
+		// Naive implementation
+		/*for (int i = 0; i < particleCount; i++)
 		{
 			if (id == i || i == secondParticle)
 				continue;
 
 			float3 p2 = particles.position.get(i);
+			if (length(p1 - p2) <= 5.0f)
+			{
+				particles.force.set(id, 50.0f * normalize(p1 - p2));
+			}
+		}*/
+
+		// Using uniform grid
+		for (int i = cellStarts[id]; i <= cellEnds[id]; i++)
+		{
+			int secondParticleId = particleIds[i];
+			if (id == secondParticleId)
+				continue;
+
+			float3 p2 = particles.position.get(secondParticleId);
 			if (length(p1 - p2) <= 5.0f)
 			{
 				particles.force.set(id, 50.0f * normalize(p1 - p2));

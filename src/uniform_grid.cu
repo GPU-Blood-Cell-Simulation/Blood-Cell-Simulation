@@ -15,13 +15,6 @@
 #pragma region Helper kernels
 
 __global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
-	unsigned int* CellIds, unsigned int* ParticleIds, const unsigned int particleCount);
-
-__global__ void calculateStartAndEndOfCellKernel(const float* positionX, const float* positionY, const float* positionZ,
-	const unsigned int* cellIds, const unsigned int* particleIds,
-	unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount);
-
-__global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
 	unsigned int* cellIds, unsigned int* particleIds, const unsigned int particleCount)
 {
 	unsigned int particleId = blockIdx.x * blockDim.x + threadIdx.x;
@@ -29,9 +22,13 @@ __global__ void calculateCellIdKernel(const float* positionX, const float* posit
 		return;
 
 	unsigned int cellId =
-		static_cast<unsigned int>(positionX[particleId] / cellWidth) +
-		static_cast<unsigned int>(positionY[particleId] / cellHeight) +
-		static_cast<unsigned int>(positionZ[particleId] / cellDepth);
+		static_cast<unsigned int>(positionZ[particleId] / cellDepth) * cellWidth * cellHeight +
+		static_cast<unsigned int>(positionY[particleId] / cellHeight) * cellWidth +
+		static_cast<unsigned int>(positionX[particleId] / cellWidth);
+
+	// Debug
+	/*if (cellId >= 9261)
+		printf("Error, cellId: %d\n", cellId);*/
 
 	particleIds[particleId] = particleId;
 	cellIds[particleId] = cellId;
@@ -59,10 +56,6 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
 	{
 		cellEnds[currentCellId] = id;
 	}
-
-	// debug
-	//if (id < 5) printf("%d. particle id: %d, cell: %d\n", id, particleIds[id], cellIds[id]);
-
 }
 
 #pragma endregion
@@ -107,5 +100,5 @@ void UniformGrid::calculateGrid(const Particles& particles)
 
 	calculateStartAndEndOfCellKernel << <blocks, threadsPerBlock >> >
 		(particles.position.x, particles.position.y, particles.position.z,
-			cellIds, particleIds, cellStarts, cellEnds,PARTICLE_COUNT);
+			cellIds, particleIds, cellStarts, cellEnds, PARTICLE_COUNT);
 }
