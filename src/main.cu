@@ -7,6 +7,7 @@
 #include "defines.cuh"
 #include "objects.cuh"
 #include "graphics/glcontroller.cuh"
+#include "uniform_grid.cuh"
 
 #include <GLFW/glfw3.h>
 #include <sstream>
@@ -69,14 +70,13 @@ int main()
     graphics::GLController glController(window);
 
     // Allocate memory
-    Particles particls(PARTICLE_COUNT);
-    Corpuscles corpscls = Corpuscles(10);
-
-    sim::allocateMemory(&cellIds, &particleIds, &cellStarts, &cellEnds, PARTICLE_COUNT);
+    Particles particles(PARTICLE_COUNT);
+    Corpuscles corpscles = Corpuscles(10);
+    UniformGrid grid;
 
     // Generate random positions
-    sim::generateRandomPositions(particls, PARTICLE_COUNT);
-    //sim::generateInitialPositionsInLayers(particls, corpscls, PARTICLE_COUNT, 3);
+    sim::generateRandomPositions(particles, PARTICLE_COUNT);
+    //sim::generateInitialPositionsInLayers(particles, corpscles, PARTICLE_COUNT, 3);
 
     // MAIN LOOP HERE - probably dictated by glfw
 
@@ -87,10 +87,10 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(particls, corpscls, cellIds, particleIds, cellStarts, cellEnds, PARTICLE_COUNT);
+        sim::calculateNextFrame(particles, corpscles, grid, PARTICLE_COUNT);
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(particls.position.x, particls.position.y, particls.position.z, PARTICLE_COUNT);
+        glController.calculateOffsets(particles.position.x, particles.position.y, particles.position.z, PARTICLE_COUNT);
 
         // OpenGL render
 #pragma region rendering
@@ -123,8 +123,7 @@ int main()
     }
 
     // Cleanup
-    particls.freeParticles();
-    sim::deallocateMemory(cellIds, particleIds, cellStarts, cellEnds);
+    particles.freeParticles();
 
     glfwTerminate();
 
