@@ -22,13 +22,15 @@ __global__ void calculateCellIdKernel(const float* positionX, const float* posit
 		return;
 
 	unsigned int cellId =
-		static_cast<unsigned int>(positionZ[particleId] / cellDepth) * cellWidth * cellHeight +
-		static_cast<unsigned int>(positionY[particleId] / cellHeight) * cellWidth +
+		static_cast<unsigned int>(positionZ[particleId] / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
+		static_cast<unsigned int>(positionY[particleId] / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
 		static_cast<unsigned int>(positionX[particleId] / cellWidth);
 
 	// Debug
 	/*if (cellId >= 9261)
 		printf("Error, cellId: %d\n", cellId);*/
+
+	//printf("id: %d, cellId: %d\n", particleId, cellId);
 
 	particleIds[particleId] = particleId;
 	cellIds[particleId] = cellId;

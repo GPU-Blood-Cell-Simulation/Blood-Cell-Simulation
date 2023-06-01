@@ -108,8 +108,8 @@ namespace sim
 		if (id >= particleCount)
 			return;
 
-		float3 p1 = particles.position.get(id);
-		int secondParticle = -1; // id % 2 == 0 ? id + 1 : id - 1;
+		int particleId = particleIds[id];
+		float3 p1 = particles.position.get(particleId);
 
 
 		// Naive implementation
@@ -129,13 +129,14 @@ namespace sim
 		for (int i = cellStarts[id]; i <= cellEnds[id]; i++)
 		{
 			int secondParticleId = particleIds[i];
-			if (id == secondParticleId)
+			if (particleId == secondParticleId)
 				continue;
 
 			float3 p2 = particles.position.get(secondParticleId);
 			if (length(p1 - p2) <= 5.0f)
 			{
-				particles.force.set(id, 50.0f * normalize(p1 - p2));
+				// Uncoalesced writes - area for optimization
+				particles.force.set(particleId, 50.0f * normalize(p1 - p2));
 			}
 		}
 	}
