@@ -126,7 +126,10 @@ namespace sim
 		}*/
 
 		// Using uniform grid
-		for (int i = cellStarts[id]; i <= cellEnds[id]; i++)
+
+		int cellId = cellIds[id];
+
+		for (int i = cellStarts[cellId]; i <= cellEnds[cellId]; i++)
 		{
 			int secondParticleId = particleIds[i];
 			if (particleId == secondParticleId)

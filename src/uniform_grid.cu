@@ -58,6 +58,15 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
 	{
 		cellEnds[currentCellId] = id;
 	}
+
+	if (id == 0)
+	{
+		cellStarts[cellIds[0]] = 0;
+	}
+	if (id == particleCount - 1)
+	{
+		cellStarts[cellIds[particleCount - 1]] = particleCount - 1;
+	}
 }
 
 #pragma endregion
