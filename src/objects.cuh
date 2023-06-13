@@ -5,6 +5,7 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include "graphics/mesh.hpp"
 
 
 struct cudaVec3
@@ -98,5 +99,30 @@ public:
 			particles.force.set(2 * index, make_float3(0, 0, 0));
 			particles.force.set(2 * index + 1, make_float3(0, 0, 0));
 		}
+	}
+};
+
+
+struct Triangles
+{
+	cudaVec3 v1;
+	cudaVec3 v2;
+	cudaVec3 v3;
+	cudaVec3 centers;
+	int size;
+
+	Triangles(Mesh m);
+};
+
+struct ray
+{
+	float3 origin;
+	float3 direction;
+	float t;
+	__device__ ray(float3 o, float3 d)
+	{
+		origin = o;
+		direction = d;
+		t = 1e10f; // INFINITY
 	}
 };

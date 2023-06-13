@@ -10,7 +10,11 @@
 
 namespace physics
 {
-	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, int particleCount)
+	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, Triangles triangles, int particleCount, int trianglesCount);
+
+	__device__ bool calculateSideCollisions(float3 p, ray& r, Triangles triangles, int trianglesCount);
+
+	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, Triangles triangles, int particleCount, int trianglesCount)
 	{
 		// depends on which cell model we use, for dipole 2
 		int cell_size = 2;
@@ -29,9 +33,10 @@ namespace physics
 		velocity = velocity + dt * F;
 
 		// collisions with vein cylinder
-		if ((pos.x - width/2) * (pos.x - width/2)+ (pos.z - depth/2) * (pos.z - depth/2) >= 
-			cylinderScaleX * cylinderScaleX * cylinderRadius * cylinderRadius)
+		if (!(velocity.x == 0 && velocity.y == 0 && velocity.z == 0) &&
+			calculateSideCollisions(pos, ray(pos, normalize(velocity)), triangles, trianglesCount))
 		{
+			// here velocity should be changed in every direction but triangle normal
 			velocity.x *= -1;
 			velocity.z *= -1;
 		}
@@ -50,5 +55,39 @@ namespace physics
 		__syncthreads();
 
 		corpuscles.propagateForces(particles, part_index);
+	}
+
+
+	__device__ bool calculateSideCollisions(float3 p, ray& r, Triangles triangles, int trianglesCount)
+	{
+		for (int i = 0; i < trianglesCount; ++i)
+		{
+			float3 v1 = triangles.v1.get(i);
+			float3 v2 = triangles.v2.get(i);
+			float3 v3 = triangles.v3.get(i);
+
+			const float3 edge1 = v2 - v1;
+			const float3 edge2 = v3 - v1;
+			const float3 h = cross(r.direction, edge2);
+			const float a = dot(edge1, h);
+			if (a > -0.0001f && a < 0.0001f)
+				continue; // ray parallel to triangle
+			const float f = 1 / a;
+			const float3 s = r.origin - v1;
+			const float u = f * dot(s, h);
+			if (u < 0 || u > 1)
+				continue;
+			const float3 q = cross(s, edge1);
+			const float v = f * dot(r.direction, q);
+			if (v < 0 || u + v > 1)
+				continue;
+			const float t = f * dot(edge2, q);
+			if (t > 0.0001f)
+			{
+				r.t = r.t > t ? t : r.t;
+				return true;
+			}
+		}
+		return false;
 	}
 }

@@ -38,11 +38,18 @@ void Mesh::setupMesh()
     glBindVertexArray(0);
 }
 
-void Mesh::draw(const std::shared_ptr<Shader> shader) const
+void Mesh::draw(const std::shared_ptr<Shader> shader, bool instanced) const
 {
     // draw mesh
     glBindVertexArray(VAO);
-    glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, PARTICLE_COUNT);
+    if (instanced)
+    {
+        glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, PARTICLE_COUNT);
+    }
+    else
+    {
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+    }
     glBindVertexArray(0);
 }
 

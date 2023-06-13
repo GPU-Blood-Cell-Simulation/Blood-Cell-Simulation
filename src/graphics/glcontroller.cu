@@ -115,23 +115,11 @@ namespace graphics
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
 	}
 
-	glm::mat4 scaleCylinderToCenter(glm::mat4 model, glm::vec3 scale)
-	{
-		return glm::scale(
-				glm::translate(
-					glm::translate(
-						glm::scale(
-							model, 
-							glm::vec3(2,2,2)), 
-						glm::vec3(-cylinderRadius, -cylinderHeight / 2, -cylinderRadius)
-					), 
-					glm::vec3(width / 2, -height / 2, depth/2)
-				), 
-				scale);
-	}
-
 	void graphics::GLController::draw()
 	{
+		// debug option
+		glCullFace(GL_FRONT);
+
 		if constexpr (!useLighting) // solidcolor
 		{
 			solidColorShader->use();
@@ -158,11 +146,12 @@ namespace graphics
 		}
 
 		cylinderSolidColorShader->use();
-		cylinderSolidColorShader->setMatrix("model", scaleCylinderToCenter(model, glm::vec3(cylinderScaleX, cylinderScaleY, cylinderScaleZ)));
+		cylinderSolidColorShader->setMatrix("model", model);
 		cylinderSolidColorShader->setMatrix("view", camera.getView());
 		cylinderSolidColorShader->setMatrix("projection", projection);
 
-		veinModel.draw(cylinderSolidColorShader);
+		veinModel.draw(cylinderSolidColorShader, false);
+		glCullFace(GL_BACK);
 
 		return;
 

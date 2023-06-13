@@ -9,6 +9,7 @@
 #include <memory>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include "cylindermesh.hpp"
 
 namespace graphics
 {
@@ -24,6 +25,11 @@ namespace graphics
 			inputController.adjustParametersUsingInput(camera);
 		}
 
+		Mesh getGridMesh()
+		{
+			return veinModel.getTopMesh();
+		}
+
 	private:
 
 		// Particle color
@@ -35,7 +41,8 @@ namespace graphics
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), windowWidth / windowHeight, 0.1f, depth * 10);
 
 		Model particleModel = Model("Models/Earth/low_poly_earth.fbx");
-    Model veinModel = Model("Models/Cylinder/cylinder.obj");
+		Model veinModel = Model(CylinderMesh(glm::vec3(width, height /*0, 0*/, depth), cylinderScaleY * cylinderHeight,
+			cylinderScaleX * cylinderRadius, 100, 30).CreateMesh()); //Model("Models/Cylinder/cylinder.obj");
 
 		Camera camera;
 		InputController inputController;

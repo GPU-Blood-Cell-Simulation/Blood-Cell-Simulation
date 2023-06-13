@@ -16,6 +16,17 @@ namespace sim
 
 	__global__ void generateInitialPositionsKernel(Particles particles, Corpuscles corpuscles, float3 dims, int particleCount);
 
+
+	// Allocate GPU buffers for the position vectors
+	void allocateMemory(UniformGrid& grid, const unsigned int particleCount)
+	{
+		HANDLE_ERROR(cudaMalloc((void**)&grid.cellIds, particleCount * sizeof(unsigned int)));
+		HANDLE_ERROR(cudaMalloc((void**)&grid.particleIds, particleCount * sizeof(unsigned int)));
+
+		HANDLE_ERROR(cudaMalloc((void**)&grid.cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+		HANDLE_ERROR(cudaMalloc((void**)&grid.cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+	}
+
 	// initial position approach
 	// arg_0 should be a^2 * arg_1
 	// but it is no necessary
@@ -145,7 +156,7 @@ namespace sim
 	}
 
 
-	void calculateNextFrame(Particles particles, Corpuscles corpuscles, UniformGrid& grid, unsigned int particleCount)
+	void calculateNextFrame(Particles particles, Corpuscles corpuscles, Triangles triangles, UniformGrid& grid, unsigned int particleCount)
 	{
 		// 1. calculate grid
 		grid.calculateGrid(particles);
@@ -157,6 +168,6 @@ namespace sim
 		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, grid.cellIds, grid.particleIds,
 			grid.cellStarts, grid.cellEnds, particleCount);
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, PARTICLE_COUNT);
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, triangles, PARTICLE_COUNT, triangles.size);
 	}
 }
