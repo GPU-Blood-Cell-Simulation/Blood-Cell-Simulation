@@ -1,4 +1,6 @@
 #include "mesh.hpp"
+#include <fstream>
+#include <iomanip>
 
 class CylinderMesh
 {
@@ -22,27 +24,28 @@ public:
 		float triangleH = height / vLayers;
 		float radianBatch = 2 * PI / hLayers;
 		float triangleBase = radianBatch * radius;
-		for (int i = 0; i <= vLayers; ++i)
+		for (int i = 0; i < vLayers; ++i)
 		{
-			float h = i * triangleH;
+			float h = i * triangleH - height / 2;
 			for (int j = 0; j < hLayers; ++j)
 			{
 				glm::vec3 position = glm::vec3(radius * cos(j * radianBatch),
-					h - height/2 , radius * sin(j * radianBatch)) + origin;
+					h , radius * sin(j * radianBatch)) + origin;
 				Vertex v; 
 				v.Position = position;
-				v.Normal = glm::vec3(glm::normalize(position - glm::vec3(origin.x, origin.y, origin.z + h - height / 2)));
+				v.Normal = glm::vec3(glm::normalize(position - glm::vec3(origin.x, origin.y, origin.z + h)));
 				v.TexCoords = glm::vec2(0); // no textures
 
 				vertices.push_back(v);
-				if (i < vLayers)
+				if (i < vLayers - 1)
 				{
+					int nextj = (j + 1) % hLayers;
 					indices.push_back((i + 1) * hLayers + j);
 					indices.push_back(i * hLayers + j);
-					indices.push_back(i * hLayers + j + 1);
+					indices.push_back(i * hLayers + nextj);
 					indices.push_back((i + 1) * hLayers + j);
-					indices.push_back(i * hLayers + j + 1);
-					indices.push_back((i + 1) * hLayers + j + 1);
+					indices.push_back(i * hLayers + nextj);
+					indices.push_back((i + 1) * hLayers + nextj);
 				}
 			}
 		}

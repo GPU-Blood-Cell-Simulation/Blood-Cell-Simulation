@@ -7,6 +7,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+
 namespace sim
 {
 
@@ -155,7 +156,6 @@ namespace sim
 		}
 	}
 
-
 	void calculateNextFrame(Particles particles, Corpuscles corpuscles, Triangles triangles, UniformGrid& grid, unsigned int particleCount)
 	{
 		// 1. calculate grid
@@ -163,10 +163,12 @@ namespace sim
 
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
+		
 		// 2. TODO: detections
 
 		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, grid.cellIds, grid.particleIds,
 			grid.cellStarts, grid.cellEnds, particleCount);
+
 
 		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, triangles, PARTICLE_COUNT, triangles.size);
 	}

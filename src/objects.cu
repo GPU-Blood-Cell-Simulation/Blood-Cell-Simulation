@@ -22,7 +22,6 @@ void cudaVec3::freeVec()
 	cudaFree(z);
 }
 
-
 __global__ void calculateCenters(cudaVec3 v1, cudaVec3 v2, cudaVec3 v3, cudaVec3 centers, int size)
 {
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -38,6 +37,7 @@ __global__ void calculateCenters(cudaVec3 v1, cudaVec3 v2, cudaVec3 v3, cudaVec3
 	centers.set(id, make_float3(x, y, z));
 }
 
+
 Triangles::Triangles(Mesh m)
 {
 	size = m.indices.size() / 3;
@@ -46,23 +46,24 @@ Triangles::Triangles(Mesh m)
 	v3.createVec(size);
 	centers.createVec(size);
 	float* cpuBuffer = new float[9 * size];
+
 	for (int i = 0; i < m.indices.size(); ++i)
 	{
-		int ind = clamp((int)m.indices[i], 0, (int)m.vertices.size() - 1);
+		int ind = m.indices[i];
 		cpuBuffer[((3 * i) % 9) * size + i / 3] = m.vertices[ind].Position.x;
 		cpuBuffer[((3 * i + 1) % 9) * size + i / 3] = m.vertices[ind].Position.y;
 		cpuBuffer[((3 * i + 2) % 9) * size + i / 3] = m.vertices[ind].Position.z;
 	}
 
-	cudaMemcpy(v1.x, cpuBuffer, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v1.y, cpuBuffer + size, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v1.z, cpuBuffer + 2 * size, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v2.x, cpuBuffer + 3 * size, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v2.y, cpuBuffer + 4 * size, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v2.z, cpuBuffer + 5 * size, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v3.x, cpuBuffer + 6 * size, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v3.y, cpuBuffer + 7 * size, size, cudaMemcpyHostToDevice);
-	cudaMemcpy(v3.z, cpuBuffer + 8 * size, size, cudaMemcpyHostToDevice);
+	cudaMemcpy(v1.x, cpuBuffer, size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v1.y, &cpuBuffer[size], size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v1.z, &cpuBuffer[2 * size], size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v2.x, &cpuBuffer[3 * size], size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v2.y, &cpuBuffer[4 * size], size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v2.z, &cpuBuffer[5 * size], size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v3.x, &cpuBuffer[6 * size], size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v3.y, &cpuBuffer[7 * size], size*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(v3.z, &cpuBuffer[8 * size], size*sizeof(float), cudaMemcpyHostToDevice);
 
 
 	// translate our CUDA positions into Vertex offsets

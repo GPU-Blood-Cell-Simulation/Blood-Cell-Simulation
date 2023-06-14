@@ -2,7 +2,6 @@
 #include "objects.cuh"
 #include "utilities.cuh"
 #include <cmath>
-
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <device_functions.h>
@@ -37,8 +36,9 @@ namespace physics
 			calculateSideCollisions(pos, ray(pos, normalize(velocity)), triangles, trianglesCount))
 		{
 			// here velocity should be changed in every direction but triangle normal
-			velocity.x *= -1;
-			velocity.z *= -1;
+			// 0.8 to slow down after contact
+			velocity.x *= -0.8;
+			velocity.z *= -0.8;
 		}
 
 		particles.velocity.set(part_index, velocity);
@@ -62,6 +62,7 @@ namespace physics
 	{
 		for (int i = 0; i < trianglesCount; ++i)
 		{
+			const float EPS = 0.000001f;
 			float3 v1 = triangles.v1.get(i);
 			float3 v2 = triangles.v2.get(i);
 			float3 v3 = triangles.v3.get(i);
@@ -70,7 +71,7 @@ namespace physics
 			const float3 edge2 = v3 - v1;
 			const float3 h = cross(r.direction, edge2);
 			const float a = dot(edge1, h);
-			if (a > -0.0001f && a < 0.0001f)
+			if (a > -EPS && a < EPS)
 				continue; // ray parallel to triangle
 			const float f = 1 / a;
 			const float3 s = r.origin - v1;
@@ -82,7 +83,7 @@ namespace physics
 			if (v < 0 || u + v > 1)
 				continue;
 			const float t = f * dot(edge2, q);
-			if (t > 0.0001f)
+			if (t > EPS)
 			{
 				r.t = r.t > t ? t : r.t;
 				return true;

@@ -14,7 +14,6 @@
 
 #include <curand.h>
 #include <curand_kernel.h>
-
 //// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
 //extern "C"
 //{
