@@ -9,10 +9,10 @@
 
 struct cudaVec3
 {
-	float* x;
-	float* y;
-	float* z;
-	int size;
+	float* x = 0;
+	float* y = 0;
+	float* z = 0;
+	int size = 0;
 
 	// allocated on host
 	cudaVec3() {}
