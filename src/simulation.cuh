@@ -11,5 +11,5 @@ namespace sim
 	void generateRandomPositions(Particles particles, const int particleCount);
 	void generateInitialPositionsInLayers(Particles particles, Corpuscles corpuscles, int particleCount, int layersCount);
 
-	void calculateNextFrame(Particles p, Corpuscles c, Triangles triangles, UniformGrid& grid, unsigned int particleCount);
+	void calculateNextFrame(Particles p, Corpuscles c, DeviceTriangles triangles, UniformGrid& grid, unsigned int particleCount, unsigned int trianglesCount);
 }

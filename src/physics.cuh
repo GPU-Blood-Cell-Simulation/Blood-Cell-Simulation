@@ -9,11 +9,11 @@
 
 namespace physics
 {
-	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, Triangles triangles, int particleCount, int trianglesCount);
+	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, DeviceTriangles triangles, int particleCount, int trianglesCount);
 
-	__device__ bool calculateSideCollisions(float3 p, ray& r, Triangles triangles, int trianglesCount);
+	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount);
 
-	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, Triangles triangles, int particleCount, int trianglesCount)
+	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, DeviceTriangles triangles, int particleCount, int trianglesCount)
 	{
 		// depends on which cell model we use, for dipole 2
 		int cell_size = 2;
@@ -30,21 +30,29 @@ namespace physics
 		float3 pos = particles.position.get(part_index);
 
 		velocity = velocity + dt * F;
-
+		ray r(pos, normalize(velocity));
 		// collisions with vein cylinder
 		if (!(velocity.x == 0 && velocity.y == 0 && velocity.z == 0) &&
-			calculateSideCollisions(pos, ray(pos, normalize(velocity)), triangles, trianglesCount))
+			calculateSideCollisions(pos, r, triangles, trianglesCount))
 		{
+			// triangles move vector
+			float3 ds = 10*normalize(make_float3(velocity.x, 0, velocity.z));
+
 			// here velocity should be changed in every direction but triangle normal
 			// 0.8 to slow down after contact
 			velocity.x *= -0.8;
 			velocity.z *= -0.8;
+
+			// move triangle a bit
+			triangles.add(r.objectIndex, 0, ds);
+			triangles.add(r.objectIndex, 1, ds);
+			triangles.add(r.objectIndex, 2, ds);
 		}
 
 		particles.velocity.set(part_index, velocity);
 
 		// propagate velocities into positions
-		float3 dpos = dt * velocity - particles.position.get(part_index);
+		//float3 dpos = dt * velocity - particles.position.get(part_index);
 		particles.position.add(part_index, dt * velocity);
 
 		// zero forces
@@ -57,15 +65,14 @@ namespace physics
 		corpuscles.propagateForces(particles, part_index);
 	}
 
-
-	__device__ bool calculateSideCollisions(float3 p, ray& r, Triangles triangles, int trianglesCount)
+	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount)
 	{
 		for (int i = 0; i < trianglesCount; ++i)
 		{
 			const float EPS = 0.000001f;
-			float3 v1 = triangles.v1.get(i);
-			float3 v2 = triangles.v2.get(i);
-			float3 v3 = triangles.v3.get(i);
+			float3 v1 = triangles.get(i,0);
+			float3 v2 = triangles.get(i,1);
+			float3 v3 = triangles.get(i,2);
 
 			const float3 edge1 = v2 - v1;
 			const float3 edge2 = v3 - v1;
@@ -86,6 +93,7 @@ namespace physics
 			if (t > EPS)
 			{
 				r.t = r.t > t ? t : r.t;
+				r.objectIndex = i;
 				return true;
 			}
 		}

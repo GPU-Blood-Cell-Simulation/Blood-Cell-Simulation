@@ -156,7 +156,7 @@ namespace sim
 		}
 	}
 
-	void calculateNextFrame(Particles particles, Corpuscles corpuscles, Triangles triangles, UniformGrid& grid, unsigned int particleCount)
+	void calculateNextFrame(Particles particles, Corpuscles corpuscles, DeviceTriangles triangles, UniformGrid& grid, unsigned int particleCount, unsigned int trianglesCount)
 	{
 		// 1. calculate grid
 		grid.calculateGrid(particles);
@@ -170,6 +170,6 @@ namespace sim
 			grid.cellStarts, grid.cellEnds, particleCount);
 
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, triangles, PARTICLE_COUNT, triangles.size);
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, triangles, PARTICLE_COUNT, trianglesCount);
 	}
 }

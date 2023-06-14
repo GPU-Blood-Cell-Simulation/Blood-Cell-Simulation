@@ -5,6 +5,7 @@
 #include "inputcontroller.hpp"
 #include "light.hpp"
 #include "../defines.cuh"
+#include "../objects.cuh"
 
 #include <memory>
 #include <glm/mat4x4.hpp>
@@ -19,6 +20,7 @@ namespace graphics
 
 		explicit GLController(GLFWwindow* window);
 		void calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount);
+		void calculateTriangles(DeviceTriangles triangles);
 		void draw();
 		inline void handleInput()
 		{
@@ -58,6 +60,8 @@ namespace graphics
 		unsigned int gBuffer;
 
 		cudaGraphicsResource_t cudaOffsetResource;
+		cudaGraphicsResource_t cudaVeinVBOResource;
+		cudaGraphicsResource_t cudaVeinEBOResource;
 
 	};
 }

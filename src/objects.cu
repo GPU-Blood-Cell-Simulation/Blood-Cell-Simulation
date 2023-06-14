@@ -4,11 +4,12 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include <algorithm>
 
 // cudaVec3
 void cudaVec3::createVec(int n)
 {
-    size = n;
+	size = n;
 	// allocate 
 	HANDLE_ERROR(cudaMalloc((void**)&x, n * sizeof(float)));
 	HANDLE_ERROR(cudaMalloc((void**)&y, n * sizeof(float)));
@@ -22,14 +23,15 @@ void cudaVec3::freeVec()
 	cudaFree(z);
 }
 
-__global__ void calculateCenters(cudaVec3 v1, cudaVec3 v2, cudaVec3 v3, cudaVec3 centers, int size)
+
+__global__ void calculateCenters(cudaVec3 vertices, int* indices, cudaVec3 centers, int size)
 {
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 	if (id >= size)
 		return;
-	float3 vv1 = v1.get(id);
-	float3 vv2 = v2.get(id);
-	float3 vv3 = v3.get(id);
+	float3 vv1 = vertices.get(indices[3 * id]);
+	float3 vv2 = vertices.get(indices[3 * id + 1]);
+	float3 vv3 = vertices.get(indices[3 * id + 2]);
 
 	float x = (vv1.x + vv2.x + vv3.x) / 3;
 	float y = (vv1.y + vv2.y + vv3.y) / 3;
@@ -37,40 +39,40 @@ __global__ void calculateCenters(cudaVec3 v1, cudaVec3 v2, cudaVec3 v3, cudaVec3
 	centers.set(id, make_float3(x, y, z));
 }
 
-
-Triangles::Triangles(Mesh m)
+DeviceTriangles::DeviceTriangles(Mesh m)
 {
-	size = m.indices.size() / 3;
-	v1.createVec(size);
-	v2.createVec(size);
-	v3.createVec(size);
-	centers.createVec(size);
-	float* cpuBuffer = new float[9 * size];
+	// sizes
+	trianglesCount = m.indices.size() / 3;
+	verticesCount = m.vertices.size();
 
-	for (int i = 0; i < m.indices.size(); ++i)
-	{
-		int ind = m.indices[i];
-		cpuBuffer[((3 * i) % 9) * size + i / 3] = m.vertices[ind].Position.x;
-		cpuBuffer[((3 * i + 1) % 9) * size + i / 3] = m.vertices[ind].Position.y;
-		cpuBuffer[((3 * i + 2) % 9) * size + i / 3] = m.vertices[ind].Position.z;
-	}
+	// allocate
+	centers.createVec(trianglesCount);
+	vertices.createVec(verticesCount);
+	HANDLE_ERROR(cudaMalloc((void**)&indices, 3 * trianglesCount * sizeof(int)));
 
-	cudaMemcpy(v1.x, cpuBuffer, size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v1.y, &cpuBuffer[size], size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v1.z, &cpuBuffer[2 * size], size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v2.x, &cpuBuffer[3 * size], size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v2.y, &cpuBuffer[4 * size], size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v2.z, &cpuBuffer[5 * size], size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v3.x, &cpuBuffer[6 * size], size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v3.y, &cpuBuffer[7 * size], size*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(v3.z, &cpuBuffer[8 * size], size*sizeof(float), cudaMemcpyHostToDevice);
+	int* indiceMem = new int[3 * trianglesCount];
+	std::copy(m.indices.begin(), m.indices.end(), indiceMem);
 
+	float* vx = new float[verticesCount];
+	float* vy = new float[verticesCount];
+	float* vz = new float[verticesCount];
 
-	// translate our CUDA positions into Vertex offsets
-	int threadsPerBlock = size > 1024 ? 1024 : size;
-	int blocks = (size + threadsPerBlock - 1) / threadsPerBlock;
-	calculateCenters << <blocks, threadsPerBlock >> > (v1, v2, v3, centers, size);
+	int iter = 0;
+	std::for_each(m.vertices.begin(), m.vertices.end(), [&](auto& v) {
+		vx[iter] = v.Position.x;
+		vy[iter] = v.Position.y;
+		vz[iter++] = v.Position.z;
+		});
+
+	// copy
+	HANDLE_ERROR(cudaMemcpy(indices, indiceMem, 3 * trianglesCount * sizeof(int), cudaMemcpyHostToDevice));
+	HANDLE_ERROR(cudaMemcpy(vertices.x, vx, verticesCount * sizeof(float), cudaMemcpyHostToDevice));
+	HANDLE_ERROR(cudaMemcpy(vertices.y, vy, verticesCount * sizeof(float), cudaMemcpyHostToDevice));
+	HANDLE_ERROR(cudaMemcpy(vertices.z, vz, verticesCount * sizeof(float), cudaMemcpyHostToDevice));
+
+	// centers
+	int threadsPerBlock = trianglesCount > 1024 ? 1024 : trianglesCount;
+	int blocks = (trianglesCount + threadsPerBlock - 1) / threadsPerBlock;
+	calculateCenters << <blocks, threadsPerBlock >> > (vertices, indices, centers, trianglesCount);
 	cudaDeviceSynchronize();
-
-	delete[] cpuBuffer;
 }

@@ -72,11 +72,11 @@ int main()
     Particles particles(PARTICLE_COUNT);
     Corpuscles corpscles = Corpuscles(10);
     UniformGrid grid, triangleCentersGrid;
-    Triangles triangles = Triangles(glController.getGridMesh());
+    DeviceTriangles triangles = DeviceTriangles(glController.getGridMesh());
 
     sim::allocateMemory(grid, PARTICLE_COUNT);
-    sim::allocateMemory(triangleCentersGrid, triangles.size);
-    triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.size);
+    sim::allocateMemory(triangleCentersGrid, triangles.trianglesCount);
+    triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.trianglesCount);
 
     // Generate random positions
     sim::generateRandomPositions(particles, PARTICLE_COUNT);
@@ -91,11 +91,11 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(particles, corpscles, triangles, grid, PARTICLE_COUNT);
+        sim::calculateNextFrame(particles, corpscles, triangles, grid, PARTICLE_COUNT, triangles.trianglesCount);
 
         // Pass positions to OpenGL
         glController.calculateOffsets(particles.position.x, particles.position.y, particles.position.z, PARTICLE_COUNT);
-
+        //glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering
         

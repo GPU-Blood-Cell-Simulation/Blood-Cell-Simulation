@@ -42,6 +42,16 @@ unsigned int Model::getCudaOffsetBuffer()
     return cudaOffsetBuffer;
 }
 
+unsigned int Model::getTopVboBuffer()
+{
+    return meshes[0].getVBO();
+}
+
+unsigned int Model::getTopEboBuffer()
+{
+    return meshes[0].getEBO();
+}
+
 
 Mesh Model::getTopMesh()
 {

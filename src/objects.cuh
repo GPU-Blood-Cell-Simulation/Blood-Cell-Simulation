@@ -103,15 +103,41 @@ public:
 };
 
 
-struct Triangles
+struct DeviceTriangles
 {
-	cudaVec3 v1;
-	cudaVec3 v2;
-	cudaVec3 v3;
-	cudaVec3 centers;
-	int size;
+	int trianglesCount;
+	int verticesCount;
 
-	Triangles(Mesh m);
+	cudaVec3 vertices;
+	int* indices;
+	cudaVec3 centers;
+
+
+	DeviceTriangles(Mesh m);
+	
+	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
+	/// <returns></returns>
+	__device__ float3 get(int triangleIndex, int vertexIndex)
+	{
+		int index = indices[3 * triangleIndex + vertexIndex];
+		return vertices.get(index);
+	}
+
+	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
+	/// <returns></returns>
+	__device__ void set(int triangleIndex, int vertexIndex, float3 value)
+	{
+		int index = indices[3 * triangleIndex + vertexIndex];
+		vertices.set(index, value);
+	}
+
+	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
+	/// <returns></returns>
+	__device__ void add(int triangleIndex, int vertexIndex, float3 value)
+	{
+		int index = indices[3 * triangleIndex + vertexIndex];
+		vertices.add(index, value);
+	}
 };
 
 struct ray
@@ -119,10 +145,16 @@ struct ray
 	float3 origin;
 	float3 direction;
 	float t;
+
+	// rays may be used to determine intersection with objects
+	// so its easy to store object index inside ray
+	unsigned int objectIndex;
+
 	__device__ ray(float3 o, float3 d)
 	{
 		origin = o;
 		direction = d;
+		objectIndex = -1; // NONE
 		t = 1e10f; // INFINITY
 	}
 };
