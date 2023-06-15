@@ -159,9 +159,9 @@ namespace graphics
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinVBOResource, 0));
 
 		// map indices
-		unsigned int* eboPtr = (unsigned int*)mapResourceAndGetPointer(cudaVeinEBOResource);
+		/*unsigned int* eboPtr = (unsigned int*)mapResourceAndGetPointer(cudaVeinEBOResource);
 		cudaMemcpy(eboPtr, triangles.indices, triangles.trianglesCount * 3 * sizeof(unsigned int), cudaMemcpyDeviceToDevice);
-		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinEBOResource, 0));
+		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinEBOResource, 0));*/
 
 	}
 

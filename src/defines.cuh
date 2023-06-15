@@ -32,9 +32,9 @@ void __syncthreads();
 inline constexpr float windowWidth = 800;
 inline constexpr float windowHeight = 800;
 
-inline constexpr float width = 100.0f;
-inline constexpr float height = 100.0f;
-inline constexpr float depth = 100.0f;
+inline constexpr float width = 200.0f;
+inline constexpr float height = 200.0f;
+inline constexpr float depth = 200.0f;
 //constexpr float3 dimension {100,100,100};
 
 

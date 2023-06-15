@@ -95,7 +95,7 @@ int main()
 
         // Pass positions to OpenGL
         glController.calculateOffsets(particles.position.x, particles.position.y, particles.position.z, PARTICLE_COUNT);
-        //glController.calculateTriangles(triangles);
+        glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering
         
