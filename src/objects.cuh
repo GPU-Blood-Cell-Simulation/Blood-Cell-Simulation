@@ -153,8 +153,13 @@ struct ray
 	__device__ ray(float3 o, float3 d)
 	{
 		origin = o;
-		direction = d;
+		direction = normalize(d);
 		objectIndex = -1; // NONE
 		t = 1e10f; // INFINITY
+	}
+
+	__device__ float3 intersectionPoint()
+	{
+		return origin + t*direction;
 	}
 };
