@@ -14,6 +14,8 @@
 
 #include <curand.h>
 #include <curand_kernel.h>
+
+//#pragma float_control( except, on )
 //// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
 //extern "C"
 //{
