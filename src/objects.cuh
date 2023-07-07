@@ -144,17 +144,11 @@ struct ray
 {
 	float3 origin;
 	float3 direction;
-	float t;
+	float t = 1e10f;
 
 	// rays may be used to determine intersection with objects
 	// so its easy to store object index inside ray
-	unsigned int objectIndex;
+	unsigned int objectIndex = -1;
 
-	__device__ ray(float3 o, float3 d)
-	{
-		origin = o;
-		direction = d;
-		objectIndex = -1; // NONE
-		t = 1e10f; // INFINITY
-	}
+	__device__ ray(float3 origin, float3 direction) : origin(origin), direction(direction) {}
 };

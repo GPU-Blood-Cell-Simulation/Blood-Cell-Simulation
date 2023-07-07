@@ -194,7 +194,6 @@ namespace graphics
 		}
 
 		cylinderSolidColorShader->use();
-		cylinderSolidColorShader->setMatrix("model", model);
 		cylinderSolidColorShader->setMatrix("view", camera.getView());
 		cylinderSolidColorShader->setMatrix("projection", projection);
 

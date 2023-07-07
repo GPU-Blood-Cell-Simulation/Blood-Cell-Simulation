@@ -24,20 +24,29 @@ namespace physics
 		if (part_index >= particleCount)
 			return;
 
+
 		// propagate force into velocities
 		float3 F = particles.force.get(part_index);
 		float3 velocity = particles.velocity.get(part_index);
 		float3 pos = particles.position.get(part_index);
 
+		// upper and lower bound
+		if (pos.y >= 0.9f * height)
+			velocity.y -= 5;
+
+		if (pos.y <= 0.1f * height)
+			velocity.y += 5;
+
 		velocity = velocity + dt * F;
 		ray r(pos, normalize(velocity));
 		// collisions with vein cylinder
+		// TODO: this is a naive (no grid) implementation
 		if (
-			//!(velocity.x == 0 && velocity.y == 0 && velocity.z == 0) &&
-			calculateSideCollisions(pos, r, triangles, trianglesCount))
+			calculateSideCollisions(pos, r, triangles, trianglesCount) &&
+			length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector
-			float3 ds = 1 * normalize(make_float3(velocity.x, 0, velocity.z));
+			float3 ds = 2 * normalize(make_float3(velocity.x, 0, velocity.z));
 
 			// here velocity should be changed in every direction but triangle normal
 			// 0.8 to slow down after contact
@@ -52,15 +61,7 @@ namespace physics
 
 		particles.velocity.set(part_index, velocity);
 
-		// upper and lower bound
-		/*if (pos.y >= height)
-			velocity.y -= 30;
-
-		if (pos.y <= 0)
-			velocity.y += 30;*/
-
 		// propagate velocities into positions
-		//float3 dpos = dt * velocity - particles.position.get(part_index);
 		particles.position.add(part_index, dt * velocity);
 
 		// zero forces
@@ -77,7 +78,7 @@ namespace physics
 	{
 		for (int i = 0; i < trianglesCount; ++i)
 		{
-			const float EPS = 0.000001f;
+			constexpr float EPS = 0.000001f;
 			float3 v1 = triangles.get(i,0);
 			float3 v2 = triangles.get(i,1);
 			float3 v3 = triangles.get(i,2);
@@ -100,46 +101,12 @@ namespace physics
 			const float t = f * dot(edge2, q);
 			if (t > EPS)
 			{
-				r.t = r.t > t ? t : r.t;
+				r.t = t;
 				r.objectIndex = i;
 				return true;
 			}
 		}
 		return false;
-
-		//for (int i = 0; i < trianglesCount; ++i)
-		//{
-		//	const float EPS = 0.000001f;
-		//	float3 v1 = triangles.get(i, 0);
-		//	float3 v2 = triangles.get(i, 1);
-		//	float3 v3 = triangles.get(i, 2);
-		//	const float3 edge2 = v2 - v1;
-		//	const float3 edge1 = v3 - v1;
-		//	const float3 normal = -1 * normalize(cross(edge1, edge2));
-
-		//	/*const float dist = dot(normal, p - v1);
-		//	if (dist > 10.0f)
-		//		continue;*/
-
-		//	const float a = -1 * dot(r.direction, normal);
-		//	if (a > -EPS && a < EPS)
-		//		continue; // ray parallel to triangle 
-		//	const float3 s = r.origin - v1;
-		//	const float f = 1 / a;
-		//	const float t = f * dot(s, normal);
-		//	if (t < EPS)
-		//		continue;
-		//	const float3 q = cross(s, r.direction);
-		//	const float u = f * dot(edge2, q);
-		//	const float v = -1 * f * dot(edge1, q);
-		//	if (v < 0 || u + v > 1)
-		//		continue;
-
-		//	r.t = r.t > t ? t : r.t;
-		//	r.objectIndex = i;
-		//	return true;
-		//}
-		//return false;
 	}
 }
 	
