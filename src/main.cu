@@ -23,11 +23,6 @@
 
 int main()
 {
-    unsigned int* cellIds = 0;
-    unsigned int* particleIds = 0;
-    unsigned int* cellStarts = 0;
-    unsigned int* cellEnds = 0;
-
     // Choose which GPU to run on, change this on a multi-GPU system.
     HANDLE_ERROR(cudaSetDevice(0));
 

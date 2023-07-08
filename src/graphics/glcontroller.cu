@@ -30,6 +30,7 @@ namespace graphics
 		devCudaOffsetBuffer[3 *id] = positionX[id];
 		devCudaOffsetBuffer[3 * id + 1] = positionY[id];
 		devCudaOffsetBuffer[3 * id + 2] = positionZ[id];
+
 	}
 
 	graphics::GLController::GLController(GLFWwindow* window)

@@ -29,8 +29,8 @@ void __syncthreads();
 #endif
 
 
-inline constexpr float windowWidth = 800;
-inline constexpr float windowHeight = 800;
+inline constexpr int windowWidth = 800;
+inline constexpr int windowHeight = 800;
 
 inline constexpr float width = 100.0f;
 inline constexpr float height = 100.0f;
