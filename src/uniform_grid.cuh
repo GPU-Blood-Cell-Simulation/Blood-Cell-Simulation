@@ -13,4 +13,5 @@ public:
 	~UniformGrid();
 
 	void calculateGrid(const Particles& particles);
+	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);
 };

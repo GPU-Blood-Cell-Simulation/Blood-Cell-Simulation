@@ -31,8 +31,9 @@ public:
     std::vector<Texture> textures;
 
     Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures);
-    void draw(const std::shared_ptr<Shader> shader) const;
+    void draw(const std::shared_ptr<Shader> shader, bool instanced = true) const;
     unsigned int getVBO();
+    unsigned int getEBO();
     void setVertexOffsetAttribute();
 private:
     //  render data

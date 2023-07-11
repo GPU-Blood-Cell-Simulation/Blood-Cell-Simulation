@@ -16,7 +16,6 @@
 #include "cudaGL.h"
 #include "cuda_gl_interop.h"
 
-
 namespace graphics
 {
 	__global__ void calculateOffsetsKernel(float* devCudaOffsetBuffer, float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
@@ -33,6 +32,34 @@ namespace graphics
 
 	}
 
+	__global__ void calculateVerticesKernel(float* devVeinVBOBuffer, cudaVec3 vertices, int verticesCount)
+	{
+		int id = blockIdx.x * blockDim.x + threadIdx.x;
+		if (id >= verticesCount)
+			return;
+
+		// Insert any debug position changes here
+
+		float3 v = vertices.get(id);
+		devVeinVBOBuffer[8 * id] = v.x;
+		devVeinVBOBuffer[8 * id + 1] = v.y;
+		devVeinVBOBuffer[8 * id + 2] = v.z;
+		devVeinVBOBuffer[8 * id + 3] = devVeinVBOBuffer[8 * id + 4] = devVeinVBOBuffer[8 * id + 5] = 0;
+		devVeinVBOBuffer[8 * id + 6] = devVeinVBOBuffer[8 * id + 7] = 0;
+	}
+
+	void* mapResourceAndGetPointer(cudaGraphicsResource_t resource)
+	{
+		// get CUDA a pointer to openGL buffer
+		void* resourceBuffer = 0;
+		size_t numBytes;
+
+		HANDLE_ERROR(cudaGraphicsMapResources(1, &resource, 0));
+		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&resourceBuffer, &numBytes, resource));
+		return resourceBuffer;
+	}
+
+
 	graphics::GLController::GLController(GLFWwindow* window)
 	{
 		// Set up GLFW to work with inputController
@@ -41,6 +68,8 @@ namespace graphics
 
 		// Register OpenGL buffer in CUDA
 		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaOffsetResource, particleModel.getCudaOffsetBuffer(), cudaGraphicsRegisterFlagsNone));
+		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinVBOResource, veinModel.getTopVboBuffer(), cudaGraphicsRegisterFlagsNone));
+		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinEBOResource, veinModel.getTopEboBuffer(), cudaGraphicsRegisterFlagsNone));
 		
 		// Create a directional light
 		directionalLight = DirLight
@@ -102,11 +131,15 @@ namespace graphics
 	void graphics::GLController::calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
 	{
 		// get CUDA a pointer to openGL buffer
-		float* devCudaOffsetBuffer = 0;
+		/*float* devCudaOffsetBuffer = 0;
 		size_t numBytes;
 
 		HANDLE_ERROR(cudaGraphicsMapResources(1, &cudaOffsetResource, 0));
-		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devCudaOffsetBuffer, &numBytes, cudaOffsetResource));
+		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devCudaOffsetBuffer, &numBytes, cudaOffsetResource));*/
+
+
+		// get CUDA a pointer to openGL buffer
+		float* devCudaOffsetBuffer = (float*)mapResourceAndGetPointer(cudaOffsetResource);
 		
 		// translate our CUDA positions into Vertex offsets
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
@@ -116,23 +149,26 @@ namespace graphics
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
 	}
 
-	glm::mat4 scaleCylinderToCenter(glm::mat4 model, glm::vec3 scale)
+	void graphics::GLController::calculateTriangles(DeviceTriangles triangles)
 	{
-		return glm::scale(
-				glm::translate(
-					glm::translate(
-						glm::scale(
-							model, 
-							glm::vec3(2,2,2)), 
-						glm::vec3(-cylinderRadius, -cylinderHeight / 2, -cylinderRadius)
-					), 
-					glm::vec3(width / 2, -height / 2, depth/2)
-				), 
-				scale);
+		// map vertices
+		float* vboPtr = (float*)mapResourceAndGetPointer(cudaVeinVBOResource);
+		int threadsPerBlock = triangles.verticesCount > 1024 ? 1024 : triangles.verticesCount;
+		int blocks = (triangles.verticesCount + threadsPerBlock - 1) / threadsPerBlock;
+		calculateVerticesKernel << <blocks, threadsPerBlock >> > (vboPtr, triangles.vertices, triangles.verticesCount);
+		cudaDeviceSynchronize();
+		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinVBOResource, 0));
+
+		// map indices
+		/*unsigned int* eboPtr = (unsigned int*)mapResourceAndGetPointer(cudaVeinEBOResource);
+		cudaMemcpy(eboPtr, triangles.indices, triangles.trianglesCount * 3 * sizeof(unsigned int), cudaMemcpyDeviceToDevice);
+		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinEBOResource, 0));*/
+
 	}
 
 	void graphics::GLController::draw()
 	{
+
 		if constexpr (!useLighting) // solidcolor
 		{
 			solidColorShader->use();
@@ -159,11 +195,12 @@ namespace graphics
 		}
 
 		cylinderSolidColorShader->use();
-		cylinderSolidColorShader->setMatrix("model", scaleCylinderToCenter(model, glm::vec3(cylinderScaleX, cylinderScaleY, cylinderScaleZ)));
 		cylinderSolidColorShader->setMatrix("view", camera.getView());
 		cylinderSolidColorShader->setMatrix("projection", projection);
 
-		veinModel.draw(cylinderSolidColorShader);
+		glCullFace(GL_FRONT);
+		veinModel.draw(cylinderSolidColorShader, false);
+		glCullFace(GL_BACK);
 
 		return;
 

@@ -11,10 +11,13 @@ class Model
 {
 public:
     Model(const char* path);
+    Model(Mesh mesh);
 
-    void draw(const std::shared_ptr<Shader> shader) const;
+    void draw(const std::shared_ptr<Shader> shader, bool instanced = true) const;
     unsigned int getCudaOffsetBuffer();
-
+    Mesh getTopMesh();
+    unsigned int getTopVboBuffer();
+    unsigned int getTopEboBuffer();
 protected:
     // Array of translation vectors for each instance - cuda writes to this
     unsigned int cudaOffsetBuffer;

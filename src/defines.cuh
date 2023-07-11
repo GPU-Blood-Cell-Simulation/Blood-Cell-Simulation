@@ -32,9 +32,9 @@ void __syncthreads();
 inline constexpr int windowWidth = 800;
 inline constexpr int windowHeight = 800;
 
-inline constexpr float width = 100.0f;
-inline constexpr float height = 100.0f;
-inline constexpr float depth = 100.0f;
+inline constexpr float width = 200.0f;
+inline constexpr float height = 200.0f;
+inline constexpr float depth = 200.0f;
 //constexpr float3 dimension {100,100,100};
 
 
@@ -43,7 +43,7 @@ inline constexpr float depth = 100.0f;
 inline constexpr float cylinderRadius = 1.0f;
 inline constexpr float cylinderHeight = 5.27716f; // scale = glm::vec3(width / 2, 2 * width, width / 2);
 inline constexpr float cylinderScaleX = width / 2;
-inline constexpr float cylinderScaleY = 2 * height;
+inline constexpr float cylinderScaleY = height / 2;
 inline constexpr float cylinderScaleZ = depth / 2;
 
 inline constexpr int cellWidth = 20;

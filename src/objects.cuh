@@ -5,6 +5,7 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include "graphics/mesh.hpp"
 
 
 struct cudaVec3
@@ -66,7 +67,7 @@ class Corpuscles
 	float L0;
 
 public:
-	Corpuscles(int initialLength = 0.5f){
+	Corpuscles(float initialLength = 0.5f){
 		L0 = initialLength;
 	}
 
@@ -99,4 +100,55 @@ public:
 			particles.force.set(2 * index + 1, make_float3(0, 0, 0));
 		}
 	}
+};
+
+
+struct DeviceTriangles
+{
+	int trianglesCount;
+	int verticesCount;
+
+	cudaVec3 vertices;
+	int* indices;
+	cudaVec3 centers;
+
+
+	DeviceTriangles(Mesh m);
+	
+	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
+	/// <returns></returns>
+	__device__ float3 get(int triangleIndex, int vertexIndex)
+	{
+		int index = indices[3 * triangleIndex + vertexIndex];
+		return vertices.get(index);
+	}
+
+	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
+	/// <returns></returns>
+	__device__ void set(int triangleIndex, int vertexIndex, float3 value)
+	{
+		int index = indices[3 * triangleIndex + vertexIndex];
+		vertices.set(index, value);
+	}
+
+	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
+	/// <returns></returns>
+	__device__ void add(int triangleIndex, int vertexIndex, float3 value)
+	{
+		int index = indices[3 * triangleIndex + vertexIndex];
+		vertices.add(index, value);
+	}
+};
+
+struct ray
+{
+	float3 origin;
+	float3 direction;
+	float t = 1e10f;
+
+	// rays may be used to determine intersection with objects
+	// so its easy to store object index inside ray
+	unsigned int objectIndex = -1;
+
+	__device__ ray(float3 origin, float3 direction) : origin(origin), direction(direction) {}
 };

@@ -7,6 +7,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+
 namespace sim
 {
 
@@ -15,6 +16,17 @@ namespace sim
 	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const int particleCount);
 
 	__global__ void generateInitialPositionsKernel(Particles particles, Corpuscles corpuscles, float3 dims, int particleCount);
+
+
+	// Allocate GPU buffers for the position vectors
+	void allocateMemory(UniformGrid& grid, const unsigned int particleCount)
+	{
+		HANDLE_ERROR(cudaMalloc((void**)&grid.cellIds, particleCount * sizeof(unsigned int)));
+		HANDLE_ERROR(cudaMalloc((void**)&grid.particleIds, particleCount * sizeof(unsigned int)));
+
+		HANDLE_ERROR(cudaMalloc((void**)&grid.cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+		HANDLE_ERROR(cudaMalloc((void**)&grid.cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+	}
 
 	// initial position approach
 	// arg_0 should be a^2 * arg_1
@@ -144,19 +156,20 @@ namespace sim
 		}
 	}
 
-
-	void calculateNextFrame(Particles particles, Corpuscles corpuscles, UniformGrid& grid, unsigned int particleCount)
+	void calculateNextFrame(Particles particles, Corpuscles corpuscles, DeviceTriangles triangles, UniformGrid& grid, unsigned int particleCount, unsigned int trianglesCount)
 	{
 		// 1. calculate grid
 		grid.calculateGrid(particles);
 
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
+		
 		// 2. TODO: detections
 
 		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, grid.cellIds, grid.particleIds,
 			grid.cellStarts, grid.cellEnds, particleCount);
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, PARTICLE_COUNT);
+
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, triangles, PARTICLE_COUNT, trianglesCount);
 	}
 }

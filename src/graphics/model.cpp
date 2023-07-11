@@ -14,15 +14,48 @@ Model::Model(const char* path)
     loadModel(path);
 }
 
-void Model::draw(const std::shared_ptr<Shader> shader) const
+
+Model::Model(Mesh mesh)
+{
+    meshes.push_back(mesh);
+
+    // Set up offset buffer for the model
+    glGenBuffers(1, &cudaOffsetBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
+    glBufferData(GL_ARRAY_BUFFER, PARTICLE_COUNT * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+
+    // Set up vertex attrubute
+    for (Mesh& mesh : meshes)
+    {
+        mesh.setVertexOffsetAttribute();
+    }
+}
+
+void Model::draw(const std::shared_ptr<Shader> shader, bool instanced) const
 {
     for (const Mesh& mesh : meshes)
-        mesh.draw(shader);
+        mesh.draw(shader, instanced);
 }
 
 unsigned int Model::getCudaOffsetBuffer()
 {
     return cudaOffsetBuffer;
+}
+
+unsigned int Model::getTopVboBuffer()
+{
+    return meshes[0].getVBO();
+}
+
+unsigned int Model::getTopEboBuffer()
+{
+    return meshes[0].getEBO();
+}
+
+
+Mesh Model::getTopMesh()
+{
+    return meshes[0];
 }
 
 

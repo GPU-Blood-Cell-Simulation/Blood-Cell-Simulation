@@ -5,10 +5,12 @@
 #include "inputcontroller.hpp"
 #include "light.hpp"
 #include "../defines.cuh"
+#include "../objects.cuh"
 
 #include <memory>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include "cylindermesh.hpp"
 
 namespace graphics
 {
@@ -18,10 +20,16 @@ namespace graphics
 
 		explicit GLController(GLFWwindow* window);
 		void calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount);
+		void calculateTriangles(DeviceTriangles triangles);
 		void draw();
 		inline void handleInput()
 		{
 			inputController.adjustParametersUsingInput(camera);
+		}
+
+		Mesh getGridMesh()
+		{
+			return veinModel.getTopMesh();
 		}
 
 	private:
@@ -35,7 +43,8 @@ namespace graphics
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), static_cast<float>(windowWidth) / windowHeight, 0.1f, depth * 10);
 
 		Model particleModel = Model("Models/Earth/low_poly_earth.fbx");
-    Model veinModel = Model("Models/Cylinder/cylinder.obj");
+		Model veinModel = Model(CylinderMesh(glm::vec3(width / 2, height / 2, depth / 2), cylinderScaleY * cylinderHeight,
+			cylinderScaleX * cylinderRadius, 100, 30).CreateMesh()); //Model("Models/Cylinder/cylinder.obj");
 
 		Camera camera;
 		InputController inputController;
@@ -51,6 +60,8 @@ namespace graphics
 		unsigned int gBuffer;
 
 		cudaGraphicsResource_t cudaOffsetResource;
+		cudaGraphicsResource_t cudaVeinVBOResource;
+		cudaGraphicsResource_t cudaVeinEBOResource;
 
 	};
 }
