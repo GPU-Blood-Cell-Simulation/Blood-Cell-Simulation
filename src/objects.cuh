@@ -67,7 +67,7 @@ class Corpuscles
 	float L0;
 
 public:
-	Corpuscles(int initialLength = 0.5f){
+	Corpuscles(float initialLength = 0.5f){
 		L0 = initialLength;
 	}
 

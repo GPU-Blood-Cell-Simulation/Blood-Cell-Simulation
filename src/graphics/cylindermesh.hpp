@@ -10,24 +10,18 @@ class CylinderMesh
 	float radius, height;
 	unsigned int vLayers, hLayers;
 	glm::vec3 origin;
-	const float PI = 3.14159f;
 public:
 	CylinderMesh(glm::vec3 origin, float height, float radius,
-		unsigned int verticalLayers, unsigned int horizontalLayers)
+		unsigned int verticalLayers, unsigned int horizontalLayers) :
+		origin(origin), radius(radius), height(height), vLayers(verticalLayers), hLayers(horizontalLayers)
 	{
-		this->origin = origin;
-		this->radius = radius;
-		this->height = height;
-		vLayers = verticalLayers;		// |
-		hLayers = horizontalLayers;		// _
-
 		float triangleH = height / vLayers;
-		float radianBatch = 2 * PI / hLayers;
+		float radianBatch = 2 * glm::pi<float>() / hLayers;
 		float triangleBase = radianBatch * radius;
-		for (int i = 0; i < vLayers; ++i)
+		for (unsigned int i = 0; i < vLayers; ++i)
 		{
 			float h = i * triangleH - height / 2;
-			for (int j = 0; j < hLayers; ++j)
+			for (unsigned int j = 0; j < hLayers; ++j)
 			{
 				glm::vec3 position = glm::vec3(radius * cos(j * radianBatch),
 					h , radius * sin(j * radianBatch)) + origin;
