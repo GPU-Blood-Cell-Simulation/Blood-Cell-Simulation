@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PHYSICS_H
+#define PHYSICS_H
+
 #include "objects.cuh"
 #include "utilities.cuh"
 #include <cmath>
@@ -109,4 +111,5 @@ namespace physics
 		return false;
 	}
 }
-	
+
+#endif
