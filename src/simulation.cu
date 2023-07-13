@@ -16,8 +16,6 @@ namespace sim
 
 	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const int particleCount);
 
-	__global__ void generateInitialPositionsKernel(Particles particles, Corpuscles corpuscles, float3 dims, int particleCount);
-
 
 	// Allocate GPU buffers for the position vectors
 	void allocateMemory(UniformGrid& grid, const unsigned int particleCount)
@@ -29,25 +27,6 @@ namespace sim
 		HANDLE_ERROR(cudaMalloc((void**)&grid.cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
 	}
 
-	// initial position approach
-	// arg_0 should be a^2 * arg_1
-	// but it is no necessary
-	void generateInitialPositionsInLayers(Particles particles, Corpuscles corspuscles, const int particleCount, const int layersCount)
-	{
-		int modelParticleCount = 2; /* cell model particles count, 2 for dipole */
-		int corpusclesPerLayer = particleCount / layersCount / modelParticleCount;
-		int layerDim = sqrt(corpusclesPerLayer); // assuming layer is a square
-
-		//real_particles_count = layerDim * layerDim * layersCount;
-
-		int threadsPerBlockDim = std::min(layerDim, 32);
-		int blDim = std::ceil(float(corpusclesPerLayer) / threadsPerBlockDim);
-		dim3 blocks = dim3(blDim, blDim, layersCount);
-		dim3 threads = dim3(threadsPerBlockDim, threadsPerBlockDim, 1);
-
-		generateInitialPositionsKernel << <blocks, threads >> > (particles, corspuscles,
-			make_float3(width, height, float(layersCount * depth) / 100), particleCount);
-	}
 
 	// Generate initial positions and velocities of particles
 	void generateRandomPositions(Particles particles, const int particleCount)
@@ -91,26 +70,6 @@ namespace sim
 		p.force.x[id] = 0;
 		p.force.y[id] = 0;
 		p.force.z[id] = 0;
-	}
-
-
-	__global__ void generateInitialPositionsKernel(Particles particles, Corpuscles corpuscles, float3 dims, int particleCount)
-	{
-		int thCnt = blockDim.x * blockDim.y;
-		int blCnt2d = gridDim.x * gridDim.y;
-
-		int tid = blockIdx.z * blCnt2d * thCnt + blockIdx.y * gridDim.x * thCnt
-			+ blockIdx.x * thCnt + threadIdx.y * blockDim.x + threadIdx.x;
-
-		float x = float((blockIdx.x * blockDim.x + threadIdx.x) * dims.x) / (blockDim.x * gridDim.x);
-		float y = float((blockIdx.y * blockDim.y + threadIdx.y) * dims.y) / (blockDim.y * gridDim.y);
-		float z = float((blockIdx.z * blockDim.z + threadIdx.z) * dims.z * blockDim.z) / (blockDim.z * gridDim.z * 100);
-
-		//printf("id: %d, x: %f, y: %f, z: %f\n", tid, x, y, z);
-		if (x <= dims.x && y <= dims.y)
-		{
-			corpuscles.setCorpuscle(tid, make_float3(x, y, z), particles, particleCount);
-		}
 	}
 
 
