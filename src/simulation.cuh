@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SIMULATION_H
+#define SIMULATION_H
 
 #include <curand.h>
 #include <curand_kernel.h>
@@ -13,3 +14,5 @@ namespace sim
 
 	void calculateNextFrame(Particles p, Corpuscles c, DeviceTriangles triangles, UniformGrid& grid, unsigned int particleCount, unsigned int trianglesCount);
 }
+
+#endif
