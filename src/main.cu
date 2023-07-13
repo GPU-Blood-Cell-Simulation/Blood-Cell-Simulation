@@ -9,6 +9,9 @@
 #include "graphics/glcontroller.cuh"
 #include "uniform_grid.cuh"
 
+#include "BloodCell/BloodCells.cuh"
+#include "BloodCell/BloodCellsFactory.h"
+
 #include <GLFW/glfw3.h>
 #include <sstream>
 
@@ -66,8 +69,13 @@ int main()
     graphics::GLController glController(window);
 
     // Allocate memory
-    Particles particles(PARTICLE_COUNT);
-    Corpuscles corpscles = Corpuscles(10);
+
+    // Creating dipols
+    BloodCellsFactory cellsFactory(PARTICLE_COUNT/2, 2);
+    cellsFactory.AddSpring(0, 1, 10);
+
+    BloodCells cells = cellsFactory.CreateBloodCells();
+
     UniformGrid grid, triangleCentersGrid;
     DeviceTriangles triangles = DeviceTriangles(glController.getGridMesh());
 
@@ -76,7 +84,7 @@ int main()
     triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.trianglesCount);
 
     // Generate random positions
-    sim::generateRandomPositions(particles, PARTICLE_COUNT);
+    sim::generateRandomPositions(cells.particles, PARTICLE_COUNT);
     //sim::generateInitialPositionsInLayers(particles, corpscles, PARTICLE_COUNT, 3);
 
     // MAIN LOOP HERE - probably dictated by glfw
@@ -88,10 +96,13 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(particles, corpscles, triangles, grid, PARTICLE_COUNT, triangles.trianglesCount);
+        sim::calculateNextFrame(cells, triangles, grid, triangles.trianglesCount);
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(particles.position.x, particles.position.y, particles.position.z, PARTICLE_COUNT);
+        glController.calculateOffsets(cells.particles.position.x,
+                                      cells.particles.position.y,
+                                      cells.particles.position.z,
+                                      cells.particlesCnt);
         glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering
@@ -124,7 +135,7 @@ int main()
     }
 
     // Cleanup
-    particles.freeParticles();
+    cells.Deallocate();
 
     glfwTerminate();
 

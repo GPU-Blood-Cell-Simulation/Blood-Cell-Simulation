@@ -1,6 +1,7 @@
 #include "simulation.cuh"
 #include "defines.cuh"
 #include "physics.cuh"
+
 #include <cmath>
 #include <ctime>
 
@@ -113,15 +114,15 @@ namespace sim
 	}
 
 
-	__global__ void detectCollisions(Particles particles, Corpuscles corpuscls, unsigned int* cellIds, unsigned int* particleIds,
-		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+	__global__ void detectCollisions(BloodCells cells, unsigned int* cellIds, unsigned int* particleIds,
+		unsigned int* cellStarts, unsigned int* cellEnds)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
-		if (id >= particleCount)
+		if (id >= cells.particlesCnt)
 			return;
 
 		int particleId = particleIds[id];
-		float3 p1 = particles.position.get(particleId);
+		float3 p1 = cells.particles.position.get(particleId);
 
 
 		// Naive implementation
@@ -147,29 +148,30 @@ namespace sim
 			if (particleId == secondParticleId)
 				continue;
 
-			float3 p2 = particles.position.get(secondParticleId);
+			float3 p2 = cells.particles.position.get(secondParticleId);
 			if (length(p1 - p2) <= 5.0f)
 			{
 				// Uncoalesced writes - area for optimization
-				particles.force.set(particleId, 50.0f * normalize(p1 - p2));
+				cells.particles.force.set(particleId, 50.0f * normalize(p1 - p2));
 			}
 		}
 	}
 
-	void calculateNextFrame(Particles particles, Corpuscles corpuscles, DeviceTriangles triangles, UniformGrid& grid, unsigned int particleCount, unsigned int trianglesCount)
+	void calculateNextFrame(BloodCells cells, DeviceTriangles triangles, UniformGrid& grid, unsigned int trianglesCount)
 	{
 		// 1. calculate grid
-		grid.calculateGrid(particles);
+		grid.calculateGrid(cells.particles);
 
-		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
-		int blDim = std::ceil(float(particleCount) / threadsPerBlock);
+		int threadsPerBlock = cells.particlesCnt > 1024 ? 1024 : cells.particlesCnt;
+		int blDim = std::ceil(float(cells.particlesCnt) / threadsPerBlock);
 		
 		// 2. TODO: detections
 
-		detectCollisions << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, grid.cellIds, grid.particleIds,
-			grid.cellStarts, grid.cellEnds, particleCount);
+		detectCollisions << < dim3(blDim), threadsPerBlock >> > (cells, grid.cellIds, grid.particleIds,
+			grid.cellStarts, grid.cellEnds);
 
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (particles, corpuscles, triangles, PARTICLE_COUNT, trianglesCount);
+		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (cells, triangles, trianglesCount);
+		cells.PropagateForces();
 	}
 }

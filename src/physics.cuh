@@ -11,26 +11,21 @@
 
 namespace physics
 {
-	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, DeviceTriangles triangles, int particleCount, int trianglesCount);
+	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int trianglesCount);
 
 	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount);
 
-	__global__ void propagateParticles(Particles particles, Corpuscles corpuscles, DeviceTriangles triangles, int particleCount, int trianglesCount)
+	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int trianglesCount)
 	{
-		// depends on which cell model we use, for dipole 2
-		int cell_size = 2;
-
 		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
-		int cell_index = part_index / cell_size;
 
-		if (part_index >= particleCount)
+		if (part_index >= cells.particlesCnt)
 			return;
 
-
 		// propagate force into velocities
-		float3 F = particles.force.get(part_index);
-		float3 velocity = particles.velocity.get(part_index);
-		float3 pos = particles.position.get(part_index);
+		float3 F = cells.particles.force.get(part_index);
+		float3 velocity = cells.particles.velocity.get(part_index);
+		float3 pos = cells.particles.position.get(part_index);
 
 		// upper and lower bound
 		if (pos.y >= 0.9f * height)
@@ -61,19 +56,13 @@ namespace physics
 			triangles.add(r.objectIndex, 2, ds);
 		}
 
-		particles.velocity.set(part_index, velocity);
+		cells.particles.velocity.set(part_index, velocity);
 
 		// propagate velocities into positions
-		particles.position.add(part_index, dt * velocity);
+		cells.particles.position.add(part_index, dt * velocity);
 
 		// zero forces
-		particles.force.set(part_index, make_float3(0, 0, 0));
-
-
-		/// must sync here probably
-		__syncthreads();
-
-		corpuscles.propagateForces(particles, part_index);
+		cells.particles.force.set(part_index, make_float3(0, 0, 0));
 	}
 
 	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount)
