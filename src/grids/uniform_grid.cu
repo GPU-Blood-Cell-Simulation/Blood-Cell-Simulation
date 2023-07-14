@@ -1,6 +1,6 @@
 #include "uniform_grid.cuh"
-#include "defines.hpp"
-#include "utilities/cuda_handle_error.cuh"
+#include "../defines.hpp"
+#include "../utilities/cuda_handle_error.cuh"
 
 #include <cstdio>
 #include <cstdlib>
@@ -73,10 +73,10 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
 #pragma endregion
 
 // Allocate GPU buffers for the index buffers
-UniformGrid::UniformGrid()
+UniformGrid::UniformGrid(const unsigned int particleCount)
 {
-	HANDLE_ERROR(cudaMalloc((void**)&cellIds, PARTICLE_COUNT * sizeof(unsigned int)));
-	HANDLE_ERROR(cudaMalloc((void**)&particleIds, PARTICLE_COUNT * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&cellIds, particleCount * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&particleIds, particleCount * sizeof(unsigned int)));
 
 	HANDLE_ERROR(cudaMalloc((void**)&cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
 	HANDLE_ERROR(cudaMalloc((void**)&cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));

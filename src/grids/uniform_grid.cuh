@@ -1,6 +1,6 @@
 #pragma once
 
-#include "blood_cell_structures/particles.cuh"
+#include "../blood_cell_structures/particles.cuh"
 
 class UniformGrid
 {
@@ -11,7 +11,7 @@ public:
 	unsigned int* cellStarts = 0;
 	unsigned int* cellEnds = 0;
 
-	UniformGrid();
+	UniformGrid(const unsigned int particleCount);
 	UniformGrid(const UniformGrid& other);
 	~UniformGrid();
 

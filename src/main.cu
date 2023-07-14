@@ -6,9 +6,9 @@
 #include "defines.hpp"
 #include "utilities/cuda_handle_error.cuh"
 
-#include "simulation.cuh"
+#include "simulation/simulation.cuh"
 #include "graphics/glcontroller.cuh"
-#include "uniform_grid.cuh"
+#include "grids/uniform_grid.cuh"
 
 #include "blood_cell_structures/blood_cells.cuh"
 #include "blood_cell_structures/blood_cells_factory.hpp"
@@ -42,18 +42,17 @@ void programLoop(GLFWwindow* window)
 
     BloodCells cells = cellsFactory.CreateBloodCells();
 
-    UniformGrid grid, triangleCentersGrid;
     DeviceTriangles triangles(glController.getGridMesh());
 
-    sim::allocateMemory(grid, PARTICLE_COUNT);
-    sim::allocateMemory(triangleCentersGrid, triangles.triangleCount);
+    UniformGrid grid(PARTICLE_COUNT), triangleCentersGrid(triangles.triangleCount);
+
     triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
 
     // Generate random positions
     sim::generateRandomPositions(cells.particles, PARTICLE_COUNT);
     //sim::generateInitialPositionsInLayers(particles, corpscles, PARTICLE_COUNT, 3);
 
-    // MAIN LOOP HERE - probably dictated by glfw
+    // MAIN LOOP HERE - dictated by glfw
 
     while (!glfwWindowShouldClose(window))
     {

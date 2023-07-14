@@ -1,12 +1,12 @@
 #pragma once
+#include "../defines.hpp"
+#include "../utilities/cuda_vec3.cuh"
+#include "../graphics/mesh.hpp"
+
 #include <vector>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-
-#include "../defines.hpp"
-#include "../utilities/cuda_vec3.cuh"
-#include "../graphics/mesh.hpp"
 
 class DeviceTriangles
 {
