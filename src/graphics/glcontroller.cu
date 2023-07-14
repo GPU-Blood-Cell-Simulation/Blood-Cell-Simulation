@@ -16,6 +16,12 @@
 #include "cudaGL.h"
 #include "cuda_gl_interop.h"
 
+#include "../utilities/cuda_handle_error.cuh"
+#include "../utilities/cuda_vec3.cuh"
+
+#include "../blood_cell_structures/device_triangles.cuh"
+
+
 namespace graphics
 {
 	__global__ void calculateOffsetsKernel(float* devCudaOffsetBuffer, float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
@@ -32,10 +38,10 @@ namespace graphics
 
 	}
 
-	__global__ void calculateVerticesKernel(float* devVeinVBOBuffer, cudaVec3 vertices, int verticesCount)
+	__global__ void calculateVerticesKernel(float* devVeinVBOBuffer, cudaVec3 vertices, int vertexCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
-		if (id >= verticesCount)
+		if (id >= vertexCount)
 			return;
 
 		// Insert any debug position changes here
@@ -153,15 +159,15 @@ namespace graphics
 	{
 		// map vertices
 		float* vboPtr = (float*)mapResourceAndGetPointer(cudaVeinVBOResource);
-		int threadsPerBlock = triangles.verticesCount > 1024 ? 1024 : triangles.verticesCount;
-		int blocks = (triangles.verticesCount + threadsPerBlock - 1) / threadsPerBlock;
-		calculateVerticesKernel << <blocks, threadsPerBlock >> > (vboPtr, triangles.vertices, triangles.verticesCount);
+		int threadsPerBlock = triangles.vertexCount > 1024 ? 1024 : triangles.vertexCount;
+		int blocks = (triangles.vertexCount + threadsPerBlock - 1) / threadsPerBlock;
+		calculateVerticesKernel << <blocks, threadsPerBlock >> > (vboPtr, triangles.vertices, triangles.vertexCount);
 		cudaDeviceSynchronize();
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinVBOResource, 0));
 
 		// map indices
 		/*unsigned int* eboPtr = (unsigned int*)mapResourceAndGetPointer(cudaVeinEBOResource);
-		cudaMemcpy(eboPtr, triangles.indices, triangles.trianglesCount * 3 * sizeof(unsigned int), cudaMemcpyDeviceToDevice);
+		cudaMemcpy(eboPtr, triangles.indices, triangles.triangleCount * 3 * sizeof(unsigned int), cudaMemcpyDeviceToDevice);
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinEBOResource, 0));*/
 
 	}
@@ -202,70 +208,68 @@ namespace graphics
 		veinModel.draw(cylinderSolidColorShader, false);
 		glCullFace(GL_BACK);
 
-		return;
+		/////////////////////////////////////////////////////////////////////////////////////////////
+		//// Deferred shading - not working yet
 
+		//// Geometry pass
 
-		// Deferred shading - not working yet
+		//geometryPassShader->use();
+		//geometryPassShader->setMatrix("model", model);
+		//geometryPassShader->setMatrix("view", camera.getView());
+		//geometryPassShader->setMatrix("projection", projection);
 
-		// Geometry pass
+		//glEnable(GL_DEPTH_TEST);
 
-		geometryPassShader->use();
-		geometryPassShader->setMatrix("model", model);
-		geometryPassShader->setMatrix("view", camera.getView());
-		geometryPassShader->setMatrix("projection", projection);
+		//particleModel.draw(geometryPassShader);
 
-		glEnable(GL_DEPTH_TEST);
+		//// Phong Lighting Pass
 
-		particleModel.draw(geometryPassShader);
+		//glDisable(GL_DEPTH_TEST);
 
-		// Phong Lighting Pass
+		//phongDeferredShader->use();
+		//phongDeferredShader->setVector("viewPos", camera.getPosition());
+		//phongDeferredShader->setVector("Diffuse", particleDiffuse);
+		//phongDeferredShader->setFloat("Specular", particleSpecular);
+		//phongDeferredShader->setFloat("Shininess", 32);
 
-		glDisable(GL_DEPTH_TEST);
+		//phongDeferredShader->setLighting(directionalLight);
 
-		phongDeferredShader->use();
-		phongDeferredShader->setVector("viewPos", camera.getPosition());
-		phongDeferredShader->setVector("Diffuse", particleDiffuse);
-		phongDeferredShader->setFloat("Specular", particleSpecular);
-		phongDeferredShader->setFloat("Shininess", 32);
+		//// copy content of geometry's depth buffer to default framebuffer's depth buffer
+		//// ----------------------------------------------------------------------------------
+		//glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+		//// blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
+		//// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
+		//// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
+		//glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		phongDeferredShader->setLighting(directionalLight);
+		//// Render quad
+		//// TODO: optimization - don't generate buffers each frame
+		//unsigned int quadVAO = 0;
+		//unsigned int quadVBO = 0;
 
-		// copy content of geometry's depth buffer to default framebuffer's depth buffer
-		// ----------------------------------------------------------------------------------
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
-		// blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
-		// the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the 		
-		// depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
-		glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// Render quad
-		// TODO: optimization - don't generate buffers each frame
-		unsigned int quadVAO = 0;
-		unsigned int quadVBO = 0;
-
-		float quadVertices[] = {
-			// positions        // texture Coords
-			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-				1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-				1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-		};
-		// setup plane VAO
-		glGenVertexArrays(1, &quadVAO);
-		glGenBuffers(1, &quadVBO);
-		glBindVertexArray(quadVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
-		glEnable(GL_DEPTH_TEST);
-		return;
+		//float quadVertices[] = {
+		//	// positions        // texture Coords
+		//	-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+		//	-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		//		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+		//		1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		//};
+		//// setup plane VAO
+		//glGenVertexArrays(1, &quadVAO);
+		//glGenBuffers(1, &quadVBO);
+		//glBindVertexArray(quadVAO);
+		//glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		//glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		//glEnableVertexAttribArray(0);
+		//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		//glEnableVertexAttribArray(1);
+		//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		//glBindVertexArray(quadVAO);
+		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		//glBindVertexArray(0);
+		//glEnable(GL_DEPTH_TEST);
+		/////////////////////////////////////////////////////////////////////////////////////////////
 	}
 }

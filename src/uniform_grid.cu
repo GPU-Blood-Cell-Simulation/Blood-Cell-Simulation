@@ -1,5 +1,6 @@
 #include "uniform_grid.cuh"
-#include "defines.cuh"
+#include "defines.hpp"
+#include "utilities/cuda_handle_error.cuh"
 
 #include <cstdio>
 #include <cstdlib>
@@ -81,12 +82,19 @@ UniformGrid::UniformGrid()
 	HANDLE_ERROR(cudaMalloc((void**)&cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
 }
 
+UniformGrid::UniformGrid(const UniformGrid& other) : isCopy(true), cellIds(other.cellIds), particleIds(other.particleIds),
+	cellStarts(other.cellStarts), cellEnds(other.cellEnds) {}
+
 UniformGrid::~UniformGrid()
 {
-	cudaFree(cellIds);
-	cudaFree(particleIds);
-	cudaFree(cellStarts);
-	cudaFree(cellEnds);
+	if (!isCopy)
+	{
+		HANDLE_ERROR(cudaFree(cellIds));
+		HANDLE_ERROR(cudaFree(particleIds));
+		HANDLE_ERROR(cudaFree(cellStarts));
+		HANDLE_ERROR(cudaFree(cellEnds));
+	}
+	
 }
 
 void UniformGrid::calculateGrid(const Particles& particles)

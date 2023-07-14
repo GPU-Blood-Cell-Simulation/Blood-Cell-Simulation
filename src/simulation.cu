@@ -1,6 +1,9 @@
 #include "simulation.cuh"
-#include "defines.cuh"
+#include "defines.hpp"
 #include "physics.cuh"
+#include "blood_cell_structures/device_triangles.cuh"
+
+#include "utilities/cuda_handle_error.cuh"
 
 #include <cmath>
 #include <ctime>
@@ -29,14 +32,14 @@ namespace sim
 
 
 	// Generate initial positions and velocities of particles
-	void generateRandomPositions(Particles particles, const int particleCount)
+	void generateRandomPositions(Particles& particles, const int particleCount)
 	{
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
 
 		// Set up random seeds
 		curandState* devStates;
-		cudaMalloc(&devStates, particleCount * sizeof(curandState));
+		HANDLE_ERROR(cudaMalloc(&devStates, particleCount * sizeof(curandState)));
 		srand(static_cast<unsigned int>(time(0)));
 		int seed = rand();
 		setupCurandStatesKernel << <blocks, threadsPerBlock >> > (devStates, seed, particleCount);
@@ -45,7 +48,7 @@ namespace sim
 
 		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, particles, particleCount);
 
-		cudaFree(devStates);
+		HANDLE_ERROR(cudaFree(devStates));
 	}
 
 	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount)
@@ -77,7 +80,7 @@ namespace sim
 		unsigned int* cellStarts, unsigned int* cellEnds)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
-		if (id >= cells.particlesCnt)
+		if (id >= cells.particleCount)
 			return;
 
 		int particleId = particleIds[id];
@@ -116,13 +119,13 @@ namespace sim
 		}
 	}
 
-	void calculateNextFrame(BloodCells cells, DeviceTriangles triangles, UniformGrid& grid, unsigned int trianglesCount)
+	void calculateNextFrame(BloodCells& cells, DeviceTriangles& triangles, UniformGrid& grid, unsigned int triangleCount)
 	{
 		// 1. calculate grid
 		grid.calculateGrid(cells.particles);
 
-		int threadsPerBlock = cells.particlesCnt > 1024 ? 1024 : cells.particlesCnt;
-		int blDim = std::ceil(float(cells.particlesCnt) / threadsPerBlock);
+		int threadsPerBlock = cells.particleCount > 1024 ? 1024 : cells.particleCount;
+		int blDim = std::ceil(float(cells.particleCount) / threadsPerBlock);
 		
 		// 2. TODO: detections
 
@@ -130,7 +133,7 @@ namespace sim
 			grid.cellStarts, grid.cellEnds);
 
 
-		physics::propagateParticles << < dim3(blDim), threadsPerBlock >> > (cells, triangles, trianglesCount);
+		propagateParticles << < dim3(blDim), threadsPerBlock >> > (cells, triangles, triangleCount);
 		cells.PropagateForces();
 	}
 }

@@ -1,34 +1,5 @@
 #pragma once
 
-#include <cstdio>
-#include <cstdlib>
-
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-// A handy function for easy error checking
-static void HandleError(cudaError_t err, const char* file, int line);
-
-static void HandleError(cudaError_t err, const char* file, int line)
-{
-    if (err != cudaSuccess)
-    {
-        printf("%s in %s at line %d\n", cudaGetErrorString(err),
-            file, line);
-        cudaDeviceSynchronize();
-        exit(EXIT_FAILURE);
-    }
-}
-
-// TODO: zmienić to, bo makra są brzydkie
-
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ));
-
-#ifdef __INTELLISENSE__
-void __syncthreads();
-#endif
-
-
 inline constexpr int windowWidth = 800;
 inline constexpr int windowHeight = 800;
 

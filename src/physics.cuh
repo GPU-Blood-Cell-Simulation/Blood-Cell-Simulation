@@ -1,25 +1,37 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#include "objects.cuh"
-#include "utilities.cuh"
+#include "utilities/math.cuh"
 #include <cmath>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <device_functions.h>
 
 
-namespace physics
+namespace sim
 {
-	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int trianglesCount);
+	struct ray
+	{
+		float3 origin;
+		float3 direction;
+		float t = 1e10f;
 
-	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount);
+		// rays may be used to determine intersection with objects
+		// so its easy to store object index inside ray
+		unsigned int objectIndex = -1;
 
-	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int trianglesCount)
+		__device__ ray(float3 origin, float3 direction) : origin(origin), direction(direction) {}
+	};
+
+	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int triangleCount);
+
+	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles, int triangleCount);
+
+	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int triangleCount)
 	{
 		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (part_index >= cells.particlesCnt)
+		if (part_index >= cells.particleCount)
 			return;
 
 		// propagate force into velocities
@@ -39,7 +51,7 @@ namespace physics
 		// collisions with vein cylinder
 		// TODO: this is a naive (no grid) implementation
 		if (
-			calculateSideCollisions(pos, r, triangles, trianglesCount) &&
+			calculateSideCollisions(pos, r, triangles, triangleCount) &&
 			length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector
@@ -65,9 +77,9 @@ namespace physics
 		cells.particles.force.set(part_index, make_float3(0, 0, 0));
 	}
 
-	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount)
+	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles, int triangleCount)
 	{
-		for (int i = 0; i < trianglesCount; ++i)
+		for (int i = 0; i < triangleCount; ++i)
 		{
 			constexpr float EPS = 0.000001f;
 			float3 v1 = triangles.get(i,0);

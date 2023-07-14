@@ -1,22 +1,25 @@
 #ifndef BLOOD_CELLS_H
 #define BLOOD_CELLS_H
 
-#include "../objects.cuh"
+#include "particles.cuh"
 
 constexpr auto NO_SPRING = 0;
 
 
 class BloodCells
 {
+	bool isCopy = false;
+
 public:
 	Particles particles;
 	int particlesInCell;
-	int particlesCnt;
+	int particleCount;
 	float* springsGraph;
 
-	BloodCells(int cellsCnt, int particlsInCells, float* graphDesc);
+	BloodCells(int cellsCnt, int particlesInCell, float* graphDesc);
+	BloodCells(const BloodCells& other);
 
-	void Deallocate();
+	~BloodCells();
 
 	void PropagateForces();
 };

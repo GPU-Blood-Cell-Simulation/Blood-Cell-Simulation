@@ -7,7 +7,7 @@
 #include "textures/texture_loading.hpp"
 
 #include <glad/glad.h>
-#include "../defines.cuh"
+#include "../defines.hpp"
 
 Model::Model(const char* path)
 {

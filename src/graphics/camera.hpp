@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../defines.cuh"
+#include "../defines.hpp"
 
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>

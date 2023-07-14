@@ -1,8 +1,10 @@
 #pragma once
-#include "objects.cuh"
+
+#include "blood_cell_structures/particles.cuh"
 
 class UniformGrid
 {
+	bool isCopy = false;
 public:
 	unsigned int* cellIds = 0;
 	unsigned int* particleIds = 0;
@@ -10,6 +12,7 @@ public:
 	unsigned int* cellEnds = 0;
 
 	UniformGrid();
+	UniformGrid(const UniformGrid& other);
 	~UniformGrid();
 
 	void calculateGrid(const Particles& particles);
