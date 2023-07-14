@@ -22,7 +22,7 @@ void BloodCellsFactory::AddSpring(int cellId1, int cellId2, float springLength)
 }
 
 
-BloodCells BloodCellsFactory::CreateBloodCells()
+BloodCells BloodCellsFactory::CreateBloodCells() const
 {
 	return BloodCells(cellCount, particlesInCell, springGraph.data());
 }

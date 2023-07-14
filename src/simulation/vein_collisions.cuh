@@ -14,6 +14,7 @@
 
 namespace sim
 {
+	// a helper struct for calculating triangle intersections
 	struct ray
 	{
 		float3 origin;
@@ -27,9 +28,9 @@ namespace sim
 		__device__ ray(float3 origin, float3 direction);
 	};
 
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles, int triangleCount);
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles);
 
-	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles, int triangleCount);
+	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles);
 }
 
 #endif

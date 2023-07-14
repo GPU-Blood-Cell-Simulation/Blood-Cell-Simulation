@@ -3,6 +3,9 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+/// <summary>
+/// Represents 3 float vectors on gpu. Uses RAII to handle memory management
+/// </summary>
 class cudaVec3
 {
 	bool isCopy = false;
@@ -19,7 +22,7 @@ public:
 	~cudaVec3();
 
 	// to use only on device
-	__device__ inline float3 get(int index)
+	__device__ inline float3 get(int index) const
 	{
 		return make_float3(x[index], y[index], z[index]);
 	}

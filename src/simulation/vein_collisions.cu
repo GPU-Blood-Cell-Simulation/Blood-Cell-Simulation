@@ -4,7 +4,9 @@ namespace sim
 {
 	__device__ ray::ray(float3 origin, float3 direction) : origin(origin), direction(direction) {}
 
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles, int triangleCount)
+	// 1. Calculate collisions between particles and vein triangles
+	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles)
 	{
 		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -28,7 +30,7 @@ namespace sim
 		// collisions with vein cylinder
 		// TODO: this is a naive (no grid) implementation
 		if (
-			calculateSideCollisions(pos, r, triangles, triangleCount) &&
+			calculateSideCollisions(pos, r, triangles) &&
 			length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector
@@ -54,9 +56,10 @@ namespace sim
 		cells.particles.force.set(part_index, make_float3(0, 0, 0));
 	}
 
-	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles, int triangleCount)
+	// Calculate whether a collision between a particle (represented by the ray) and a vein triangle occurred
+	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles)
 	{
-		for (int i = 0; i < triangleCount; ++i)
+		for (int i = 0; i < triangles.triangleCount; ++i)
 		{
 			constexpr float EPS = 0.000001f;
 			float3 v1 = triangles.get(i, 0);

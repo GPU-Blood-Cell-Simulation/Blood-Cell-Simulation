@@ -4,8 +4,9 @@
 
 namespace sim
 {
-	__global__ void detectParticleCollisions(BloodCells cells, unsigned int* cellIds, unsigned int* particleIds,
-		unsigned int* cellStarts, unsigned int* cellEnds)
+	// Calculate collisions between particles
+	__global__ void detectParticleCollisions(BloodCells cells, unsigned int* gridCellIds, unsigned int* particleIds,
+		unsigned int* gridCellStarts, unsigned int* gridCellEnds)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= cells.particleCount)
@@ -30,9 +31,9 @@ namespace sim
 
 		// Using uniform grid
 
-		int cellId = cellIds[id];
+		int cellId = gridCellIds[id];
 
-		for (int i = cellStarts[cellId]; i <= cellEnds[cellId]; i++)
+		for (int i = gridCellStarts[cellId]; i <= gridCellEnds[cellId]; i++)
 		{
 			int secondParticleId = particleIds[i];
 			if (particleId == secondParticleId)

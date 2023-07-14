@@ -8,6 +8,9 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+/// <summary>
+/// Vein triangles
+/// </summary>
 class DeviceTriangles
 {
 	bool isCopy = false;
@@ -25,7 +28,7 @@ public:
 
 	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
 	/// <returns></returns>
-	__device__ inline float3 get(int triangleIndex, int vertexIndex)
+	__device__ inline float3 get(int triangleIndex, int vertexIndex) const
 	{
 		int index = indices[3 * triangleIndex + vertexIndex];
 		return vertices.get(index);

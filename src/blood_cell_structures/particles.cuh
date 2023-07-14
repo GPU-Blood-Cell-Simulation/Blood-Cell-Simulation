@@ -1,7 +1,9 @@
 #pragma once
 #include "../utilities/cuda_vec3.cuh"
 
-// Global structure of particles
+/// <summary>
+/// A structure containing the position, velocity and force vectors of all particles
+/// </summary>
 struct Particles
 {
 	cudaVec3 position;

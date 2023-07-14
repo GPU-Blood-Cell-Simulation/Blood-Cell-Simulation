@@ -8,7 +8,7 @@
 #include "cuda_runtime.h"
 
 
-BloodCells::BloodCells(int cellCount, int particlesInCell, float* graphDesc) :
+BloodCells::BloodCells(int cellCount, int particlesInCell, const float* graphDesc) :
 	particles(cellCount * particlesInCell), particlesInCell(particlesInCell), particleCount(cellCount * particlesInCell)
 {
 	int graphSize = particlesInCell * particlesInCell;

@@ -5,7 +5,9 @@
 
 constexpr auto NO_SPRING = 0;
 
-
+/// <summary>
+/// Contains all the particles and the springs graph
+/// </summary>
 class BloodCells
 {
 	bool isCopy = false;
@@ -16,7 +18,7 @@ public:
 	int particleCount;
 	float* springsGraph;
 
-	BloodCells(int cellsCnt, int particlesInCell, float* graphDesc);
+	BloodCells(int cellsCount, int particlesInCell, const float* graphDesc);
 	BloodCells(const BloodCells& other);
 
 	~BloodCells();

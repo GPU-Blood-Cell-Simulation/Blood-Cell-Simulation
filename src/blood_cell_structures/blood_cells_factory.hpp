@@ -12,7 +12,7 @@ public:
 
 	void AddSpring(int cellId1, int cellId2, float springLength);
 
-	BloodCells CreateBloodCells();
+	BloodCells CreateBloodCells() const;
 
 private:
 	std::vector<float> springGraph;

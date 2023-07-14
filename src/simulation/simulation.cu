@@ -62,7 +62,7 @@ namespace sim
 		p.force.z[id] = 0;
 	}
 
-
+	// Main simulation function, called every frame
 	void calculateNextFrame(BloodCells& cells, DeviceTriangles& triangles, UniformGrid& grid, unsigned int triangleCount)
 	{
 		// 1. Calculate grid
@@ -73,8 +73,8 @@ namespace sim
 		
 		// 2. Detect particle collisions
 
-		detectParticleCollisions << < dim3(blDim), threadsPerBlock >> > (cells, grid.cellIds, grid.particleIds,
-			grid.cellStarts, grid.cellEnds);
+		detectParticleCollisions << < dim3(blDim), threadsPerBlock >> > (cells, grid.gridCellIds, grid.particleIds,
+			grid.gridCellStarts, grid.gridCellEnds);
 
 		// 3. Propagate forces into neighbors
 
@@ -82,6 +82,6 @@ namespace sim
 
 		// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
 
-		detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (cells, triangles, triangleCount);
+		detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (cells, triangles);
 	}
 }
