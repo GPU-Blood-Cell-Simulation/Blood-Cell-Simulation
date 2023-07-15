@@ -1,4 +1,5 @@
 #include "vein_collisions.cuh"
+#include "../utilities/vertex_index_enum.h"
 
 namespace sim
 {
@@ -42,9 +43,9 @@ namespace sim
 			velocity.z *= -0.8;
 
 			// move triangle a bit
-			triangles.add(r.objectIndex, 0, ds);
-			triangles.add(r.objectIndex, 1, ds);
-			triangles.add(r.objectIndex, 2, ds);
+			triangles.add(r.objectIndex, vertex0, ds);
+			triangles.add(r.objectIndex, vertex1, ds);
+			triangles.add(r.objectIndex, vertex2, ds);
 		}
 
 		cells.particles.velocity.set(part_index, velocity);
@@ -62,9 +63,9 @@ namespace sim
 		for (int i = 0; i < triangles.triangleCount; ++i)
 		{
 			constexpr float EPS = 0.000001f;
-			float3 v1 = triangles.get(i, 0);
-			float3 v2 = triangles.get(i, 1);
-			float3 v3 = triangles.get(i, 2);
+			float3 v1 = triangles.get(i, vertex0);
+			float3 v2 = triangles.get(i, vertex1);
+			float3 v3 = triangles.get(i, vertex2);
 
 			const float3 edge1 = v2 - v1;
 			const float3 edge2 = v3 - v1;

@@ -516,6 +516,7 @@
     <ClInclude Include="src\utilities\cuda_handle_error.cuh" />
     <ClInclude Include="src\utilities\cuda_vec3.cuh" />
     <ClInclude Include="src\utilities\math.cuh" />
+    <ClInclude Include="src\utilities\vertex_index_enum.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\include\assimp\color4.inl" />
