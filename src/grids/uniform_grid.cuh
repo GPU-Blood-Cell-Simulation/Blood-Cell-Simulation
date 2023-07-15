@@ -21,7 +21,7 @@ public:
 	UniformGrid(const UniformGrid& other);
 	~UniformGrid();
 
-	inline void UniformGrid::calculateGrid(const Particles& particles, unsigned int particleCount)
+	inline void calculateGrid(const Particles& particles, unsigned int particleCount)
 	{
 		calculateGrid(particles.position.x, particles.position.y, particles.position.z, particleCount);
 	}

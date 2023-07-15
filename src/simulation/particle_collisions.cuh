@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../grids/uniform_grid.cuh"
+#include "../grids/no_grid.cuh"
 #include "../blood_cell_structures/blood_cells.cuh"
 #include "../utilities/math.cuh"
 
@@ -49,8 +50,9 @@ namespace sim
 		}
 	}
 
-	// Calculate collisions between particles without any grid
-	__global__ void noGridParticleCollisions(BloodCells bloodCells)
+	template<>
+	// Calculate collisions between particles without any grid (naive implementation)
+	__global__ void calculateParticleCollisions<NoGrid>(BloodCells bloodCells, NoGrid grid)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= bloodCells.particleCount)
@@ -61,6 +63,8 @@ namespace sim
 		// Naive implementation
 		for (int i = 0; i < bloodCells.particleCount; i++)
 		{
+			if (id == i)
+				continue;
 
 			float3 p2 = bloodCells.particles.position.get(i);
 

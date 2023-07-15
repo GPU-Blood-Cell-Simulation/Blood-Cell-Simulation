@@ -9,6 +9,7 @@
 #include "simulation/simulation.cuh"
 #include "graphics/glcontroller.cuh"
 #include "grids/uniform_grid.cuh"
+#include "grids/no_grid.cuh"
 
 #include "blood_cell_structures/blood_cells.cuh"
 #include "blood_cell_structures/blood_cells_factory.hpp"
@@ -99,6 +100,8 @@ void programLoop(GLFWwindow* window)
 
     UniformGrid grid(PARTICLE_COUNT), triangleCentersGrid(triangles.triangleCount);
 
+    //NoGrid grid, triangleCentersGrid;
+
     triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
 
     // Generate random positions
@@ -113,7 +116,7 @@ void programLoop(GLFWwindow* window)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(cells, triangles, grid, triangles.triangleCount);
+        sim::calculateNextFrame(cells, triangles, &grid, triangles.triangleCount);
 
         // Pass positions to OpenGL
         glController.calculateOffsets(cells.particles.position.x,

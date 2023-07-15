@@ -62,17 +62,24 @@ namespace sim
 	}
 
 	// Main simulation function, called every frame
-	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, UniformGrid& grid, unsigned int triangleCount)
+	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid, unsigned int triangleCount)
 	{
 		// 1. Calculate grid
-		grid.calculateGrid(bloodCells.particles, bloodCells.particleCount);
+		std::visit([&](auto&& g)
+			{
+				g->calculateGrid(bloodCells.particles, bloodCells.particleCount);
+			}, grid);
+		
 
 		int threadsPerBlock = bloodCells.particleCount > 1024 ? 1024 : bloodCells.particleCount;
 		int blDim = std::ceil(float(bloodCells.particleCount) / threadsPerBlock);
 		
 		// 2. Detect particle collisions
-
-		calculateParticleCollisions << < dim3(blDim), threadsPerBlock >> > (bloodCells, grid);
+		std::visit([&](auto&& g)
+			{
+				calculateParticleCollisions << < dim3(blDim), threadsPerBlock >> > (bloodCells, *g);
+			}, grid);
+		
 
 		// 3. Propagate forces into neighbors
 
