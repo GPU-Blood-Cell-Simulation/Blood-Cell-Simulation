@@ -1,25 +1,17 @@
-#ifndef PHYSICS_H
-#define PHYSICS_H
+#include "vein_collisions.cuh"
+#include "../utilities/vertex_index_enum.h"
 
-#include "objects.cuh"
-#include "utilities.cuh"
-#include <cmath>
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include <device_functions.h>
-
-
-namespace physics
+namespace sim
 {
-	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int trianglesCount);
+	__device__ ray::ray(float3 origin, float3 direction) : origin(origin), direction(direction) {}
 
-	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount);
-
-	__global__ void propagateParticles(BloodCells cells, DeviceTriangles triangles, int trianglesCount)
+	// 1. Calculate collisions between particles and vein triangles
+	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles)
 	{
 		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (part_index >= cells.particlesCnt)
+		if (part_index >= cells.particleCount)
 			return;
 
 		// propagate force into velocities
@@ -39,7 +31,7 @@ namespace physics
 		// collisions with vein cylinder
 		// TODO: this is a naive (no grid) implementation
 		if (
-			calculateSideCollisions(pos, r, triangles, trianglesCount) &&
+			calculateSideCollisions(pos, r, triangles) &&
 			length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector
@@ -51,9 +43,9 @@ namespace physics
 			velocity.z *= -0.8;
 
 			// move triangle a bit
-			triangles.add(r.objectIndex, 0, ds);
-			triangles.add(r.objectIndex, 1, ds);
-			triangles.add(r.objectIndex, 2, ds);
+			triangles.add(r.objectIndex, vertex0, ds);
+			triangles.add(r.objectIndex, vertex1, ds);
+			triangles.add(r.objectIndex, vertex2, ds);
 		}
 
 		cells.particles.velocity.set(part_index, velocity);
@@ -65,14 +57,15 @@ namespace physics
 		cells.particles.force.set(part_index, make_float3(0, 0, 0));
 	}
 
-	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles triangles, int trianglesCount)
+	// Calculate whether a collision between a particle (represented by the ray) and a vein triangle occurred
+	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles)
 	{
-		for (int i = 0; i < trianglesCount; ++i)
+		for (int i = 0; i < triangles.triangleCount; ++i)
 		{
 			constexpr float EPS = 0.000001f;
-			float3 v1 = triangles.get(i,0);
-			float3 v2 = triangles.get(i,1);
-			float3 v3 = triangles.get(i,2);
+			float3 v1 = triangles.get(i, vertex0);
+			float3 v2 = triangles.get(i, vertex1);
+			float3 v3 = triangles.get(i, vertex2);
 
 			const float3 edge1 = v2 - v1;
 			const float3 edge2 = v3 - v1;
@@ -100,5 +93,3 @@ namespace physics
 		return false;
 	}
 }
-
-#endif

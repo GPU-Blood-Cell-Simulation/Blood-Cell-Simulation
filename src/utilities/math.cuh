@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <cstdio>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -55,7 +56,6 @@ __host__ __device__ inline float length(float3 v)
 {
 	return sqrtf(length_squared(v));
 }
-
 
 __host__ __device__ inline float3 normalize(float3 v) // versor
 {

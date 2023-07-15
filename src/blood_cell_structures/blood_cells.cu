@@ -1,26 +1,32 @@
-#include "BloodCells.cuh"
+#include "blood_cells.cuh"
+#include "../utilities/cuda_handle_error.cuh"
+#include "../utilities/math.cuh"
+#include "../defines.hpp"
+
+#include <vector>
 
 #include "cuda_runtime.h"
-#include "../utilities.cuh"
-#include "../defines.cuh"
 
-BloodCells::BloodCells(int cellsCnt, int particlsInCells, float* graphDesc) :
-	particles(cellsCnt* particlsInCells)
+
+BloodCells::BloodCells(int cellCount, int particlesInCell, const float* graphDesc) :
+	particles(cellCount * particlesInCell), particlesInCell(particlesInCell), particleCount(cellCount * particlesInCell)
 {
-	this->particlesInCell = particlsInCells;
-	this->particlesCnt = cellsCnt * particlesInCell;
-
 	int graphSize = particlesInCell * particlesInCell;
 
 	HANDLE_ERROR(cudaMalloc(&springsGraph, sizeof(float) * graphSize));
 	HANDLE_ERROR(cudaMemcpy(springsGraph, graphDesc, sizeof(float) * graphSize, cudaMemcpyHostToDevice));
 }
 
+BloodCells::BloodCells(const BloodCells& other) : isCopy(true), particles(other.particles), particlesInCell(other.particlesInCell),
+particleCount(other.particleCount), springsGraph(other.springsGraph) {}
 
-void BloodCells::Deallocate()
+
+BloodCells::~BloodCells()
 {
-	HANDLE_ERROR(cudaFree(springsGraph));
-	particles.freeParticles();
+	if (!isCopy)
+	{
+		HANDLE_ERROR(cudaFree(springsGraph));
+	}
 }
 
 
@@ -29,8 +35,8 @@ __global__ void PropagateForcesOnDevice(BloodCells cells);
 
 void BloodCells::PropagateForces()
 {
-	int threadsPerBlock = particlesCnt > 1024 ? 1024 : particlesCnt;
-	int blocks = (particlesCnt + threadsPerBlock - 1) / threadsPerBlock;
+	int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
+	int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
 
 	PropagateForcesOnDevice << <blocks, threadsPerBlock >> > (*this);
 }
@@ -46,7 +52,7 @@ __global__ void PropagateForcesOnDevice(BloodCells cells)
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int inCellIndex = index % cells.particlesInCell;
 
-	if (index >= cells.particlesCnt)
+	if (index >= cells.particleCount)
 		return;
 
 	float3 pos = cells.particles.position.get(index);

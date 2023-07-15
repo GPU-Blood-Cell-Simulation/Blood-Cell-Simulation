@@ -3,14 +3,16 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include "simulation.cuh"
-#include "defines.cuh"
-#include "objects.cuh"
-#include "graphics/glcontroller.cuh"
-#include "uniform_grid.cuh"
+#include "defines.hpp"
+#include "utilities/cuda_handle_error.cuh"
 
-#include "BloodCell/BloodCells.cuh"
-#include "BloodCell/BloodCellsFactory.h"
+#include "simulation/simulation.cuh"
+#include "graphics/glcontroller.cuh"
+#include "grids/uniform_grid.cuh"
+
+#include "blood_cell_structures/blood_cells.cuh"
+#include "blood_cell_structures/blood_cells_factory.hpp"
+#include "blood_cell_structures/device_triangles.cuh"
 
 #include <GLFW/glfw3.h>
 #include <sstream>
@@ -24,6 +26,8 @@
 //{
 //    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
 //}
+
+void programLoop(GLFWwindow* window);
 
 int main()
 {
@@ -60,34 +64,47 @@ int main()
 
     // debug
     glEnable(GL_DEBUG_OUTPUT);
+    
+#pragma endregion
+    
+    // Main simulation loop
+    
+    programLoop(window);
 
+    // Cleanup
+
+    glfwTerminate();
+    HANDLE_ERROR(cudaDeviceReset());
+
+    return 0;
+}
+
+// Main simulation loop - upon returning from this function all memory-freeing destructors are called
+void programLoop(GLFWwindow* window)
+{
     double lastTime = glfwGetTime();
     int frameCount = 0;
-#pragma endregion
-
     // Create a graphics controller
     graphics::GLController glController(window);
 
     // Allocate memory
 
     // Creating dipols
-    BloodCellsFactory cellsFactory(PARTICLE_COUNT/2, 2);
+    BloodCellsFactory cellsFactory(PARTICLE_COUNT / 2, 2);
     cellsFactory.AddSpring(0, 1, 10);
 
     BloodCells cells = cellsFactory.CreateBloodCells();
 
-    UniformGrid grid, triangleCentersGrid;
-    DeviceTriangles triangles = DeviceTriangles(glController.getGridMesh());
+    DeviceTriangles triangles(glController.getGridMesh());
 
-    sim::allocateMemory(grid, PARTICLE_COUNT);
-    sim::allocateMemory(triangleCentersGrid, triangles.trianglesCount);
-    triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.trianglesCount);
+    UniformGrid grid(PARTICLE_COUNT), triangleCentersGrid(triangles.triangleCount);
+
+    triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
 
     // Generate random positions
     sim::generateRandomPositions(cells.particles, PARTICLE_COUNT);
-    //sim::generateInitialPositionsInLayers(particles, corpscles, PARTICLE_COUNT, 3);
 
-    // MAIN LOOP HERE - probably dictated by glfw
+    // MAIN LOOP HERE - dictated by glfw
 
     while (!glfwWindowShouldClose(window))
     {
@@ -96,17 +113,17 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(cells, triangles, grid, triangles.trianglesCount);
+        sim::calculateNextFrame(cells, triangles, grid, triangles.triangleCount);
 
         // Pass positions to OpenGL
         glController.calculateOffsets(cells.particles.position.x,
-                                      cells.particles.position.y,
-                                      cells.particles.position.z,
-                                      cells.particlesCnt);
+            cells.particles.position.y,
+            cells.particles.position.z,
+            cells.particleCount);
         glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering
-        
+
         glController.draw();
         glfwSwapBuffers(window);
 
@@ -133,13 +150,4 @@ int main()
         glfwPollEvents();
         glController.handleInput();
     }
-
-    // Cleanup
-    cells.Deallocate();
-
-    glfwTerminate();
-
-    HANDLE_ERROR(cudaDeviceReset());
-
-    return 0;
 }

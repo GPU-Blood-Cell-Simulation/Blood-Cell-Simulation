@@ -4,8 +4,8 @@
 #include "camera.hpp"
 #include "inputcontroller.hpp"
 #include "light.hpp"
-#include "../defines.cuh"
-#include "../objects.cuh"
+#include "../defines.hpp"
+#include "../blood_cell_structures/device_triangles.cuh"
 
 #include <memory>
 #include <glm/mat4x4.hpp>

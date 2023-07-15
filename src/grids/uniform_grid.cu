@@ -1,5 +1,6 @@
 #include "uniform_grid.cuh"
-#include "defines.cuh"
+#include "../defines.hpp"
+#include "../utilities/cuda_handle_error.cuh"
 
 #include <cstdio>
 #include <cstdlib>
@@ -72,21 +73,28 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
 #pragma endregion
 
 // Allocate GPU buffers for the index buffers
-UniformGrid::UniformGrid()
+UniformGrid::UniformGrid(const unsigned int particleCount)
 {
-	HANDLE_ERROR(cudaMalloc((void**)&cellIds, PARTICLE_COUNT * sizeof(unsigned int)));
-	HANDLE_ERROR(cudaMalloc((void**)&particleIds, PARTICLE_COUNT * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&gridCellIds, particleCount * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&particleIds, particleCount * sizeof(unsigned int)));
 
-	HANDLE_ERROR(cudaMalloc((void**)&cellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
-	HANDLE_ERROR(cudaMalloc((void**)&cellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&gridCellStarts, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&gridCellEnds, width / cellWidth * height / cellHeight * depth / cellDepth * sizeof(unsigned int)));
 }
+
+UniformGrid::UniformGrid(const UniformGrid& other) : isCopy(true), gridCellIds(other.gridCellIds), particleIds(other.particleIds),
+	gridCellStarts(other.gridCellStarts), gridCellEnds(other.gridCellEnds) {}
 
 UniformGrid::~UniformGrid()
 {
-	cudaFree(cellIds);
-	cudaFree(particleIds);
-	cudaFree(cellStarts);
-	cudaFree(cellEnds);
+	if (!isCopy)
+	{
+		HANDLE_ERROR(cudaFree(gridCellIds));
+		HANDLE_ERROR(cudaFree(particleIds));
+		HANDLE_ERROR(cudaFree(gridCellStarts));
+		HANDLE_ERROR(cudaFree(gridCellEnds));
+	}
+	
 }
 
 void UniformGrid::calculateGrid(const Particles& particles)
@@ -94,26 +102,26 @@ void UniformGrid::calculateGrid(const Particles& particles)
 	calculateGrid(particles.position.x, particles.position.y, particles.position.z, PARTICLE_COUNT);
 }
 
-void UniformGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int objectsCount)
+void UniformGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int objectCount)
 {
 	// Calculate launch parameters
 
-	const int threadsPerBlock = objectsCount > 1024 ? 1024 : objectsCount;
-	const int blocks = (objectsCount + threadsPerBlock - 1) / threadsPerBlock;
+	const int threadsPerBlock = objectCount > 1024 ? 1024 : objectCount;
+	const int blocks = (objectCount + threadsPerBlock - 1) / threadsPerBlock;
 
 	// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
 	calculateCellIdKernel << <blocks, threadsPerBlock >> >
-		(positionX, positionY, positionZ, cellIds, particleIds, objectsCount);
+		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount);
 
 	// 2. Sort particle ids by cell id
 
-	thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast<unsigned int>(cellIds);
+	thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast<unsigned int>(gridCellIds);
 	thrust::device_ptr<unsigned int> values = thrust::device_pointer_cast<unsigned int>(particleIds);
 
-	thrust::stable_sort_by_key(keys, keys + objectsCount, values);
+	thrust::stable_sort_by_key(keys, keys + objectCount, values);
 
 	// 3. Find the start and end of every cell
 
 	calculateStartAndEndOfCellKernel << <blocks, threadsPerBlock >> >
-		(positionX, positionY, positionZ, cellIds, particleIds, cellStarts, cellEnds, objectsCount);
+		(positionX, positionY, positionZ, gridCellIds, particleIds, gridCellStarts, gridCellEnds, objectCount);
 }
