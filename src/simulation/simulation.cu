@@ -1,8 +1,7 @@
 #include "simulation.cuh"
 #include "../defines.hpp"
-#include "particle_collisions.cuh"
 #include "vein_collisions.cuh"
-#include "../blood_cell_structures/device_triangles.cuh"
+#include "particle_collisions.cuh"
 #include "../utilities/cuda_handle_error.cuh"
 
 #include <cmath>
@@ -63,25 +62,24 @@ namespace sim
 	}
 
 	// Main simulation function, called every frame
-	void calculateNextFrame(BloodCells& cells, DeviceTriangles& triangles, UniformGrid& grid, unsigned int triangleCount)
+	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, UniformGrid& grid, unsigned int triangleCount)
 	{
 		// 1. Calculate grid
-		grid.calculateGrid(cells.particles);
+		grid.calculateGrid(bloodCells.particles, bloodCells.particleCount);
 
-		int threadsPerBlock = cells.particleCount > 1024 ? 1024 : cells.particleCount;
-		int blDim = std::ceil(float(cells.particleCount) / threadsPerBlock);
+		int threadsPerBlock = bloodCells.particleCount > 1024 ? 1024 : bloodCells.particleCount;
+		int blDim = std::ceil(float(bloodCells.particleCount) / threadsPerBlock);
 		
 		// 2. Detect particle collisions
 
-		detectParticleCollisions << < dim3(blDim), threadsPerBlock >> > (cells, grid.gridCellIds, grid.particleIds,
-			grid.gridCellStarts, grid.gridCellEnds);
+		calculateParticleCollisions << < dim3(blDim), threadsPerBlock >> > (bloodCells, grid);
 
 		// 3. Propagate forces into neighbors
 
-		cells.PropagateForces();
+		bloodCells.propagateForces();
 
 		// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
 
-		detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (cells, triangles);
+		detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles);
 	}
 }

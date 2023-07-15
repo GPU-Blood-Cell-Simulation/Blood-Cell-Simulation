@@ -91,9 +91,9 @@ void programLoop(GLFWwindow* window)
 
     // Creating dipols
     BloodCellsFactory cellsFactory(PARTICLE_COUNT / 2, 2);
-    cellsFactory.AddSpring(0, 1, 10);
+    cellsFactory.addSpring(0, 1, 10);
 
-    BloodCells cells = cellsFactory.CreateBloodCells();
+    BloodCells cells = cellsFactory.createBloodCells();
 
     DeviceTriangles triangles(glController.getGridMesh());
 

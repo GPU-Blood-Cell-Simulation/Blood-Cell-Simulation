@@ -12,7 +12,7 @@ BloodCellsFactory::BloodCellsFactory(int cellCount, int particlesInSingleCell) :
 }
 
 
-void BloodCellsFactory::AddSpring(int cellId1, int cellId2, float springLength)
+void BloodCellsFactory::addSpring(int cellId1, int cellId2, float springLength)
 {
 	if (cellId1 == cellId2 || springLength <= 0)
 		throw std::runtime_error("Invalid spring addition.");
@@ -22,7 +22,7 @@ void BloodCellsFactory::AddSpring(int cellId1, int cellId2, float springLength)
 }
 
 
-BloodCells BloodCellsFactory::CreateBloodCells() const
+BloodCells BloodCellsFactory::createBloodCells() const
 {
 	return BloodCells(cellCount, particlesInCell, springGraph.data());
 }

@@ -97,11 +97,6 @@ UniformGrid::~UniformGrid()
 	
 }
 
-void UniformGrid::calculateGrid(const Particles& particles)
-{
-	calculateGrid(particles.position.x, particles.position.y, particles.position.z, PARTICLE_COUNT);
-}
-
 void UniformGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int objectCount)
 {
 	// Calculate launch parameters

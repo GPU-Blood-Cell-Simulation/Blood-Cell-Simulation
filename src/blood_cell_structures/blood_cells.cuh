@@ -23,7 +23,7 @@ public:
 
 	~BloodCells();
 
-	void PropagateForces();
+	void propagateForces();
 };
 
 #endif
