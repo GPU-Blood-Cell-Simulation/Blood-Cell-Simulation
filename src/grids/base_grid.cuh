@@ -8,6 +8,8 @@
 template<typename Derived>
 class BaseGrid
 {
+protected:
+    BaseGrid() {}
 public:
 
     inline void calculateGrid(const Particles& particles)
