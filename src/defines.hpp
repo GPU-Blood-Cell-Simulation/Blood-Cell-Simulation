@@ -21,6 +21,8 @@ inline constexpr int cellWidth = 20;
 inline constexpr int cellHeight = 20;
 inline constexpr int cellDepth = 20;
 
+
+
 // 96 = 3*2*4*4
 // three layers of 2 particle dipoles, each layer is 4x4
 inline constexpr unsigned int PARTICLE_COUNT = 500;
@@ -36,6 +38,9 @@ inline constexpr float v0 = 0.1f;
 //inline unsigned int new_cell_index = 0;
 
 /// PHYSICS CONST
+
+// factor to slow down particles after collision
+inline constexpr float velocityCollisionDamping = 0.8f;
 
 // ! this value should be determined experimentally !
 // Hooks law k factor from F = k*x
