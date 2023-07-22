@@ -31,6 +31,8 @@ namespace sim
 	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles);
 
 	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles);
+	
+	__device__ float3 calculateBaricentric(float3 point, float3 v1, float3 v2, float3 v3);
 }
 
 #endif

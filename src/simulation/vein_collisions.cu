@@ -38,14 +38,20 @@ namespace sim
 			length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
-			float3 ds = 2 * velocityDir;
+			float3 ds = 0.8f * velocityDir;
 
 			float speed = length(velocity);
 			velocity = velocityCollisionDamping * speed * reflectedVelociy;
+
+			float3 v0 = triangles.get(r.objectIndex, vertex0);
+			float3 v1 = triangles.get(r.objectIndex, vertex1);
+			float3 v2 = triangles.get(r.objectIndex, vertex2);
+			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
+
 			// move triangle a bit
-			triangles.add(r.objectIndex, vertex0, ds);
-			triangles.add(r.objectIndex, vertex1, ds);
-			triangles.add(r.objectIndex, vertex2, ds);
+			triangles.add(r.objectIndex, vertex0, baricentric.x*ds);
+			triangles.add(r.objectIndex, vertex1, baricentric.y*ds);
+			triangles.add(r.objectIndex, vertex2, baricentric.z*ds);
 		}
 
 		cells.particles.velocity.set(part_index, velocity);
@@ -64,11 +70,11 @@ namespace sim
 		for (int i = 0; i < triangles.triangleCount; ++i)
 		{
 			// triangle vectices and edges
-			float3 v1 = triangles.get(i, vertex0);
-			float3 v2 = triangles.get(i, vertex1);
-			float3 v3 = triangles.get(i, vertex2);
-			const float3 edge1 = v2 - v1;
-			const float3 edge2 = v3 - v1;
+			float3 v0 = triangles.get(i, vertex0);
+			float3 v1 = triangles.get(i, vertex1);
+			float3 v2 = triangles.get(i, vertex2);
+			const float3 edge1 = v1 - v0;
+			const float3 edge2 = v2 - v0;
 
 			const float3 h = cross(velocityRay.direction, edge2);
 			const float a = dot(edge1, h);
@@ -76,7 +82,7 @@ namespace sim
 				continue; // ray parallel to triangle
 			
 			const float f = 1 / a;
-			const float3 s = velocityRay.origin - v1;
+			const float3 s = velocityRay.origin - v0;
 			const float u = f * dot(s, h);
 			if (u < 0 || u > 1)
 				continue;
@@ -100,5 +106,21 @@ namespace sim
 			}
 		}
 		return false;
+	}
+
+	__device__ float3 calculateBaricentric(float3 point, float3 v0, float3 v1, float3 v2)
+	{
+		float3 baricentric;
+		float3 e0 = v1 - v0, e1 = v2 - v1, e2 = point - v0;
+		float d00 = dot(e0, e0);
+		float d01 = dot(e0, e1);
+		float d11 = dot(e1, e1);
+		float d20 = dot(e2, e0);
+		float d21 = dot(e2, e1);
+		float denom = d00 * d11 - d01 * d01;
+		baricentric.x = (d11 * d20 - d01 * d21) / denom;
+		baricentric.y = (d00 * d21 - d01 * d20) / denom;
+		baricentric.z = 1.0f - baricentric.x - baricentric.y;
+		return baricentric;
 	}
 }
