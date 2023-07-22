@@ -109,7 +109,6 @@
     <CudaCompile Include="src\blood_cell_structures\blood_cells.cu" />
     <CudaCompile Include="src\blood_cell_structures\device_triangles.cu" />
     <CudaCompile Include="src\graphics\glcontroller.cu" />
-    <CudaCompile Include="src\simulation\particle_collisions.cu" />
     <CudaCompile Include="src\simulation\vein_collisions.cu" />
     <CudaCompile Include="src\grids\uniform_grid.cu" />
     <CudaCompile Include="src\main.cu" />
@@ -509,6 +508,8 @@
     <ClInclude Include="src\graphics\shader.hpp" />
     <ClInclude Include="src\graphics\textures\stb_image.h" />
     <ClInclude Include="src\graphics\textures\texture_loading.hpp" />
+    <ClInclude Include="src\grids\base_grid.cuh" />
+    <ClInclude Include="src\grids\no_grid.cuh" />
     <ClInclude Include="src\simulation\particle_collisions.cuh" />
     <ClInclude Include="src\grids\uniform_grid.cuh" />
     <ClInclude Include="src\simulation\vein_collisions.cuh" />

@@ -10,9 +10,9 @@ class BloodCellsFactory
 public:
 	BloodCellsFactory(int cellCount, int particlesInSingleCell);
 
-	void AddSpring(int cellId1, int cellId2, float springLength);
+	void addSpring(int cellId1, int cellId2, float springLength);
 
-	BloodCells CreateBloodCells() const;
+	BloodCells createBloodCells() const;
 
 private:
 	std::vector<float> springGraph;
