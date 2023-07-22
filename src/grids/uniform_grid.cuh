@@ -1,13 +1,16 @@
 #pragma once
 
 #include "../blood_cell_structures/particles.cuh"
+#include "base_grid.cuh"
 
 /// <summary>
 /// Represents a grid of uniform cell size
 /// </summary>
-class UniformGrid
+class UniformGrid : public BaseGrid<UniformGrid>
 {
+private:
 	bool isCopy = false;
+
 public:
 	unsigned int* gridCellIds = 0;
 	unsigned int* particleIds = 0;
@@ -18,6 +21,10 @@ public:
 	UniformGrid(const UniformGrid& other);
 	~UniformGrid();
 
-	void calculateGrid(const Particles& particles);
+	inline void calculateGrid(const Particles& particles, unsigned int particleCount)
+	{
+		calculateGrid(particles.position.x, particles.position.y, particles.position.z, particleCount);
+	}
+
 	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);
 };

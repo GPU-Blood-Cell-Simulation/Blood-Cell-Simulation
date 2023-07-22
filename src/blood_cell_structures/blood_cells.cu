@@ -33,7 +33,7 @@ BloodCells::~BloodCells()
 __global__ void PropagateForcesOnDevice(BloodCells cells);
 
 
-void BloodCells::PropagateForces()
+void BloodCells::propagateForces()
 {
 	int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 	int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
