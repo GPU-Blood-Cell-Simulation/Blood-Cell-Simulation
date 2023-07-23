@@ -27,25 +27,31 @@ namespace sim
 			velocity.y += 5;
 
 		velocity = velocity + dt * F;
-		ray r(pos, normalize(velocity));
+		float3 velocityDir = normalize(velocity);
+		ray r(pos, velocityDir);
+		float3 reflectedVelociy;
+
 		// collisions with vein cylinder
 		// TODO: this is a naive (no grid) implementation
 		if (
-			calculateSideCollisions(pos, r, triangles) &&
+			calculateSideCollisions(pos, r, reflectedVelociy, triangles) &&
 			length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
-			// triangles move vector
-			float3 ds = 2 * normalize(make_float3(velocity.x, 0, velocity.z));
+			// triangles move vector, 2 is experimentall constant
+			float3 ds = 0.8f * velocityDir;
 
-			// here velocity should be changed in every direction but triangle normal
-			// 0.8 to slow down after contact
-			velocity.x *= -0.8;
-			velocity.z *= -0.8;
+			float speed = length(velocity);
+			velocity = velocityCollisionDamping * speed * reflectedVelociy;
+
+			float3 v0 = triangles.get(r.objectIndex, vertex0);
+			float3 v1 = triangles.get(r.objectIndex, vertex1);
+			float3 v2 = triangles.get(r.objectIndex, vertex2);
+			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
 			// move triangle a bit
-			triangles.add(r.objectIndex, vertex0, ds);
-			triangles.add(r.objectIndex, vertex1, ds);
-			triangles.add(r.objectIndex, vertex2, ds);
+			triangles.add(r.objectIndex, vertex0, baricentric.x*ds);
+			triangles.add(r.objectIndex, vertex1, baricentric.y*ds);
+			triangles.add(r.objectIndex, vertex2, baricentric.z*ds);
 		}
 
 		cells.particles.velocity.set(part_index, velocity);
@@ -58,38 +64,63 @@ namespace sim
 	}
 
 	// Calculate whether a collision between a particle (represented by the ray) and a vein triangle occurred
-	__device__ bool calculateSideCollisions(float3 p, ray& r, DeviceTriangles& triangles)
+	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles)
 	{
+		constexpr float EPS = 0.000001f;
 		for (int i = 0; i < triangles.triangleCount; ++i)
 		{
-			constexpr float EPS = 0.000001f;
-			float3 v1 = triangles.get(i, vertex0);
-			float3 v2 = triangles.get(i, vertex1);
-			float3 v3 = triangles.get(i, vertex2);
+			// triangle vectices and edges
+			float3 v0 = triangles.get(i, vertex0);
+			float3 v1 = triangles.get(i, vertex1);
+			float3 v2 = triangles.get(i, vertex2);
+			const float3 edge1 = v1 - v0;
+			const float3 edge2 = v2 - v0;
 
-			const float3 edge1 = v2 - v1;
-			const float3 edge2 = v3 - v1;
-			const float3 h = cross(r.direction, edge2);
+			const float3 h = cross(velocityRay.direction, edge2);
 			const float a = dot(edge1, h);
 			if (a > -EPS && a < EPS)
 				continue; // ray parallel to triangle
+			
 			const float f = 1 / a;
-			const float3 s = r.origin - v1;
+			const float3 s = velocityRay.origin - v0;
 			const float u = f * dot(s, h);
 			if (u < 0 || u > 1)
 				continue;
 			const float3 q = cross(s, edge1);
-			const float v = f * dot(r.direction, q);
+			const float v = f * dot(velocityRay.direction, q);
 			if (v < 0 || u + v > 1)
 				continue;
 			const float t = f * dot(edge2, q);
 			if (t > EPS)
 			{
-				r.t = t;
-				r.objectIndex = i;
+				velocityRay.t = t;
+				velocityRay.objectIndex = i;
+
+				// this normal is oriented to the vein interior
+				// it is caused by the order of vertices in triangles used to correct face culling
+				// change order of edge2 and edge1 in cross product for oposite normal
+				// Question: Is the situation when we should use oposite normal possible ?
+				float3 normal = normalize(cross(edge2, edge1));
+				reflectionVector = velocityRay.direction - 2 * dot(velocityRay.direction, normal) * normal;
 				return true;
 			}
 		}
 		return false;
+	}
+
+	__device__ float3 calculateBaricentric(float3 point, float3 v0, float3 v1, float3 v2)
+	{
+		float3 baricentric;
+		float3 e0 = v1 - v0, e1 = v2 - v1, e2 = point - v0;
+		float d00 = dot(e0, e0);
+		float d01 = dot(e0, e1);
+		float d11 = dot(e1, e1);
+		float d20 = dot(e2, e0);
+		float d21 = dot(e2, e1);
+		float denom = d00 * d11 - d01 * d01;
+		baricentric.x = (d11 * d20 - d01 * d21) / denom;
+		baricentric.y = (d00 * d21 - d01 * d20) / denom;
+		baricentric.z = 1.0f - baricentric.x - baricentric.y;
+		return baricentric;
 	}
 }
