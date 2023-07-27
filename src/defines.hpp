@@ -22,10 +22,8 @@ inline constexpr int cellHeight = 20;
 inline constexpr int cellDepth = 20;
 
 
-
-// 96 = 3*2*4*4
-// three layers of 2 particle dipoles, each layer is 4x4
 inline constexpr unsigned int PARTICLE_COUNT = 500;
+inline constexpr float springsInCellsLength = 10;
 
 // ! this value should be determined experimentally !
 // one frame simulation time span
