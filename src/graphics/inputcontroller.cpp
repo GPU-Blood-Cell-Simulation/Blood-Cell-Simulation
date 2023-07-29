@@ -44,6 +44,11 @@ namespace graphics
 			case GLFW_KEY_RIGHT:
 				controller->pressedKeys.RIGHT = true;
 				break;
+			// Change view mode
+			case GLFW_KEY_V:
+				glPolygonMode(GL_FRONT_AND_BACK, (VEIN_POLYGON_MODE = (VEIN_POLYGON_MODE == GL_LINE ? GL_FILL : GL_LINE)));
+				break;
+
 			}
 		}
 		else if (action == GLFW_RELEASE)

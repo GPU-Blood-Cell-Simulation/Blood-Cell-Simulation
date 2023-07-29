@@ -21,6 +21,7 @@ inline constexpr int cellWidth = 20;
 inline constexpr int cellHeight = 20;
 inline constexpr int cellDepth = 20;
 
+inline unsigned int VEIN_POLYGON_MODE = 0;
 
 inline constexpr unsigned int PARTICLE_COUNT = 500;
 inline constexpr float springsInCellsLength = 10;

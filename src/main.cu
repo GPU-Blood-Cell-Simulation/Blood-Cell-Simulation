@@ -62,6 +62,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    VEIN_POLYGON_MODE = GL_FILL;
 
     // debug
     glEnable(GL_DEBUG_OUTPUT);
