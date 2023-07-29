@@ -14,6 +14,14 @@ public:
 
 	BloodCells createBloodCells() const;
 
+	static BloodCells createMonopols(int cellCount);
+
+	static BloodCells createDipols(int cellCount, float springLength);
+
+	static BloodCells createQuadrupole(int cellCount, float springLength);
+
+	static BloodCells createOctuple(int cellCount, float springLength);
+
 private:
 	std::vector<float> springGraph;
 	int particlesInCell;
