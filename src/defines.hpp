@@ -21,7 +21,7 @@ inline constexpr int cellWidth = 20;
 inline constexpr int cellHeight = 20;
 inline constexpr int cellDepth = 20;
 
-
+inline unsigned int VEIN_POLYGON_MODE = 0;
 
 // 96 = 3*2*4*4
 // three layers of 2 particle dipoles, each layer is 4x4
