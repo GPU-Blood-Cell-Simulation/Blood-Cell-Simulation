@@ -23,8 +23,8 @@ __global__ void calculateCellIdKernel(const float* positionX, const float* posit
 		return;
 
 	unsigned int cellId =
-		static_cast<unsigned int>(positionZ[particleId] / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
-		static_cast<unsigned int>(positionY[particleId] / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
+		static_cast<unsigned int>(positionZ[particleId] / cellDepth) * cellCountX * cellCountY +
+		static_cast<unsigned int>(positionY[particleId] / cellHeight) * cellCountX +
 		static_cast<unsigned int>(positionX[particleId] / cellWidth);
 
 	// Debug
