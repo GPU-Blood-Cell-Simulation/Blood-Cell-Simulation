@@ -116,7 +116,7 @@ void programLoop(GLFWwindow* window)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(cells, triangles, &grid, triangles.triangleCount);
+        sim::calculateNextFrame(cells, triangles, &grid, triangleCentersGrid, triangles.triangleCount);
 
         // Pass positions to OpenGL
         glController.calculateOffsets(cells.particles.position.x,

@@ -17,9 +17,9 @@ inline constexpr float cylinderScaleX = width / 2;
 inline constexpr float cylinderScaleY = height / 2;
 inline constexpr float cylinderScaleZ = depth / 2;
 
-inline constexpr int cellWidth = 20;
-inline constexpr int cellHeight = 20;
-inline constexpr int cellDepth = 20;
+inline constexpr int cellWidth = 2;
+inline constexpr int cellHeight = 2;
+inline constexpr int cellDepth = 2;
 
 
 

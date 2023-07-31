@@ -12,14 +12,15 @@ private:
 	bool isCopy = false;
 
 public:
+	unsigned int cellAmount;
 	unsigned int* gridCellIds = 0;
 	unsigned int* particleIds = 0;
 	unsigned int* gridCellStarts = 0;
 	unsigned int* gridCellEnds = 0;
 
-	UniformGrid(const unsigned int particleCount);
-	UniformGrid(const UniformGrid& other);
-	~UniformGrid();
+	__host__ __device__ UniformGrid(const unsigned int particleCount);
+	__host__ __device__ UniformGrid(const UniformGrid& other);
+	__host__ __device__ ~UniformGrid();
 
 	inline void calculateGrid(const Particles& particles, unsigned int particleCount)
 	{
@@ -27,4 +28,6 @@ public:
 	}
 
 	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);
+
+	__device__ unsigned int calculateCellId(float3 position);
 };

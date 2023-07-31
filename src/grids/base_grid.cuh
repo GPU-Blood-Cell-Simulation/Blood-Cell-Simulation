@@ -20,4 +20,8 @@ public:
     {
         static_cast<Derived*>(this)->calculateGrid(positionX, positionY, positionZ, particleCount);;
     }
+    inline unsigned int calculateCellId(float3 position)
+    {
+        return static_cast<Derived*>(this)->calculateCellId(position);
+    }
 };

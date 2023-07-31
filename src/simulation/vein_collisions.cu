@@ -7,7 +7,7 @@ namespace sim
 
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles)
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles, UniformGrid triangleGrid, unsigned int gridCellAmount )
 	{
 		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -32,10 +32,14 @@ namespace sim
 		float3 reflectedVelociy;
 
 		// collisions with vein cylinder
-		// TODO: this is a naive (no grid) implementation
-		if (
-			calculateSideCollisions(pos, r, reflectedVelociy, triangles) &&
-			length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		bool collisionOccured = false;
+		/*std::visit([&](auto&& g)
+			{
+				collisionOccured = calculateSideCollisions(pos, r, reflectedVelociy, triangles, *g);
+			}, triangleGrid);*/
+		collisionOccured = calculateSideCollisions(pos, r, reflectedVelociy, triangles, triangleGrid, gridCellAmount);
+
+		if (collisionOccured &&	length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;
@@ -63,45 +67,83 @@ namespace sim
 		cells.particles.force.set(part_index, make_float3(0, 0, 0));
 	}
 
-	// Calculate whether a collision between a particle (represented by the ray) and a vein triangle occurred
-	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles)
+
+	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& velocityRay, float3& reflectionVector)
 	{
 		constexpr float EPS = 0.000001f;
-		for (int i = 0; i < triangles.triangleCount; ++i)
+		const float3 edge1 = v1 - v0;
+		const float3 edge2 = v2 - v0;
+
+		const float3 h = cross(velocityRay.direction, edge2);
+		const float a = dot(edge1, h);
+		if (a > -EPS && a < EPS)
+			return false; // ray parallel to triangle
+
+		const float f = 1 / a;
+		const float3 s = velocityRay.origin - v0;
+		const float u = f * dot(s, h);
+		if (u < 0 || u > 1)
+			return false;
+		const float3 q = cross(s, edge1);
+		const float v = f * dot(velocityRay.direction, q);
+		if (v < 0 || u + v > 1)
+			return false;
+		const float t = f * dot(edge2, q);
+		if (t > EPS)
 		{
-			// triangle vectices and edges
-			float3 v0 = triangles.get(i, vertex0);
-			float3 v1 = triangles.get(i, vertex1);
-			float3 v2 = triangles.get(i, vertex2);
-			const float3 edge1 = v1 - v0;
-			const float3 edge2 = v2 - v0;
+			velocityRay.t = t;
 
-			const float3 h = cross(velocityRay.direction, edge2);
-			const float a = dot(edge1, h);
-			if (a > -EPS && a < EPS)
-				continue; // ray parallel to triangle
-			
-			const float f = 1 / a;
-			const float3 s = velocityRay.origin - v0;
-			const float u = f * dot(s, h);
-			if (u < 0 || u > 1)
-				continue;
-			const float3 q = cross(s, edge1);
-			const float v = f * dot(velocityRay.direction, q);
-			if (v < 0 || u + v > 1)
-				continue;
-			const float t = f * dot(edge2, q);
-			if (t > EPS)
+			// this normal is oriented to the vein interior
+			// it is caused by the order of vertices in triangles used to correct face culling
+			// change order of edge2 and edge1 in cross product for oposite normal
+			// Question: Is the situation when we should use oposite normal possible ?
+			float3 normal = normalize(cross(edge2, edge1));
+			reflectionVector = velocityRay.direction - 2 * dot(velocityRay.direction, normal) * normal;
+			return true;
+		}
+	}
+
+	// chwilowo zakomentowane
+	//template<>
+	//__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, NoGrid& triangleGrid)
+	//{
+	//	for (int i = 0; i < triangles.triangleCount; ++i)
+	//	{
+	//		// triangle vectices and edges
+	//		float3 v0 = triangles.get(i, vertex0);
+	//		float3 v1 = triangles.get(i, vertex1);
+	//		float3 v2 = triangles.get(i, vertex2);
+	//		
+	//		if (!realCollisionDetection(v0, v1, v2, velocityRay, reflectionVector))
+	//			continue;
+
+	//		velocityRay.objectIndex = i;
+	//		return true;
+	//	}
+	//	return false;
+	//}
+
+
+	// chwilowo zakomentowane
+	//template<>
+	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid, unsigned int gridCellAmount)
+	{
+		unsigned int cellId = triangleGrid.calculateCellId(position);
+
+		if (cellId >= 0 && cellId < gridCellAmount)
+		{
+			for (int i = triangleGrid.gridCellStarts[cellId]; i <= triangleGrid.gridCellEnds[cellId]; i++)
 			{
-				velocityRay.t = t;
-				velocityRay.objectIndex = i;
+				// triangle vectices and edges
+				unsigned int triangleId = triangleGrid.particleIds[i];
+				float3 v0 = triangles.get(triangleId, vertex0);
+				float3 v1 = triangles.get(triangleId, vertex1);
+				float3 v2 = triangles.get(triangleId, vertex2);
 
-				// this normal is oriented to the vein interior
-				// it is caused by the order of vertices in triangles used to correct face culling
-				// change order of edge2 and edge1 in cross product for oposite normal
-				// Question: Is the situation when we should use oposite normal possible ?
-				float3 normal = normalize(cross(edge2, edge1));
-				reflectionVector = velocityRay.direction - 2 * dot(velocityRay.direction, normal) * normal;
+				if (!realCollisionDetection(v0, v1, v2, velocityRay, reflectionVector))
+					continue;
+
+				velocityRay.objectIndex = triangleId;
 				return true;
 			}
 		}

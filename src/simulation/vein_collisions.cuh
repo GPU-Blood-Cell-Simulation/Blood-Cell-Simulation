@@ -4,6 +4,10 @@
 #include "../utilities/math.cuh"
 #include "../blood_cell_structures/blood_cells.cuh"
 #include "../blood_cell_structures/device_triangles.cuh"
+#include "../grids/uniform_grid.cuh"
+#include "../grids/no_grid.cuh"
+#include <variant>
+
 
 #include <cmath>
 
@@ -11,6 +15,7 @@
 #include "device_launch_parameters.h"
 #include <device_functions.h>
 
+using Grid = std::variant<UniformGrid*, NoGrid*>;
 
 namespace sim
 {
@@ -28,9 +33,22 @@ namespace sim
 		__device__ ray(float3 origin, float3 direction);
 	};
 
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles);
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles, UniformGrid triangleGrid, unsigned int gridCellAmount);
 
-	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles);
+	// chwilowo zakomentowane
+	//template<typename T>
+	//// Calculate whether a collision between a particle (represented by the ray) and a vein triangle occurred
+	//__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, T& triangleGrid) {
+	//}
+
+	// chwilowo zakomentowane
+	//template<>
+	//__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, NoGrid& triangleGrid);
+	/*
+	template<>
+	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid);*/
+
+	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid, unsigned int gridCellAmount);
 	
 	__device__ float3 calculateBaricentric(float3 point, float3 v1, float3 v2, float3 v3);
 }
