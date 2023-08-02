@@ -62,14 +62,19 @@ namespace sim
 	}
 
 	// Main simulation function, called every frame
-	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid, UniformGrid triangleGrid, unsigned int triangleCount)
+	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid, Grid triangleGrid, unsigned int triangleCount)
 	{
 		// 1. Calculate grid
 		std::visit([&](auto&& g)
 			{
 				g->calculateGrid(bloodCells.particles, bloodCells.particleCount);
 			}, grid);
-		triangleGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangleCount);
+
+
+		std::visit([&](auto&& g)
+			{
+				g->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangleCount);
+			}, triangleGrid);
 
 		int threadsPerBlock = bloodCells.particleCount > 1024 ? 1024 : bloodCells.particleCount;
 		int blDim = std::ceil(float(bloodCells.particleCount) / threadsPerBlock);
@@ -87,6 +92,10 @@ namespace sim
 
 		// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
 
-		detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, triangleGrid, triangleGrid.cellAmount);
+		std::visit([&](auto&& g)
+			{
+				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g);
+			}, triangleGrid);
+		
 	}
 }
