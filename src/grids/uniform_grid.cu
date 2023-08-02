@@ -29,7 +29,6 @@ __global__ void calculateCellIdKernel(const float* positionX, const float* posit
 	unsigned int particleId = blockIdx.x * blockDim.x + threadIdx.x;
 	if (particleId >= particleCount)
 		return;
-
 	/*unsigned int cellId =
 		static_cast<unsigned int>(positionZ[particleId] / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
 		static_cast<unsigned int>(positionY[particleId] / cellHeight) * static_cast<unsigned int>(width / cellWidth) +

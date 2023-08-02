@@ -62,6 +62,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    VEIN_POLYGON_MODE = GL_FILL;
 
     // debug
     glEnable(GL_DEBUG_OUTPUT);
@@ -91,10 +92,7 @@ void programLoop(GLFWwindow* window)
     // Allocate memory
 
     // Creating dipols
-    BloodCellsFactory cellsFactory(PARTICLE_COUNT / 2, 2);
-    cellsFactory.addSpring(0, 1, 10);
-
-    BloodCells cells = cellsFactory.createBloodCells();
+    BloodCells cells = BloodCellsFactory::createDipols(PARTICLE_COUNT / 2, springsInCellsLength);
 
     DeviceTriangles triangles(glController.getGridMesh());
 

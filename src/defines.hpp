@@ -17,15 +17,18 @@ inline constexpr float cylinderScaleX = width / 2;
 inline constexpr float cylinderScaleY = height / 2;
 inline constexpr float cylinderScaleZ = depth / 2;
 
-inline constexpr int cellWidth = 2;
-inline constexpr int cellHeight = 2;
-inline constexpr int cellDepth = 2;
+inline constexpr unsigned int cellWidth = 20;
+inline constexpr unsigned int cellHeight = 20;
+inline constexpr unsigned int cellDepth = 20;
 
+inline constexpr unsigned int cellCountX = static_cast<unsigned int>(width / cellWidth);
+inline constexpr unsigned int cellCountY = static_cast<unsigned int>(height / cellHeight);
+inline constexpr unsigned int cellCountZ = static_cast<unsigned int>(depth / cellDepth);
 
+inline unsigned int VEIN_POLYGON_MODE = 0;
 
-// 96 = 3*2*4*4
-// three layers of 2 particle dipoles, each layer is 4x4
 inline constexpr unsigned int PARTICLE_COUNT = 500;
+inline constexpr float springsInCellsLength = 10;
 
 // ! this value should be determined experimentally !
 // one frame simulation time span
