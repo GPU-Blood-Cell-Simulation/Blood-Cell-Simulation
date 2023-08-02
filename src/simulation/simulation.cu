@@ -62,40 +62,26 @@ namespace sim
 	}
 
 	// Main simulation function, called every frame
-	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid, Grid triangleGrid, unsigned int triangleCount)
+	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, Grid particleGrid, Grid triangleGrid, unsigned int triangleCount)
 	{
-		// 1. Calculate grid
-		std::visit([&](auto&& g)
+		std::visit([&](auto&& g1, auto&& g2)
 			{
-				g->calculateGrid(bloodCells.particles, bloodCells.particleCount);
-			}, grid);
+				// 1. Calculate grids
+				g1->calculateGrid(bloodCells.particles, bloodCells.particleCount);
+				g2->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangleCount);
 
+				int threadsPerBlock = bloodCells.particleCount > 1024 ? 1024 : bloodCells.particleCount;
+				int blDim = std::ceil(float(bloodCells.particleCount) / threadsPerBlock);
 
-		std::visit([&](auto&& g)
-			{
-				g->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangleCount);
-			}, triangleGrid);
+				// 2. Detect particle collisions
+				calculateParticleCollisions << < dim3(blDim), threadsPerBlock >> > (bloodCells, *g1);
 
-		int threadsPerBlock = bloodCells.particleCount > 1024 ? 1024 : bloodCells.particleCount;
-		int blDim = std::ceil(float(bloodCells.particleCount) / threadsPerBlock);
-		
-		// 2. Detect particle collisions
-		std::visit([&](auto&& g)
-			{
-				calculateParticleCollisions << < dim3(blDim), threadsPerBlock >> > (bloodCells, *g);
-			}, grid);
-		
+				// 3. Propagate forces into neighbors
+				bloodCells.propagateForces();
 
-		// 3. Propagate forces into neighbors
+				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
+				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g2);
 
-		bloodCells.propagateForces();
-
-		// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
-
-		std::visit([&](auto&& g)
-			{
-				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g);
-			}, triangleGrid);
-		
+			}, particleGrid, triangleGrid);
 	}
 }
