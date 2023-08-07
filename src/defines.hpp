@@ -37,6 +37,9 @@ inline constexpr float dt = 0.1f;
 // initial particle velocity value
 inline constexpr float v0 = 0.1f;
 
+// distance beetwen particle and vein on which an impact occurs
+inline constexpr float veinImpactDistance = 5.0f;
+
 /// used in allocating new particles in array
 //inline unsigned int new_cell_index = 0;
 

@@ -97,10 +97,9 @@ void programLoop(GLFWwindow* window)
     DeviceTriangles triangles(glController.getGridMesh());
 
     UniformGrid grid(PARTICLE_COUNT), triangleCentersGrid(triangles.triangleCount);
-
     //NoGrid grid, triangleCentersGrid;
 
-    triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
+    //triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
 
     // Generate random positions
     sim::generateRandomPositions(cells.particles, PARTICLE_COUNT);

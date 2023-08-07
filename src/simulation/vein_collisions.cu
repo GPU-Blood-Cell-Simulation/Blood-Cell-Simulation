@@ -237,7 +237,7 @@ namespace sim
 			}
 		}
 
-		if (collicionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		if (collicionOccured)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;
@@ -301,7 +301,8 @@ namespace sim
 			float3 v1 = triangles.get(triangleId, vertex1);
 			float3 v2 = triangles.get(triangleId, vertex2);
 
-			if (!realCollisionDetection(v0, v1, v2, r, reflectedVelociy))
+			if (!(realCollisionDetection(v0, v1, v2, r, reflectedVelociy) 
+				&& length(pos - (pos + r.t * r.direction)) <= veinImpactDistance))
 				continue;
 
 			r.objectIndex = triangleId;
@@ -309,7 +310,7 @@ namespace sim
 			break;
 		}
 
-		if (collicionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		if (collicionOccured)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;
@@ -361,7 +362,8 @@ namespace sim
 						float3 v1 = triangles.get(triangleId, vertex1);
 						float3 v2 = triangles.get(triangleId, vertex2);
 
-						if (!realCollisionDetection(v0, v1, v2, velocityRay, reflectionVector))
+						if (!(realCollisionDetection(v0, v1, v2, velocityRay, reflectionVector) 
+							&& length(position - (position + velocityRay.t * velocityRay.direction)) <= veinImpactDistance))
 							continue;
 
 						velocityRay.objectIndex = triangleId;
