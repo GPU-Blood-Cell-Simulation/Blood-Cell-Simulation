@@ -81,12 +81,18 @@ namespace sim
 			}, grid);
 		
 
-		// 3. Propagate forces into neighbors
+		// 3. Propagate particle forces into neighbors
 
 		bloodCells.propagateForces();
 
 		// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
 
 		detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles);
+
+		// 5. Propagate forces -> velocities, velocities -> positions for vein triangles
+		threadsPerBlock = triangles.vertexCount > 1024 ? 1024 : triangles.vertexCount;
+		blDim = std::ceil(float(triangles.vertexCount) / threadsPerBlock);
+
+		propagateVeinTriangleVertices << < dim3(blDim), threadsPerBlock >> > (triangles);
 	}
 }

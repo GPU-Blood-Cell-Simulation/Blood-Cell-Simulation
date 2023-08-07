@@ -7,14 +7,14 @@
 #include <algorithm>
 
 
-__global__ void calculateCenters(cudaVec3 vertices, int* indices, cudaVec3 centers, int size)
+__global__ void calculateCenters(cudaVec3 position, unsigned int* indices, cudaVec3 centers, int triangleCount)
 {
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
-	if (id >= size)
+	if (id >= triangleCount)
 		return;
-	float3 vv1 = vertices.get(indices[3 * id]);
-	float3 vv2 = vertices.get(indices[3 * id + 1]);
-	float3 vv3 = vertices.get(indices[3 * id + 2]);
+	float3 vv1 = position.get(indices[3 * id]);
+	float3 vv2 = position.get(indices[3 * id + 1]);
+	float3 vv3 = position.get(indices[3 * id + 2]);
 
 	float x = (vv1.x + vv2.x + vv3.x) / 3;
 	float y = (vv1.y + vv2.y + vv3.y) / 3;
@@ -23,7 +23,7 @@ __global__ void calculateCenters(cudaVec3 vertices, int* indices, cudaVec3 cente
 }
 
 DeviceTriangles::DeviceTriangles(const Mesh& mesh) : triangleCount(mesh.indices.size() / 3), vertexCount(mesh.vertices.size()),
-	centers(triangleCount), vertices(vertexCount)
+	centers(triangleCount), position(vertexCount), velocity(vertexCount), force(vertexCount)
 {
 	// allocate
 	HANDLE_ERROR(cudaMalloc((void**)&indices, 3 * triangleCount * sizeof(int)));
@@ -44,19 +44,19 @@ DeviceTriangles::DeviceTriangles(const Mesh& mesh) : triangleCount(mesh.indices.
 
 	// copy
 	HANDLE_ERROR(cudaMemcpy(indices, indicesMem.data(), 3 * triangleCount * sizeof(int), cudaMemcpyHostToDevice));
-	HANDLE_ERROR(cudaMemcpy(vertices.x, vx.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
-	HANDLE_ERROR(cudaMemcpy(vertices.y, vy.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
-	HANDLE_ERROR(cudaMemcpy(vertices.z, vz.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
+	HANDLE_ERROR(cudaMemcpy(position.x, vx.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
+	HANDLE_ERROR(cudaMemcpy(position.y, vy.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
+	HANDLE_ERROR(cudaMemcpy(position.z, vz.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
 
 	// centers
 	int threadsPerBlock = triangleCount > 1024 ? 1024 : triangleCount;
 	int blocks = (triangleCount + threadsPerBlock - 1) / threadsPerBlock;
-	calculateCenters << <blocks, threadsPerBlock >> > (vertices, indices, centers, triangleCount);
+	calculateCenters << <blocks, threadsPerBlock >> > (position, indices, centers, triangleCount);
 	cudaDeviceSynchronize();
 }
 
 DeviceTriangles::DeviceTriangles(const DeviceTriangles& other) : isCopy(true), triangleCount(other.triangleCount), vertexCount(other.vertexCount),
-	vertices(other.vertices), indices(other.indices), centers(other.centers) {}
+position(other.position), velocity(other.velocity), force(other.force), indices(other.indices), centers(other.centers) {}
 
 DeviceTriangles::~DeviceTriangles()
 {

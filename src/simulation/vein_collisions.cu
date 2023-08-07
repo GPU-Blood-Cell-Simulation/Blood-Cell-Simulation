@@ -9,15 +9,14 @@ namespace sim
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles)
 	{
-		int part_index = blockDim.x * blockIdx.x + threadIdx.x;
+		int partIndex = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (part_index >= cells.particleCount)
+		if (partIndex >= cells.particleCount)
 			return;
 
-		// propagate force into velocities
-		float3 F = cells.particles.force.get(part_index);
-		float3 velocity = cells.particles.velocity.get(part_index);
-		float3 pos = cells.particles.position.get(part_index);
+		float3 F = cells.particles.force.get(partIndex);
+		float3 velocity = cells.particles.velocity.get(partIndex);
+		float3 pos = cells.particles.position.get(partIndex);
 
 		// upper and lower bound
 		if (pos.y >= 0.9f * height)
@@ -26,6 +25,7 @@ namespace sim
 		if (pos.y <= 0.1f * height)
 			velocity.y += 5;
 
+		// propagate particle forces into velocities
 		velocity = velocity + dt * F;
 		float3 velocityDir = normalize(velocity);
 		ray r(pos, velocityDir);
@@ -35,7 +35,7 @@ namespace sim
 		// TODO: this is a naive (no grid) implementation
 		if (
 			calculateSideCollisions(pos, r, reflectedVelociy, triangles) &&
-			length(pos - (pos + r.t * r.direction)) <= 5.0f)
+			length_squared(pos - (pos + r.t * r.direction)) <= 25.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;
@@ -43,24 +43,29 @@ namespace sim
 			float speed = length(velocity);
 			velocity = velocityCollisionDamping * speed * reflectedVelociy;
 
-			float3 v0 = triangles.get(r.objectIndex, vertex0);
-			float3 v1 = triangles.get(r.objectIndex, vertex1);
-			float3 v2 = triangles.get(r.objectIndex, vertex2);
+			unsigned int vertexIndex0 = triangles.getIndex(r.objectIndex, vertex0);
+			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
+			unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
+
+			float3 v0 = triangles.position.get(vertexIndex0);
+			float3 v1 = triangles.position.get(vertexIndex1);
+			float3 v2 = triangles.position.get(vertexIndex2);
 			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
 			// move triangle a bit
-			triangles.add(r.objectIndex, vertex0, baricentric.x*ds);
-			triangles.add(r.objectIndex, vertex1, baricentric.y*ds);
-			triangles.add(r.objectIndex, vertex2, baricentric.z*ds);
+			triangles.force.add(vertexIndex0, baricentric.x * ds);
+			triangles.force.add(vertexIndex1, baricentric.y * ds);
+			triangles.force.add(vertexIndex2, baricentric.z * ds);
+
 		}
 
-		cells.particles.velocity.set(part_index, velocity);
+		cells.particles.velocity.set(partIndex, velocity);
 
 		// propagate velocities into positions
-		cells.particles.position.add(part_index, dt * velocity);
+		cells.particles.position.add(partIndex, dt * velocity);
 
 		// zero forces
-		cells.particles.force.set(part_index, make_float3(0, 0, 0));
+		cells.particles.force.set(partIndex, make_float3(0, 0, 0));
 	}
 
 	// Calculate whether a collision between a particle (represented by the ray) and a vein triangle occurred
@@ -70,9 +75,9 @@ namespace sim
 		for (int i = 0; i < triangles.triangleCount; ++i)
 		{
 			// triangle vectices and edges
-			float3 v0 = triangles.get(i, vertex0);
-			float3 v1 = triangles.get(i, vertex1);
-			float3 v2 = triangles.get(i, vertex2);
+			float3 v0 = triangles.position.get(triangles.getIndex(i, vertex0));
+			float3 v1 = triangles.position.get(triangles.getIndex(i, vertex1));
+			float3 v2 = triangles.position.get(triangles.getIndex(i, vertex2));
 			const float3 edge1 = v1 - v0;
 			const float3 edge2 = v2 - v0;
 
@@ -122,5 +127,27 @@ namespace sim
 		baricentric.y = (d00 * d21 - d01 * d20) / denom;
 		baricentric.z = 1.0f - baricentric.x - baricentric.y;
 		return baricentric;
+	}
+
+	/// <summary>
+	/// Propagates the forces at vein triangle indices into their neighbors using elastic springs
+	/// </summary>
+	/// <param name="triangles"></param>
+	/// <returns></returns>
+	__global__ void propagateVeinTriangleVertices(DeviceTriangles triangles)
+	{
+		int vertex = blockDim.x * blockIdx.x + threadIdx.x;
+
+		if (vertex >= triangles.vertexCount)
+			return;
+
+		// propagate forces into velocities
+		triangles.velocity.add(vertex, dt * triangles.force.get(vertex));
+
+		// propagate velocities into positions
+		triangles.position.add(vertex, dt * triangles.velocity.get(vertex));
+
+		// zero forces
+		triangles.force.set(vertex, make_float3(0, 0, 0));
 	}
 }

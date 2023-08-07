@@ -16,38 +16,23 @@ class DeviceTriangles
 {
 	bool isCopy = false;
 public:
-	int triangleCount;
-	int vertexCount;
+	unsigned int triangleCount;
+	unsigned int vertexCount;
 
-	cudaVec3 vertices;
-	int* indices;
+	cudaVec3 position;
+	cudaVec3 velocity;
+	cudaVec3 force;
+
+	unsigned int* indices;
 	cudaVec3 centers;
 
 	DeviceTriangles(const Mesh& mesh);
 	DeviceTriangles(const DeviceTriangles& other);
 	~DeviceTriangles();
 
-	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
-	/// <returns></returns>
-	__device__ inline float3 get(int triangleIndex, VertexIndex vertexIndex) const
-	{
-		int index = indices[3 * triangleIndex + vertexIndex];
-		return vertices.get(index);
-	}
 
-	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
-	/// <returns></returns>
-	__device__ inline void set(int triangleIndex, VertexIndex vertexIndex, float3 value)
+	__device__ inline unsigned int getIndex(int triangleIndex, VertexIndex vertexIndex) const
 	{
-		int index = indices[3 * triangleIndex + vertexIndex];
-		vertices.set(index, value);
-	}
-
-	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
-	/// <returns></returns>
-	__device__ inline void add(int triangleIndex, VertexIndex vertexIndex, float3 value)
-	{
-		int index = indices[3 * triangleIndex + vertexIndex];
-		vertices.add(index, value);
+		return indices[3 * triangleIndex + vertexIndex];
 	}
 };
