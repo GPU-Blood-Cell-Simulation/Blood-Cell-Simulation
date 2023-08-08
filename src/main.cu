@@ -89,21 +89,18 @@ void programLoop(GLFWwindow* window)
     // Create a graphics controller
     graphics::GLController glController(window);
 
-    // Allocate memory
+    // Create dipols
+    BloodCells bloodCells = BloodCellsFactory::createDipols(PARTICLE_COUNT / 2, springsInCellsLength);
 
-    // Creating dipols
-    BloodCells cells = BloodCellsFactory::createDipols(PARTICLE_COUNT / 2, springsInCellsLength);
-
+    // Create vein triangles
     DeviceTriangles triangles(glController.getGridMesh());
 
+    // Create grids
     UniformGrid grid(PARTICLE_COUNT), triangleCentersGrid(triangles.triangleCount);
-
     //NoGrid grid, triangleCentersGrid;
 
-    triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
-
-    // Generate random positions
-    sim::generateRandomPositions(cells.particles, PARTICLE_COUNT);
+    // Create the main simulation controller and inject its dependencies
+    sim::SimulationController simulationController(bloodCells, triangles, &grid);
 
     // MAIN LOOP HERE - dictated by glfw
 
@@ -114,13 +111,13 @@ void programLoop(GLFWwindow* window)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
-        sim::calculateNextFrame(cells, triangles, &grid, triangles.triangleCount);
+        simulationController.calculateNextFrame();
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(cells.particles.position.x,
-            cells.particles.position.y,
-            cells.particles.position.z,
-            cells.particleCount);
+        glController.calculateOffsets(bloodCells.particles.position.x,
+            bloodCells.particles.position.y,
+            bloodCells.particles.position.z,
+            bloodCells.particleCount);
         glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering

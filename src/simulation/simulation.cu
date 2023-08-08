@@ -17,22 +17,33 @@ namespace sim
 
 	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const int particleCount);
 
-	// Generate initial positions and velocities of particles
-	void generateRandomPositions(Particles& particles, const int particleCount)
+	SimulationController::SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid) : bloodCells(bloodCells), triangles(triangles), grid(grid)
 	{
-		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
-		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
+		// Generate random particle positions
+		generateRandomPositions();
+	}
+
+	SimulationController::~SimulationController()
+	{
+
+	}
+
+	// Generate initial positions and velocities of particles
+	void SimulationController::generateRandomPositions()
+	{
+		int threadsPerBlock = bloodCells.particleCount > 1024 ? 1024 : bloodCells.particleCount;
+		int blocks = (bloodCells.particleCount + threadsPerBlock - 1) / threadsPerBlock;
 
 		// Set up random seeds
 		curandState* devStates;
-		HANDLE_ERROR(cudaMalloc(&devStates, particleCount * sizeof(curandState)));
+		HANDLE_ERROR(cudaMalloc(&devStates, bloodCells.particleCount * sizeof(curandState)));
 		srand(static_cast<unsigned int>(time(0)));
 		int seed = rand();
-		setupCurandStatesKernel << <blocks, threadsPerBlock >> > (devStates, seed, particleCount);
+		setupCurandStatesKernel << <blocks, threadsPerBlock >> > (devStates, seed, bloodCells.particleCount);
 
 		// Generate random positions and velocity vectors
 
-		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, particles, particleCount);
+		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, bloodCells.particles, bloodCells.particleCount);
 
 		HANDLE_ERROR(cudaFree(devStates));
 	}
@@ -62,7 +73,7 @@ namespace sim
 	}
 
 	// Main simulation function, called every frame
-	void calculateNextFrame(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid, unsigned int triangleCount)
+	void SimulationController::calculateNextFrame()
 	{
 		// 1. Calculate grid
 		std::visit([&](auto&& g)

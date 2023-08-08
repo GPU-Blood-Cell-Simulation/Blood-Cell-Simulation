@@ -14,9 +14,20 @@ using Grid = std::variant<UniformGrid*, NoGrid*>;
 
 namespace sim
 {
-	void generateRandomPositions(Particles& particles, const int particleCount);
+	class SimulationController
+	{
+	public:
+		SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid);
+		~SimulationController();
 
-	void calculateNextFrame(BloodCells& cells, DeviceTriangles& triangles, Grid grid, unsigned int triangleCount);
+		void calculateNextFrame();
+	private:
+		BloodCells& bloodCells;
+		DeviceTriangles& triangles;
+		Grid grid;
+
+		void generateRandomPositions();
+	};
 }
 
 #endif

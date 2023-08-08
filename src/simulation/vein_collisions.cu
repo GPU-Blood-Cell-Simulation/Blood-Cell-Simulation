@@ -141,6 +141,27 @@ namespace sim
 		if (vertex >= triangles.vertexCount)
 			return;
 
+		constexpr int verticalLayers = cylinderScaleY * cylinderHeight;
+		constexpr int horizontalLayers = cylinderScaleX * cylinderRadius;
+
+		int i = vertex / horizontalLayers;
+		int j = vertex - i * horizontalLayers;
+
+		// lower end of the vein
+		if (j == 0)
+		{
+
+		}
+		// upper end of the vein
+		else if (j == horizontalLayers - 1)
+		{
+			
+		}
+		else
+		{
+			
+		}
+
 		// propagate forces into velocities
 		triangles.velocity.add(vertex, dt * triangles.force.get(vertex));
 
