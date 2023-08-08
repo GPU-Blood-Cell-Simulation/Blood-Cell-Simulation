@@ -23,11 +23,6 @@ namespace sim
 		generateRandomPositions();
 	}
 
-	SimulationController::~SimulationController()
-	{
-
-	}
-
 	// Generate initial positions and velocities of particles
 	void SimulationController::generateRandomPositions()
 	{
@@ -100,10 +95,11 @@ namespace sim
 
 		detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles);
 
-		// 5. Propagate forces -> velocities, velocities -> positions for vein triangles
-		threadsPerBlock = triangles.vertexCount > 1024 ? 1024 : triangles.vertexCount;
-		blDim = std::ceil(float(triangles.vertexCount) / threadsPerBlock);
+		// 5. Gather forces from neighbors
 
-		propagateVeinTriangleVertices << < dim3(blDim), threadsPerBlock >> > (triangles);
+		triangles.gatherForcesFromNeighbors();
+
+		// 6. Propagate forces -> velocities, velocities -> positions for vein triangles
+		triangles.propagateForcesIntoPositions();
 	}
 }

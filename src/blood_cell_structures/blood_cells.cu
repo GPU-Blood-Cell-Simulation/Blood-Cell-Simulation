@@ -47,6 +47,7 @@ __device__ inline float CalculateSpringForce(float3 p1, float3 p2, float3 v1, fl
 }
 
 
+// TODO : split into two kernels with a temporary buffer - necessary synchronization
 __global__ void PropagateForcesOnDevice(BloodCells cells)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;

@@ -52,6 +52,7 @@ namespace sim
 			float3 v2 = triangles.position.get(vertexIndex2);
 			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
+			// TODO: Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it.
 			// move triangle a bit
 			triangles.force.add(vertexIndex0, baricentric.x * ds);
 			triangles.force.add(vertexIndex1, baricentric.y * ds);
@@ -129,46 +130,4 @@ namespace sim
 		return baricentric;
 	}
 
-	/// <summary>
-	/// Propagates the forces at vein triangle indices into their neighbors using elastic springs
-	/// </summary>
-	/// <param name="triangles"></param>
-	/// <returns></returns>
-	__global__ void propagateVeinTriangleVertices(DeviceTriangles triangles)
-	{
-		int vertex = blockDim.x * blockIdx.x + threadIdx.x;
-
-		if (vertex >= triangles.vertexCount)
-			return;
-
-		constexpr int verticalLayers = cylinderScaleY * cylinderHeight;
-		constexpr int horizontalLayers = cylinderScaleX * cylinderRadius;
-
-		int i = vertex / horizontalLayers;
-		int j = vertex - i * horizontalLayers;
-
-		// lower end of the vein
-		if (j == 0)
-		{
-
-		}
-		// upper end of the vein
-		else if (j == horizontalLayers - 1)
-		{
-			
-		}
-		else
-		{
-			
-		}
-
-		// propagate forces into velocities
-		triangles.velocity.add(vertex, dt * triangles.force.get(vertex));
-
-		// propagate velocities into positions
-		triangles.position.add(vertex, dt * triangles.velocity.get(vertex));
-
-		// zero forces
-		triangles.force.set(vertex, make_float3(0, 0, 0));
-	}
 }

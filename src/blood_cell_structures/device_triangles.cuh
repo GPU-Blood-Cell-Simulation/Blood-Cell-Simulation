@@ -14,10 +14,9 @@
 /// </summary>
 class DeviceTriangles
 {
-	bool isCopy = false;
 public:
-	unsigned int triangleCount;
-	unsigned int vertexCount;
+	const unsigned int triangleCount;
+	const unsigned int vertexCount;
 
 	cudaVec3 position;
 	cudaVec3 velocity;
@@ -25,6 +24,8 @@ public:
 
 	unsigned int* indices;
 	cudaVec3 centers;
+
+	cudaVec3 tempForcesBuffer;
 
 	DeviceTriangles(const Mesh& mesh);
 	DeviceTriangles(const DeviceTriangles& other);
@@ -35,4 +36,13 @@ public:
 	{
 		return indices[3 * triangleIndex + vertexIndex];
 	}
+
+	void gatherForcesFromNeighbors();
+	void propagateForcesIntoPositions();
+
+private:
+	bool isCopy = false;
+
+	const unsigned int threadsPerBlock;
+	const unsigned int blDim;
 };
