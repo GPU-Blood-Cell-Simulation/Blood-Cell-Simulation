@@ -2,6 +2,7 @@
 #include "../defines.hpp"
 #include "../utilities/cuda_vec3.cuh"
 #include "../utilities/vertex_index_enum.h"
+#include "../utilities/math.cuh"
 #include "../graphics/mesh.hpp"
 
 #include <vector>
@@ -25,7 +26,7 @@ public:
 	unsigned int* indices;
 	cudaVec3 centers;
 
-	cudaVec3 tempForcesBuffer;
+	cudaVec3 tempForceBuffer;
 
 	DeviceTriangles(const Mesh& mesh);
 	DeviceTriangles(const DeviceTriangles& other);
@@ -35,6 +36,15 @@ public:
 	__device__ inline unsigned int getIndex(int triangleIndex, VertexIndex vertexIndex) const
 	{
 		return indices[3 * triangleIndex + vertexIndex];
+	}
+
+	__device__ inline float calculateVeinSpringForce(float3 p1, float3 p2, float3 v1, float3 v2, float springLength, int i, int j, int jNeighbor)
+	{
+		/*float diff = length(p1 - p2) - springLength;
+		if (diff > 1)
+		printf("Difference: %f, i: %d, j: %d, iNeighbor: %d\n", diff, i, j, jNeighbor);*/
+
+		return (length(p1 - p2) - springLength)* vein_k_sniff + dot(normalize(p1 - p2), (v1 - v2)) * vein_d_fact;
 	}
 
 	void gatherForcesFromNeighbors();

@@ -27,39 +27,43 @@ namespace sim
 
 		// propagate particle forces into velocities
 		velocity = velocity + dt * F;
-		float3 velocityDir = normalize(velocity);
-		ray r(pos, velocityDir);
-		float3 reflectedVelociy;
-
-		// collisions with vein cylinder
-		// TODO: this is a naive (no grid) implementation
-		if (
-			calculateSideCollisions(pos, r, reflectedVelociy, triangles) &&
-			length_squared(pos - (pos + r.t * r.direction)) <= 25.0f)
+		// TODO: is there a faster way to calculate this?
+		if (velocity.x != 0 && velocity.y != 0 && velocity.z != 0)
 		{
-			// triangles move vector, 2 is experimentall constant
-			float3 ds = 0.8f * velocityDir;
+			float3 velocityDir = normalize(velocity);
+			ray r(pos, velocityDir);
+			float3 reflectedVelociy;
 
-			float speed = length(velocity);
-			velocity = velocityCollisionDamping * speed * reflectedVelociy;
+			// collisions with vein cylinder
+			// TODO: this is a naive (no grid) implementation
+			if (
+				calculateSideCollisions(pos, r, reflectedVelociy, triangles) &&
+				length_squared(pos - (pos + r.t * r.direction)) <= 25.0f)
+			{
+				// triangles move vector, 2 is experimentall constant
+				float3 ds = 0.8f * velocityDir;
 
-			unsigned int vertexIndex0 = triangles.getIndex(r.objectIndex, vertex0);
-			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
-			unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
+				float speed = length(velocity);
+				velocity = velocityCollisionDamping * speed * reflectedVelociy;
 
-			float3 v0 = triangles.position.get(vertexIndex0);
-			float3 v1 = triangles.position.get(vertexIndex1);
-			float3 v2 = triangles.position.get(vertexIndex2);
-			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
+				unsigned int vertexIndex0 = triangles.getIndex(r.objectIndex, vertex0);
+				unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
+				unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
 
-			// TODO: Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it.
-			// move triangle a bit
-			triangles.force.add(vertexIndex0, baricentric.x * ds);
-			triangles.force.add(vertexIndex1, baricentric.y * ds);
-			triangles.force.add(vertexIndex2, baricentric.z * ds);
+				float3 v0 = triangles.position.get(vertexIndex0);
+				float3 v1 = triangles.position.get(vertexIndex1);
+				float3 v2 = triangles.position.get(vertexIndex2);
+				float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
+				// TODO: Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it.
+				// move triangle a bit
+				triangles.force.add(vertexIndex0, baricentric.x * ds);
+				triangles.force.add(vertexIndex1, baricentric.y * ds);
+				triangles.force.add(vertexIndex2, baricentric.z * ds);
+
+			}
 		}
-
+		
 		cells.particles.velocity.set(partIndex, velocity);
 
 		// propagate velocities into positions

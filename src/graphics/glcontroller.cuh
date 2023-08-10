@@ -43,8 +43,8 @@ namespace graphics
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), static_cast<float>(windowWidth) / windowHeight, 0.1f, depth * 10);
 
 		Model particleModel = Model("Models/Earth/low_poly_earth.fbx");
-		Model veinModel = Model(CylinderMesh(glm::vec3(width / 2, height / 2, depth / 2), cylinderScaleY * cylinderHeight,
-			cylinderScaleX * cylinderRadius, 100, 30).CreateMesh()); //Model("Models/Cylinder/cylinder.obj");
+		Model veinModel = Model(CylinderMesh(glm::vec3(width / 2, height / 2, depth / 2), veinHeight,
+			veinRadius, verticalLayers, horizontalLayers).CreateMesh()); //Model("Models/Cylinder/cylinder.obj");
 
 		Camera camera;
 		InputController inputController;

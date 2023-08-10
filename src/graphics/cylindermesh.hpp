@@ -1,14 +1,15 @@
 #include "mesh.hpp"
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 
 class CylinderMesh
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
-	float radius, height;
-	unsigned int vLayers, hLayers;
+	const float radius, height;
+	const unsigned int vLayers, hLayers;
 	glm::vec3 origin;
 public:
 	CylinderMesh(glm::vec3 origin, float height, float radius,
@@ -43,6 +44,9 @@ public:
 				}
 			}
 		}
+		// Vertex distance debug info
+		// std::cout << "Vertical (i): " << length(vertices[0].Position - vertices[hLayers].Position) << std::endl;
+		// std::cout << "Horizontal (j): " << length(vertices[0].Position - vertices[1].Position) << std::endl;
 	}
 
 	Mesh CreateMesh()

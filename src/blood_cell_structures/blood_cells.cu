@@ -42,11 +42,6 @@ void BloodCells::propagateForces()
 }
 
 
-__device__ inline float CalculateSpringForce(float3 p1, float3 p2, float3 v1, float3 v2, float springLen) {
-	return (length(p1 - p2) - springLen) * k_sniff + dot(normalize(p1 - p2), (v1 - v2)) * d_fact;
-}
-
-
 // TODO : split into two kernels with a temporary buffer - necessary synchronization
 __global__ void PropagateForcesOnDevice(BloodCells cells)
 {
@@ -71,7 +66,7 @@ __global__ void PropagateForcesOnDevice(BloodCells cells)
 		float3 neighbourPos = cells.particles.position.get(neighbourIndex);
 		float3 neighbourVelo = cells.particles.velocity.get(neighbourIndex);
 
-		float springForce = CalculateSpringForce(pos, neighbourPos, velo, neighbourVelo, springLen);
+		float springForce = cells.calculateParticleSpringForce(pos, neighbourPos, velo, neighbourVelo, springLen);
 
 		cells.particles.force.add(index, springForce * normalize(neighbourPos - pos));
 	}
