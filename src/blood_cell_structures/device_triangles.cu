@@ -103,10 +103,13 @@ void DeviceTriangles::propagateForcesIntoPositions()
 /// <returns></returns>
 __global__ void gatherForcesKernel(DeviceTriangles triangles)
 {
-	// TODO: vertex distances (spring lengths) are hardcoded for now, ideally we'd like to calculate them for every possible vein model
 	int vertex = blockDim.x * blockIdx.x + threadIdx.x;
 	if (vertex >= triangles.force.size)
 		return;
+
+	// TODO: vertex distances (spring lengths) are hardcoded for now, ideally we'd like to calculate them for every possible vein model
+	constexpr float veinVertexHorizontalDistance = 20.9057f;
+	constexpr float veinVertexNonHorizontalDistances[] = { 21.5597f, 5.26999f, 21.5597f };
 
 	float springForce;
 	float3 neighborPosition;
@@ -121,40 +124,58 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 
 	// vertically adjacent vertices
 
-	unsigned int jPrev = j != 0 ? j - 1 : horizontalLayers - 1;
-	unsigned int jNext = (j + 1) % horizontalLayers;
-	unsigned int vertexHorizontalPrev = i * horizontalLayers + jPrev;
-	unsigned int vertexHorizontalNext = i * horizontalLayers + jNext;
+	unsigned int jSpan[] =
+	{
+		j != 0 ? j - 1 : horizontalLayers - 1,
+		j,
+		(j + 1) % horizontalLayers
+	};
+
+
+	unsigned int vertexHorizontalPrev = i * horizontalLayers + jSpan[0];
+	unsigned int vertexHorizontalNext = i * horizontalLayers + jSpan[2];
 
 
 	// Previous horizontally
 	neighborPosition = triangles.position.get(vertexHorizontalPrev);
-	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalPrev), 20.9057f, i, j, jPrev);
+	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalPrev), veinVertexHorizontalDistance);
 	vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
 
 	// Next horizontally
 	neighborPosition = triangles.position.get(vertexHorizontalNext);
-	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalNext), 20.9057f, i, j, jNext);
+	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalNext), veinVertexHorizontalDistance);
 	vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
+
+	
 
 	// not the lower end of the vein
 	if (i != 0)
 	{
-		// Previous vertically
-		unsigned int vertexVerticalPrev = (i - 1) * horizontalLayers + j;
-		neighborPosition = triangles.position.get(vertexVerticalPrev);
-		springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalPrev), 5.26999f,i,j,i-1);
-		vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
+		// Lower vertical neighbors
+		#pragma unroll
+		for (int jIndex = 0; jIndex < 3; jIndex++)
+		{
+			unsigned int vertexVerticalPrev = (i - 1) * horizontalLayers + jSpan[jIndex];
+			neighborPosition = triangles.position.get(vertexVerticalPrev);
+			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalPrev), veinVertexNonHorizontalDistances[jIndex]);
+			vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
+		}
+		
 	}
 
 	//// not the upper end of the vein
 	if (i != verticalLayers - 1)
 	{
-		//Next vertically
-		unsigned int vertexVerticalNext = (i + 1) * horizontalLayers + j;
-		neighborPosition = triangles.position.get(vertexVerticalNext);
-		springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalNext), 5.26999f,i,j,i+1);
-		vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
+		// Upper vertical neighbors
+		#pragma unroll
+		for (int jIndex = 0; jIndex < 3; jIndex++)
+		{
+			unsigned int vertexVerticalNext = (i + 1) * horizontalLayers + jSpan[jIndex];
+			neighborPosition = triangles.position.get(vertexVerticalNext);
+			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalNext), veinVertexNonHorizontalDistances[jIndex]);
+			vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
+		}
+		
 	}
 
 	triangles.tempForceBuffer.set(vertex, vertexForce);

@@ -45,8 +45,10 @@ public:
 			}
 		}
 		// Vertex distance debug info
-		// std::cout << "Vertical (i): " << length(vertices[0].Position - vertices[hLayers].Position) << std::endl;
-		// std::cout << "Horizontal (j): " << length(vertices[0].Position - vertices[1].Position) << std::endl;
+		/*std::cout << "Vertical (i): " << length(vertices[0].Position - vertices[hLayers].Position) << std::endl;
+		std::cout << "Horizontal (j): " << length(vertices[0].Position - vertices[1].Position) << std::endl;
+		std::cout << "Diagonal: " << length(vertices[0].Position - vertices[hLayers + 1].Position) << std::endl;
+		exit(0);*/
 	}
 
 	Mesh CreateMesh()

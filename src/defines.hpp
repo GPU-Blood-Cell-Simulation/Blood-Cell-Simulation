@@ -33,7 +33,7 @@ inline constexpr unsigned int cellCountZ = static_cast<unsigned int>(depth / cel
 
 inline unsigned int VEIN_POLYGON_MODE = 0;
 
-inline constexpr unsigned int PARTICLE_COUNT = 500;
+inline constexpr unsigned int PARTICLE_COUNT = 1000;
 inline constexpr float springsInCellsLength = 10;
 
 // ! this value should be determined experimentally !

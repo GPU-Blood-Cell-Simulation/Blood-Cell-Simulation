@@ -38,12 +38,8 @@ public:
 		return indices[3 * triangleIndex + vertexIndex];
 	}
 
-	__device__ inline float calculateVeinSpringForce(float3 p1, float3 p2, float3 v1, float3 v2, float springLength, int i, int j, int jNeighbor)
+	__device__ inline float calculateVeinSpringForce(float3 p1, float3 p2, float3 v1, float3 v2, float springLength)
 	{
-		/*float diff = length(p1 - p2) - springLength;
-		if (diff > 1)
-		printf("Difference: %f, i: %d, j: %d, iNeighbor: %d\n", diff, i, j, jNeighbor);*/
-
 		return (length(p1 - p2) - springLength)* vein_k_sniff + dot(normalize(p1 - p2), (v1 - v2)) * vein_d_fact;
 	}
 
