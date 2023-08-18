@@ -75,13 +75,13 @@ namespace sim
 
 				// 2. Detect particle collisions
 				calculateParticleCollisions << < dim3(blDim), threadsPerBlock >> > (bloodCells, *g1);
-
+				//HANDLE_ERROR(cudaPeekAtLastError());
 				// 3. Propagate forces into neighbors
 				bloodCells.propagateForces();
-
+				//HANDLE_ERROR(cudaPeekAtLastError());
 				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
-				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g2);
-
+				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g1, *g2, FRAME);
+				//HANDLE_ERROR(cudaPeekAtLastError());
 			}, particleGrid, triangleGrid);
 	}
 }

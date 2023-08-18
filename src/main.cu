@@ -96,11 +96,12 @@ void programLoop(GLFWwindow* window)
 
     DeviceTriangles triangles(glController.getGridMesh());
 
-    UniformGrid grid(PARTICLE_COUNT), triangleCentersGrid(triangles.triangleCount);
+    UniformGrid grid(PARTICLE_COUNT, 20, 20, 20), triangleCentersGrid(triangles.triangleCount, 5, 5, 5);
+
     //NoGrid grid, triangleCentersGrid;
 
-    //triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
-
+    triangleCentersGrid.calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
+    NoGrid triangleGrid = NoGrid();
     // Generate random positions
     sim::generateRandomPositions(cells.particles, PARTICLE_COUNT);
 
@@ -108,13 +109,14 @@ void programLoop(GLFWwindow* window)
 
     while (!glfwWindowShouldClose(window))
     {
+        FRAME++;
         // Clear 
         glClearColor(1.00f, 0.75f, 0.80f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Calculate particle positions using CUDA
         sim::calculateNextFrame(cells, triangles, &grid, &triangleCentersGrid, triangles.triangleCount);
-
+        //return;
         // Pass positions to OpenGL
         glController.calculateOffsets(cells.particles.position.x,
             cells.particles.position.y,

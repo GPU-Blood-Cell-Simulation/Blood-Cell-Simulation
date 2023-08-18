@@ -17,18 +17,19 @@ inline constexpr float cylinderScaleX = width / 2;
 inline constexpr float cylinderScaleY = height / 2;
 inline constexpr float cylinderScaleZ = depth / 2;
 
-inline constexpr unsigned int cellWidth = 20;
-inline constexpr unsigned int cellHeight = 20;
-inline constexpr unsigned int cellDepth = 20;
+//inline constexpr unsigned int cellWidth = 5;
+//inline constexpr unsigned int cellHeight = 5;
+//inline constexpr unsigned int cellDepth = 5;
 
-inline constexpr unsigned int cellCountX = static_cast<unsigned int>(width / cellWidth);
-inline constexpr unsigned int cellCountY = static_cast<unsigned int>(height / cellHeight);
-inline constexpr unsigned int cellCountZ = static_cast<unsigned int>(depth / cellDepth);
+//inline constexpr unsigned int cellCountX = static_cast<unsigned int>(width / cellWidth);
+//inline constexpr unsigned int cellCountY = static_cast<unsigned int>(height / cellHeight);
+//inline constexpr unsigned int cellCountZ = static_cast<unsigned int>(depth / cellDepth);
 
 inline unsigned int VEIN_POLYGON_MODE = 0;
 
 inline constexpr unsigned int PARTICLE_COUNT = 500;
 inline constexpr float springsInCellsLength = 10;
+inline unsigned int FRAME = 0;
 
 // ! this value should be determined experimentally !
 // one frame simulation time span

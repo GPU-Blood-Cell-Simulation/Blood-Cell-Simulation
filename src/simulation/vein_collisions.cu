@@ -1,5 +1,6 @@
 #include "vein_collisions.cuh"
 #include "../utilities/vertex_index_enum.h"
+#include "../utilities/cuda_handle_error.cuh"
 
 
 namespace sim
@@ -62,7 +63,7 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid triangleGrid )
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid, unsigned int frame )
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -87,12 +88,12 @@ namespace sim
 		float3 reflectedVelociy = make_float3(0, 0, 0);
 
 		bool collicionOccured = false;
-		int xId = static_cast<unsigned int>(cells.particles.position.x[particleId] / cellWidth);
-		int yId = static_cast<unsigned int>(cells.particles.position.y[particleId] / cellHeight) * cellCountX;
-		int zId = static_cast<unsigned int>(cells.particles.position.z[particleId] / cellDepth) * cellCountX * cellCountY;
+		int xId = static_cast<unsigned int>(cells.particles.position.x[particleId] / particleGrid.cellWidth);
+		int yId = static_cast<unsigned int>(cells.particles.position.y[particleId] / particleGrid.cellHeight) * particleGrid.cellCountX;
+		int zId = static_cast<unsigned int>(cells.particles.position.z[particleId] / particleGrid.cellDepth) * particleGrid.cellCountX * particleGrid.cellCountY;
 
 		// collisions with vein cylinder
-		if (xId < 1)
+		/*if (xId < 1)
 		{
 			if (yId < 1)
 			{
@@ -235,9 +236,56 @@ namespace sim
 					collicionOccured = calculateSideCollisions<-1, 1, -1, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid );
 				}
 			}
+		}*/
+		int checksAmount = 0;
+		//collicionOccured = calculateSideCollisions/*<-1, 1, -1, 1, -1, 1>*/(pos, r, reflectedVelociy, triangles, triangleGrid, checksAmount);
+
+		unsigned int cellId = triangleGrid.calculateCellId(pos);
+		/*if (cellId > *triangleGrid.cellAmountDevice || cellId < 0)
+			return;*/
+		//checksAmount = 0;
+
+		#pragma unroll
+		for (int x = -1; x <= 1; x++)
+		{
+			#pragma unroll	
+			for (int y = -1; y <= 1; y++)
+			{
+				#pragma unroll
+				for (int z = -1; z <= 1; z++)
+				{
+					int neighborCellId = cellId + z * triangleGrid.cellCountX * triangleGrid.cellCountY + y * triangleGrid.cellCountX + x;
+					int diff = triangleGrid.gridCellEnds[neighborCellId] - triangleGrid.gridCellStarts[neighborCellId];
+					//if( diff > 5831)
+						//printf("particle id = %d, cell id = %d, neighbour cell id = %d, grid start = %d, grid end = %d\n", particleId, cellId, neighborCellId, triangleGrid.gridCellStarts[neighborCellId], triangleGrid.gridCellEnds[neighborCellId]);
+					for (int i = triangleGrid.gridCellStarts[neighborCellId]; i <= triangleGrid.gridCellEnds[neighborCellId]; i++)
+					{
+						// triangle vectices and edges
+						unsigned int triangleId = triangleGrid.particleIds[i];
+						float3 v0 = triangles.get(triangleId, vertex0);
+						float3 v1 = triangles.get(triangleId, vertex1);
+						float3 v2 = triangles.get(triangleId, vertex2);
+						checksAmount++;
+						//if (diff > 5831 /*&& cellId == 142*/)
+						//{
+						//	printf("[particle %d][cell %d][neighbour cell %d][triangle %d] triangle (%f, %f, %f),(%f, %f, %f),(%f, %f, %f)\n", particleId, cellId, neighborCellId, triangleId, v0.x, v0.y,v0.z, v1.x, v1.y, v1.z, v2.x, v2.y,v2.z);
+						//}
+						if (!realCollisionDetection(v0, v1, v2, r, reflectedVelociy))
+							continue;
+
+						r.objectIndex = triangleId;
+						collicionOccured = true;
+						goto check_collision;
+					}
+				}
+			}
 		}
 
-		if (collicionOccured)
+	check_collision:
+		//__syncthreads();
+		//if(frame == 70)
+		//	printf("[Frame %d][Particle ID %d][Cell ID %d] checks = %d\n", frame, particleId, cellId, checksAmount);
+		if (collicionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;
@@ -268,7 +316,7 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells cells, DeviceTriangles triangles, NoGrid  triangleGrid )
+	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid  triangleGrid, unsigned int frame)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -293,22 +341,22 @@ namespace sim
 		float3 reflectedVelociy = make_float3(0, 0, 0);
 
 		bool collicionOccured = false;
-
+		int checksAmount = 0;
 		for (int triangleId = 0; triangleId < triangles.triangleCount; ++triangleId)
 		{
 			// triangle vectices and edges
 			float3 v0 = triangles.get(triangleId, vertex0);
 			float3 v1 = triangles.get(triangleId, vertex1);
 			float3 v2 = triangles.get(triangleId, vertex2);
-
-			if (!(realCollisionDetection(v0, v1, v2, r, reflectedVelociy) 
-				&& length(pos - (pos + r.t * r.direction)) <= veinImpactDistance))
+			checksAmount++;
+			if (!realCollisionDetection(v0, v1, v2, r, reflectedVelociy))
 				continue;
 
 			r.objectIndex = triangleId;
 			collicionOccured = true;
 			break;
 		}
+		printf("[ID %d] checks = %d\n",particleId, checksAmount);
 
 		if (collicionOccured)
 		{
@@ -338,22 +386,22 @@ namespace sim
 		cells.particles.force.set(particleId, make_float3(0, 0, 0));
 	}
 
-	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>
-	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid )
+	//template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>
+	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid, int& checksAmount )
 	{
 		unsigned int cellId = triangleGrid.calculateCellId(position);
-
+		checksAmount = 0;
 		#pragma unroll
-		for (int x = xMin; x <= xMax; x++)
+		for (int x = -1; x <= 1; x++)
 		{
 			#pragma unroll	
-			for (int y = yMin; y <= yMax; y++)
+			for (int y = -1; y <= 1; y++)
 			{
 				#pragma unroll
-				for (int z = zMin; z <= zMax; z++)
+				for (int z = -1; z <= 1; z++)
 				{
-					int neighborCellId = cellId + z * cellCountX * cellCountY + y * cellCountX + x;
-
+					int neighborCellId = cellId + z * triangleGrid.cellCountX * triangleGrid.cellCountY + y * triangleGrid.cellCountX + x;
+					printf("cell id = %d, neighbour cell id = %d, grid start = %d, grid end = %d\n", cellId, neighborCellId, triangleGrid.gridCellStarts[neighborCellId], triangleGrid.gridCellEnds[neighborCellId]);
 					for (int i = triangleGrid.gridCellStarts[neighborCellId]; i <= triangleGrid.gridCellEnds[neighborCellId]; i++)
 					{
 						// triangle vectices and edges
@@ -361,9 +409,8 @@ namespace sim
 						float3 v0 = triangles.get(triangleId, vertex0);
 						float3 v1 = triangles.get(triangleId, vertex1);
 						float3 v2 = triangles.get(triangleId, vertex2);
-
-						if (!(realCollisionDetection(v0, v1, v2, velocityRay, reflectionVector) 
-							&& length(position - (position + velocityRay.t * velocityRay.direction)) <= veinImpactDistance))
+						checksAmount++;
+						if (!realCollisionDetection(v0, v1, v2, velocityRay, reflectionVector))
 							continue;
 
 						velocityRay.objectIndex = triangleId;

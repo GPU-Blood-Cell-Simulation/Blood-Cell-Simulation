@@ -15,35 +15,9 @@
 
 #pragma region Helper kernels
 
-__device__ unsigned int calculateIdForCell(float x, float y, float z)
-{
-	return
-		static_cast<unsigned int>(z / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
-		static_cast<unsigned int>(y / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
-		static_cast<unsigned int>(x / cellWidth);
-}
 
-__global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
-	unsigned int* cellIds, unsigned int* particleIds, const unsigned int particleCount)
-{
-	unsigned int particleId = blockIdx.x * blockDim.x + threadIdx.x;
-	if (particleId >= particleCount)
-		return;
-	/*unsigned int cellId =
-		static_cast<unsigned int>(positionZ[particleId] / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
-		static_cast<unsigned int>(positionY[particleId] / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
-		static_cast<unsigned int>(positionX[particleId] / cellWidth);*/
-	unsigned int cellId = calculateIdForCell(positionX[particleId], positionY[particleId], positionZ[particleId]);
-	// Debug
-	/*if (cellId >= 9261)
-		printf("Error, cellId: %d\n", cellId);*/
 
-	//printf("id: %d, cellId: %d\n", particleId, cellId);
 
-	particleIds[particleId] = particleId;
-	cellIds[particleId] = cellId;
-
-}
 
 __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const float* positionY, const float* positionZ,
 	const unsigned int* cellIds, const unsigned int* particleIds,
@@ -80,14 +54,24 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
 #pragma endregion
 
 // Allocate GPU buffers for the index buffers
-UniformGrid::UniformGrid(const unsigned int particleCount)
+UniformGrid::UniformGrid(const unsigned int particleCount, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
 {
+	this->cellWidth = cellWidth;
+	this->cellHeight= cellHeight;
+	this->cellDepth = cellDepth;
+	cellCountX = static_cast<unsigned int>(width / cellWidth);
+	cellCountY = static_cast<unsigned int>(height / cellHeight);
+	cellCountZ = static_cast<unsigned int>(depth / cellDepth);
+
 	cellAmount = width / cellWidth * height / cellHeight * depth / cellDepth;
 	HANDLE_ERROR(cudaMalloc((void**)&gridCellIds, particleCount * sizeof(unsigned int)));
 	HANDLE_ERROR(cudaMalloc((void**)&particleIds, particleCount * sizeof(unsigned int)));
 
 	HANDLE_ERROR(cudaMalloc((void**)&gridCellStarts, cellAmount * sizeof(unsigned int)));
 	HANDLE_ERROR(cudaMalloc((void**)&gridCellEnds, cellAmount * sizeof(unsigned int)));
+
+	HANDLE_ERROR(cudaMalloc((void**)&cellAmountDevice, sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMemcpy(cellAmountDevice, &cellAmount, sizeof(unsigned int), cudaMemcpyHostToDevice));
 }
 
 UniformGrid::UniformGrid(const UniformGrid& other) : isCopy(true), gridCellIds(other.gridCellIds), particleIds(other.particleIds),
