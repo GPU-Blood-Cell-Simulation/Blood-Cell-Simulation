@@ -12,12 +12,6 @@ protected:
     BaseGrid() {}
 public:
 
-    unsigned int cellWidth;
-    unsigned int cellHeight;
-    unsigned int cellDepth;
-    unsigned int cellCountX;
-    unsigned int cellCountY;
-    unsigned int cellCountZ;
 
     inline void calculateGrid(const Particles& particles)
     {

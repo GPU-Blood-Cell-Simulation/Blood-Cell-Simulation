@@ -18,6 +18,30 @@
 
 
 
+__device__ unsigned int calculateIdForCell(float x, float y, float z, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
+{
+	if (x < 0 || x > width || y < 0 || y > height || z < 0 || z > depth) {
+		printf("Position out of grid bounds: (%f, %f, %f)\n", x, y, z);
+	}
+	return
+		static_cast<unsigned int>(z / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
+		static_cast<unsigned int>(y / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
+		static_cast<unsigned int>(x / cellWidth);
+}
+
+__global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
+	unsigned int* cellIds, unsigned int* particleIds, const unsigned int particleCount,
+	unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
+{
+	unsigned int particleId = blockIdx.x * blockDim.x + threadIdx.x;
+	if (particleId >= particleCount)
+		return;
+
+	unsigned int cellId = calculateIdForCell(positionX[particleId], positionY[particleId], positionZ[particleId], cellWidth, cellHeight, cellDepth);
+
+	particleIds[particleId] = particleId;
+	cellIds[particleId] = cellId;
+}
 
 __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const float* positionY, const float* positionZ,
 	const unsigned int* cellIds, const unsigned int* particleIds,
@@ -54,28 +78,27 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
 #pragma endregion
 
 // Allocate GPU buffers for the index buffers
-UniformGrid::UniformGrid(const unsigned int particleCount, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
+UniformGrid::UniformGrid(const unsigned int objectsCount, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
 {
 	this->cellWidth = cellWidth;
 	this->cellHeight= cellHeight;
 	this->cellDepth = cellDepth;
+	this->objectsCount = objectsCount;
 	cellCountX = static_cast<unsigned int>(width / cellWidth);
 	cellCountY = static_cast<unsigned int>(height / cellHeight);
 	cellCountZ = static_cast<unsigned int>(depth / cellDepth);
 
 	cellAmount = width / cellWidth * height / cellHeight * depth / cellDepth;
-	HANDLE_ERROR(cudaMalloc((void**)&gridCellIds, particleCount * sizeof(unsigned int)));
-	HANDLE_ERROR(cudaMalloc((void**)&particleIds, particleCount * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&gridCellIds, objectsCount* sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&particleIds, objectsCount * sizeof(unsigned int)));
 
 	HANDLE_ERROR(cudaMalloc((void**)&gridCellStarts, cellAmount * sizeof(unsigned int)));
 	HANDLE_ERROR(cudaMalloc((void**)&gridCellEnds, cellAmount * sizeof(unsigned int)));
-
-	HANDLE_ERROR(cudaMalloc((void**)&cellAmountDevice, sizeof(unsigned int)));
-	HANDLE_ERROR(cudaMemcpy(cellAmountDevice, &cellAmount, sizeof(unsigned int), cudaMemcpyHostToDevice));
 }
 
 UniformGrid::UniformGrid(const UniformGrid& other) : isCopy(true), gridCellIds(other.gridCellIds), particleIds(other.particleIds),
-	gridCellStarts(other.gridCellStarts), gridCellEnds(other.gridCellEnds) 
+	gridCellStarts(other.gridCellStarts), gridCellEnds(other.gridCellEnds), cellCountX(other.cellCountX), cellCountY(other.cellCountY), cellCountZ(other.cellCountZ),
+	cellWidth(other.cellWidth), cellHeight(other.cellHeight), cellDepth(other.cellDepth), objectsCount(other.objectsCount), cellAmount(other.cellAmount)
 {}
 
 UniformGrid::~UniformGrid()
@@ -87,7 +110,6 @@ UniformGrid::~UniformGrid()
 		HANDLE_ERROR(cudaFree(gridCellStarts));
 		HANDLE_ERROR(cudaFree(gridCellEnds));
 	}
-	
 }
 
 void UniformGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int objectCount)
@@ -99,7 +121,7 @@ void UniformGrid::calculateGrid(const float* positionX, const float* positionY, 
 
 	// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
 	calculateCellIdKernel << <blocks, threadsPerBlock >> >
-		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount);
+		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount, cellWidth, cellHeight, cellDepth);
 
 	// 2. Sort particle ids by cell id
 
@@ -116,5 +138,5 @@ void UniformGrid::calculateGrid(const float* positionX, const float* positionY, 
 
 __device__ unsigned int UniformGrid::calculateCellId(float3 position)
 {
-	return calculateIdForCell(position.x, position.y, position.z);
+	return calculateIdForCell(position.x, position.y, position.z, cellWidth, cellHeight, cellDepth);
 }

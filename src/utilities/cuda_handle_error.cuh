@@ -6,6 +6,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+
 // A handy function for easy error checking
 static void HandleError(cudaError_t err, const char* file, int line);
 
@@ -21,7 +22,3 @@ static void HandleError(cudaError_t err, const char* file, int line)
 }
 
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ));
-
-#ifdef __INTELLISENSE__
-void __syncthreads();
-#endif

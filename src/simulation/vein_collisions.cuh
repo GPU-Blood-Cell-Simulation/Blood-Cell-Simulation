@@ -34,21 +34,23 @@ namespace sim
 	__device__ float3 calculateBaricentric(float3 point, float3 v1, float3 v2, float3 v3);
 
 	#pragma region Main Collision Template Kernels
-	template<typename T>
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, T triangleGrid, unsigned int frame) {}
+	template<typename T1, typename T2>
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles, T1 particleGrid, T2 triangleGrid) {}
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid, unsigned int frame);
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid);
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid, unsigned int frame );
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid);
 	#pragma endregion
 
-	//template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>
-	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid, int& checksAmount );
+	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>
+	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid);
 
 
 	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& velocityRay, float3& reflectionVector);
 
 	__device__ float3 calculateBaricentric(float3 point, float3 v0, float3 v1, float3 v2);
+
+	__device__ bool modifyVelocityIfPositionOutOfBounds(float3& position, float3& velocity, float3 velocityNormalized);
 }

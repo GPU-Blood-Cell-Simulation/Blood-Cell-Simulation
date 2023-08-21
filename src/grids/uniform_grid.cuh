@@ -13,8 +13,14 @@ private:
 
 public:
 
+	unsigned int cellWidth;
+	unsigned int cellHeight;
+	unsigned int cellDepth;
+	unsigned int cellCountX;
+	unsigned int cellCountY;
+	unsigned int cellCountZ;
 	unsigned int cellAmount;
-	unsigned int* cellAmountDevice;
+	unsigned int objectsCount;
 
 	unsigned int* gridCellIds = 0;
 	unsigned int* particleIds = 0;
@@ -30,35 +36,6 @@ public:
 		calculateGrid(particles.position.x, particles.position.y, particles.position.z, particleCount);
 	}
 
-	__device__ unsigned int calculateIdForCell(float x, float y, float z)
-	{
-		return
-			static_cast<unsigned int>(z / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
-			static_cast<unsigned int>(y / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
-			static_cast<unsigned int>(x / cellWidth);
-	}
-
-	__global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
-		unsigned int* cellIds, unsigned int* particleIds, const unsigned int particleCount)
-	{
-		unsigned int particleId = blockIdx.x * blockDim.x + threadIdx.x;
-		if (particleId >= particleCount)
-			return;
-		/*unsigned int cellId =
-			static_cast<unsigned int>(positionZ[particleId] / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
-			static_cast<unsigned int>(positionY[particleId] / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
-			static_cast<unsigned int>(positionX[particleId] / cellWidth);*/
-		unsigned int cellId = calculateIdForCell(positionX[particleId], positionY[particleId], positionZ[particleId]);
-		// Debug
-		/*if (cellId >= 9261)
-			printf("Error, cellId: %d\n", cellId);*/
-
-			//printf("id: %d, cellId: %d\n", particleId, cellId);
-
-		particleIds[particleId] = particleId;
-		cellIds[particleId] = cellId;
-
-	}
 	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);
 
 	__device__ unsigned int calculateCellId(float3 position);
