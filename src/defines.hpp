@@ -16,8 +16,9 @@ inline constexpr unsigned int cylinderVerticalLayers = 100;
 inline constexpr unsigned int cylinderHorizontalLayers = 30;
 
 // blood cell parameters
-inline constexpr unsigned int PARTICLE_COUNT = 500;
+inline constexpr unsigned int PARTICLE_COUNT = 1000;
 inline constexpr float springsInCellsLength = 10;
+inline constexpr float particleRadious = 5;
 // debug
 inline unsigned int FRAME = 0;
 inline unsigned int VEIN_POLYGON_MODE = 0;
@@ -48,9 +49,16 @@ inline constexpr float k_sniff = 0.1f;
 // Damping factor 
 inline constexpr float d_fact = 0.1f;
 
+// Particle-particle collision coefficients
+inline constexpr float collisionSpringCoeff = 0.2;
+inline constexpr float collisionDampingCoeff = 0.02;
+inline constexpr float collistionShearCoeff = 0.05;
+
 // Lighting
 inline constexpr bool useLighting = true;
 
 // Camera movement constants
 inline constexpr float cameraMovementSpeed = width / 100;
 inline constexpr float cameraRotationSpeed = 0.02f;
+
+
