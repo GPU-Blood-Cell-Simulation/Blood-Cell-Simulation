@@ -12,6 +12,7 @@ protected:
     BaseGrid() {}
 public:
 
+
     inline void calculateGrid(const Particles& particles)
     {
         static_cast<Derived*>(this)->calculateGrid(particles);
@@ -19,5 +20,9 @@ public:
     inline void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount)
     {
         static_cast<Derived*>(this)->calculateGrid(positionX, positionY, positionZ, particleCount);;
+    }
+    inline unsigned int calculateCellId(float3 position)
+    {
+        return static_cast<Derived*>(this)->calculateCellId(position);
     }
 };

@@ -16,7 +16,7 @@ namespace sim
 {
 	void generateRandomPositions(Particles& particles, const int particleCount);
 
-	void calculateNextFrame(BloodCells& cells, DeviceTriangles& triangles, Grid grid, unsigned int triangleCount);
+	void calculateNextFrame(BloodCells& cells, DeviceTriangles& triangles, Grid grid, Grid triangleGrid, unsigned int triangleCount);
 }
 
 #endif
