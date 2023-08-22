@@ -27,9 +27,9 @@ public:
 	unsigned int* gridCellStarts = 0;
 	unsigned int* gridCellEnds = 0;
 
-	__host__ __device__ UniformGrid(const unsigned int particleCount, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth);
-	__host__ __device__ UniformGrid(const UniformGrid& other);
-	__host__ __device__ ~UniformGrid();
+	UniformGrid(const unsigned int particleCount, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth);
+	UniformGrid(const UniformGrid& other);
+	~UniformGrid();
 
 	inline void calculateGrid(const Particles& particles, unsigned int particleCount)
 	{
