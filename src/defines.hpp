@@ -18,7 +18,6 @@ inline constexpr unsigned int cylinderHorizontalLayers = 30;
 // blood cell parameters
 inline constexpr unsigned int PARTICLE_COUNT = 500;
 inline constexpr float springsInCellsLength = 10;
-
 // debug
 inline unsigned int FRAME = 0;
 inline unsigned int VEIN_POLYGON_MODE = 0;

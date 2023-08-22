@@ -15,7 +15,8 @@
 
 #pragma region Helper kernels
 
-
+#define max(a,b) ( a > b ? a : b)
+#define min(a,b) ( a > b ? b : a)
 
 
 __device__ unsigned int calculateIdForCell(float x, float y, float z, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
@@ -23,10 +24,12 @@ __device__ unsigned int calculateIdForCell(float x, float y, float z, unsigned i
 	if (x < 0 || x > width || y < 0 || y > height || z < 0 || z > depth) {
 		printf("Position out of grid bounds: (%f, %f, %f)\n", x, y, z);
 	}
+	 
+	// should we clamp x,y,z if out of bounds?
 	return
-		static_cast<unsigned int>(z / cellDepth) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
-		static_cast<unsigned int>(y / cellHeight) * static_cast<unsigned int>(width / cellWidth) +
-		static_cast<unsigned int>(x / cellWidth);
+		static_cast<unsigned int>(min(width,max(0,z / cellDepth))) * static_cast<unsigned int>(width / cellWidth) * static_cast<unsigned int>(height / cellHeight) +
+		static_cast<unsigned int>(min(height,max(0,y / cellHeight))) * static_cast<unsigned int>(width / cellWidth) +
+		static_cast<unsigned int>(min(depth,max(0,x / cellWidth)));
 }
 
 __global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,

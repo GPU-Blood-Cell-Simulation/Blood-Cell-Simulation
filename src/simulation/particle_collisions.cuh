@@ -72,8 +72,8 @@ namespace sim
 
 		int cellId = grid.gridCellIds[id];
 		int xId = static_cast<unsigned int>(bloodCells.particles.position.x[particleId] / grid.cellWidth);
-		int yId = static_cast<unsigned int>(bloodCells.particles.position.y[particleId] / grid.cellHeight) * grid.cellCountX;
-		int zId = static_cast<unsigned int>(bloodCells.particles.position.z[particleId] / grid.cellDepth) * grid.cellCountX * grid.cellCountY;
+		int yId = static_cast<unsigned int>(bloodCells.particles.position.y[particleId] / grid.cellHeight);
+		int zId = static_cast<unsigned int>(bloodCells.particles.position.z[particleId] / grid.cellDepth);
 
 		// Check all corner cases and call the appropriate function specialization
 		// Ugly but fast

@@ -88,7 +88,7 @@ namespace sim
 				//printf("Total size: %d\n", sizeof(bloodCells) + sizeof(triangles) + sizeof(*g1) + sizeof(*g2) + sizeof(FRAME));
 				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g1, *g2);
 				HANDLE_ERROR(cudaPeekAtLastError());
-				
+
 				// 5. Recalculate triangles centers
 				triangles.calculateCenters();
 				HANDLE_ERROR(cudaPeekAtLastError());

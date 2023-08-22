@@ -60,7 +60,7 @@ namespace sim
 	}
 
 
-
+	
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
@@ -88,10 +88,160 @@ namespace sim
 		ray r(pos, velocityDir);
 		float3 reflectedVelociy = make_float3(0, 0, 0);
 
-		// at the moment cells to check are full 3x3 cube
-		// TODO: find out if we can use optimal if-else check from particle collisions
-		if (calculateSideCollisions<-1, 1, -1, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid) 
-			&& length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		bool collisionDetected = false;
+		unsigned int cellId = triangleGrid.calculateCellId(pos);
+		unsigned int xId = static_cast<unsigned int>(pos.x / triangleGrid.cellWidth);
+		unsigned int yId = static_cast<unsigned int>(pos.y / triangleGrid.cellHeight);
+		unsigned int zId = static_cast<unsigned int>(pos.z / triangleGrid.cellDepth);
+
+		// Check all corner cases and call the appropriate function specialization
+		// Ugly but fast
+		if (xId < 1)
+		{
+			if (yId < 1)
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<0, 1, 0, 1, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<0, 1, 0, 1, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<0, 1, 0, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+			else if (yId > triangleGrid.cellCountY - 2)
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<0, 1, -1, 0, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<0, 1, -1, 0, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<0, 1, -1, 0, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+			else
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<0, 1, -1, 1, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<0, 1, -1, 1, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<0, 1, -1, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+		}
+		else if (xId > triangleGrid.cellCountX - 2)
+		{
+			if (yId < 1)
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, 0, 1, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, 0, 1, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, 0, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+			else if (yId > triangleGrid.cellCountY - 2)
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, -1, 0, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, -1, 0, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, -1, 0, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+			else
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, -1, 1, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, -1, 1, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<-1, 0, -1, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+		}
+		else
+		{
+			if (yId < 1)
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, 0, 1, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, 0, 1, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, 0, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+			else if (yId > triangleGrid.cellCountY - 2)
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, -1, 0, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, -1, 0, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, -1, 0, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+			else
+			{
+				if (zId < 1)
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, -1, 1, 0, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else if (zId > triangleGrid.cellCountZ - 2)
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, -1, 1, -1, 0>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+				else
+				{
+					collisionDetected = calculateSideCollisions<-1, 1, -1, 1, -1, 1>(pos, r, reflectedVelociy, triangles, triangleGrid);
+				}
+			}
+		}
+
+		if (collisionDetected && length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;
