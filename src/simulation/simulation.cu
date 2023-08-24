@@ -100,7 +100,7 @@ namespace sim
     
 				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
 
-				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, particleGrid, triangleGrid);
+				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g1, *g2);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 5. Gather forces from neighbors

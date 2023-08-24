@@ -113,7 +113,6 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 	if (vertex >= triangles.force.size)
 		return;
 
-	return;
 	// TODO: vertex distances (spring lengths) are hardcoded for now, ideally we'd like to calculate them for every possible vein model
 	constexpr float veinVertexHorizontalDistance = 20.9057f;
 	constexpr float veinVertexNonHorizontalDistances[] = { 21.5597f, 5.26999f, 21.5597f };

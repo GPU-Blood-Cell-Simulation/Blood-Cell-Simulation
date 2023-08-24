@@ -82,9 +82,14 @@ namespace sim
 		if (pos.y <= 0.1f * height)
 			velocity.y += 5;
 
+		// TEST
+		//velocity = velocity + float3{ 0, 0.1f , 0 };
+		//return;
+		
+
 		// propagate particle forces into velocities
 		velocity = velocity + dt * F;
-
+		
 		// TODO: is there a faster way to calculate this?
 		/*if (velocity.x != 0 && velocity.y != 0 && velocity.z != 0)
 			goto set_particle_values;*/
@@ -255,6 +260,8 @@ namespace sim
 		if (collisionDetected && length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			float3 ds = 0.8f * velocityDir;
+			float speed = length(velocity);
+			velocity = velocityCollisionDamping * speed * reflectedVelociy;
 
 			unsigned int vertexIndex0 = triangles.getIndex(r.objectIndex, vertex0);
 			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
@@ -263,9 +270,12 @@ namespace sim
 			float3 v0 = triangles.position.get(vertexIndex0);
 			float3 v1 = triangles.position.get(vertexIndex1);
 			float3 v2 = triangles.position.get(vertexIndex2);
+
 			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
-			// TODO: Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it.
+			// TODO:
+			// Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it. - Filip
+			// Here we probably should use atomicAdd. - Hubert
 			// move triangle a bit
 			triangles.force.add(vertexIndex0, baricentric.x * ds);
 			triangles.force.add(vertexIndex1, baricentric.y * ds);
@@ -287,7 +297,7 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells bloodCells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid  triangleGrid)
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells bloodCells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -312,7 +322,6 @@ namespace sim
 		float3 reflectedVelociy = make_float3(0, 0, 0);
 
 		bool collicionOccured = false;
-		int checksAmount = 0;
 		for (int triangleId = 0; triangleId < triangles.triangleCount; ++triangleId)
 		{
 			constexpr float EPS = 1e-7f;
@@ -332,7 +341,6 @@ namespace sim
 			const float3 s = r.origin - v0;
 			const float u = f * dot(s, h);
 			if (u < 0 || u > 1)
-			checksAmount++;
 			if (!realCollisionDetection(v0, v1, v2, r, reflectedVelociy))
 				continue;
 
