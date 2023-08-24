@@ -9,7 +9,7 @@
 
 
 
-__global__ void calculateCentersKernel(cudaVec3 vertices, int* indices, cudaVec3 centers, int size)
+__global__ void calculateCentersKernel(cudaVec3 position, unsigned int* indices, cudaVec3 centers, unsigned int triangleCount)
 
 {
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -29,7 +29,7 @@ void DeviceTriangles::calculateCenters()
 {
 	int threadsPerBlock = triangleCount > 1024 ? 1024 : triangleCount;
 	int blocks = (triangleCount + threadsPerBlock - 1) / threadsPerBlock;
-	calculateCentersKernel << <blocks, threadsPerBlock >> > (vertices, indices, centers, triangleCount);
+	calculateCentersKernel << <blocks, threadsPerBlock >> > (position, indices, centers, triangleCount);
 }
 
 DeviceTriangles::DeviceTriangles(const Mesh& mesh) : triangleCount(mesh.indices.size() / 3), vertexCount(mesh.vertices.size()),
@@ -104,7 +104,7 @@ void DeviceTriangles::propagateForcesIntoPositions()
 /// <summary>
 /// Update the tempForceBuffer based on forces applied onto 4 neighboring vertices in 2D space uisng elastic springs
 /// </summary>
-/// <param name="force">Vertex force vector</param>
+/// <param name="force">Vertex force vector</param>horizontalLayers
 /// <param name="tempForceBuffer">Temporary buffer necessary to synchronize</param>
 /// <returns></returns>
 __global__ void gatherForcesKernel(DeviceTriangles triangles)
@@ -113,6 +113,7 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 	if (vertex >= triangles.force.size)
 		return;
 
+	return;
 	// TODO: vertex distances (spring lengths) are hardcoded for now, ideally we'd like to calculate them for every possible vein model
 	constexpr float veinVertexHorizontalDistance = 20.9057f;
 	constexpr float veinVertexNonHorizontalDistances[] = { 21.5597f, 5.26999f, 21.5597f };
@@ -125,21 +126,21 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 	float3 vertexForce = { 0,0,0 };
 
 	// Calculate our own spatial indices
-	unsigned int i = vertex / horizontalLayers;
-	unsigned int j = vertex - i * horizontalLayers;
+	unsigned int i = vertex / cylinderHorizontalLayers;
+	unsigned int j = vertex - i * cylinderHorizontalLayers;
 
 	// vertically adjacent vertices
 
 	unsigned int jSpan[] =
 	{
-		j != 0 ? j - 1 : horizontalLayers - 1,
+		j != 0 ? j - 1 : cylinderHorizontalLayers - 1,
 		j,
-		(j + 1) % horizontalLayers
+		(j + 1) % cylinderHorizontalLayers
 	};
 
 
-	unsigned int vertexHorizontalPrev = i * horizontalLayers + jSpan[0];
-	unsigned int vertexHorizontalNext = i * horizontalLayers + jSpan[2];
+	unsigned int vertexHorizontalPrev = i * cylinderHorizontalLayers + jSpan[0];
+	unsigned int vertexHorizontalNext = i * cylinderHorizontalLayers + jSpan[2];
 
 
 	// Previous horizontally
@@ -161,7 +162,7 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 		#pragma unroll
 		for (int jIndex = 0; jIndex < 3; jIndex++)
 		{
-			unsigned int vertexVerticalPrev = (i - 1) * horizontalLayers + jSpan[jIndex];
+			unsigned int vertexVerticalPrev = (i - 1) * cylinderHorizontalLayers + jSpan[jIndex];
 			neighborPosition = triangles.position.get(vertexVerticalPrev);
 			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalPrev), veinVertexNonHorizontalDistances[jIndex]);
 			vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
@@ -170,13 +171,13 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 	}
 
 	//// not the upper end of the vein
-	if (i != verticalLayers - 1)
+	if (i != cylinderVerticalLayers - 1)
 	{
 		// Upper vertical neighbors
 		#pragma unroll
 		for (int jIndex = 0; jIndex < 3; jIndex++)
 		{
-			unsigned int vertexVerticalNext = (i + 1) * horizontalLayers + jSpan[jIndex];
+			unsigned int vertexVerticalNext = (i + 1) * cylinderHorizontalLayers + jSpan[jIndex];
 			neighborPosition = triangles.position.get(vertexVerticalNext);
 			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalNext), veinVertexNonHorizontalDistances[jIndex]);
 			vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);

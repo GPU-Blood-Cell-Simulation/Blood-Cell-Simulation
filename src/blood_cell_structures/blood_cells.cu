@@ -45,7 +45,6 @@ void BloodCells::propagateForces()
 }
 
 
-// TODO : split into two kernels with a temporary buffer - necessary synchronization
 __global__ void PropagateForcesOnDevice(BloodCells cells)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;

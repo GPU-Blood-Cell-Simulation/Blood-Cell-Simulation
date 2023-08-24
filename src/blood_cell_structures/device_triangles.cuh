@@ -46,6 +46,8 @@ public:
 	void gatherForcesFromNeighbors();
 	void propagateForcesIntoPositions();
 
+	void calculateCenters();
+
 private:
 	bool isCopy = false;
 
@@ -58,8 +60,6 @@ private:
 	__device__ inline void atomicAdd(int triangleIndex, VertexIndex vertexIndex, float3 value)
 	{
 		int index = indices[3 * triangleIndex + vertexIndex];
-		vertices.atomicAddVec3(index, value);
+		position.atomicAddVec3(index, value);
 	}
-
-	void calculateCenters();
 };

@@ -17,13 +17,14 @@ namespace sim
 	class SimulationController
 	{
 	public:
-		SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid);
+		SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid particleGrid, Grid triangleGrid);
 
 		void calculateNextFrame();
 	private:
 		BloodCells& bloodCells;
 		DeviceTriangles& triangles;
-		Grid grid;
+		Grid particleGrid;
+		Grid triangleGrid;
 
 		void generateRandomPositions();
 	};

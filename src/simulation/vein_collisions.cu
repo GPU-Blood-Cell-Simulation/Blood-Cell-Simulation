@@ -7,37 +7,37 @@ namespace sim
 {
 	__device__ ray::ray(float3 origin, float3 direction) : origin(origin), direction(direction) {}
 
-	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& velocityRay, float3& reflectionVector)
+	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& r, float3& reflectionVector)
 	{
 		constexpr float EPS = 0.000001f;
 		const float3 edge1 = v1 - v0;
 		const float3 edge2 = v2 - v0;
 
-		const float3 h = cross(velocityRay.direction, edge2);
+		const float3 h = cross(r.direction, edge2);
 		const float a = dot(edge1, h);
 		if (a > -EPS && a < EPS)
 			return false; // ray parallel to triangle
 
 		const float f = 1 / a;
-		const float3 s = velocityRay.origin - v0;
+		const float3 s = r.origin - v0;
 		const float u = f * dot(s, h);
 		if (u < 0 || u > 1)
 			return false;
 		const float3 q = cross(s, edge1);
-		const float v = f * dot(velocityRay.direction, q);
+		const float v = f * dot(r.direction, q);
 		if (v < 0 || u + v > 1)
 			return false;
 		const float t = f * dot(edge2, q);
 		if (t > EPS)
 		{
-			velocityRay.t = t;
+			r.t = t;
 
 			// this normal is oriented to the vein interior
 			// it is caused by the order of vertices in triangles used to correct face culling
 			// change order of edge2 and edge1 in cross product for oposite normal
 			// Question: Is the situation when we should use oposite normal possible ?
 			float3 normal = normalize(cross(edge2, edge1));
-			reflectionVector = velocityRay.direction - 2 * dot(velocityRay.direction, normal) * normal;
+			reflectionVector = r.direction - 2 * dot(r.direction, normal) * normal;
 			return true;
 		}
 		return false;
@@ -64,16 +64,16 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid )
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells bloodCells, DeviceTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid )
 	{
-		int partIndex = blockDim.x * blockIdx.x + threadIdx.x;
+		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (partIndex >= cells.particleCount)
+		if (particleId >= bloodCells.particleCount)
 			return;
 
-		float3 F = cells.particles.force.get(partIndex);
-		float3 velocity = cells.particles.velocity.get(partIndex);
-		float3 pos = cells.particles.position.get(partIndex);
+		float3 F = bloodCells.particles.force.get(particleId);
+		float3 velocity = bloodCells.particles.velocity.get(particleId);
+		float3 pos = bloodCells.particles.position.get(particleId);
 
 		// upper and lower bound
 		if (pos.y >= 0.9f * height)
@@ -86,7 +86,9 @@ namespace sim
 		velocity = velocity + dt * F;
 
 		// TODO: is there a faster way to calculate this?
-		if (velocity.x != 0 && velocity.y != 0 && velocity.z != 0)
+		/*if (velocity.x != 0 && velocity.y != 0 && velocity.z != 0)
+			goto set_particle_values;*/
+
 		float3 velocityDir = normalize(velocity);
 
 		// cubical bounds
@@ -251,46 +253,51 @@ namespace sim
 		}
 
 		if (collisionDetected && length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		{
+			float3 ds = 0.8f * velocityDir;
 
-				float3 v0 = triangles.position.get(vertexIndex0);
-				float3 v1 = triangles.position.get(vertexIndex1);
-				float3 v2 = triangles.position.get(vertexIndex2);
-				float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
+			unsigned int vertexIndex0 = triangles.getIndex(r.objectIndex, vertex0);
+			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
+			unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
 
-				// TODO: Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it.
-				// move triangle a bit
-				triangles.force.add(vertexIndex0, baricentric.x * ds);
-				triangles.force.add(vertexIndex1, baricentric.y * ds);
-				triangles.force.add(vertexIndex2, baricentric.z * ds);
+			float3 v0 = triangles.position.get(vertexIndex0);
+			float3 v1 = triangles.position.get(vertexIndex1);
+			float3 v2 = triangles.position.get(vertexIndex2);
+			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
-			}
+			// TODO: Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it.
+			// move triangle a bit
+			triangles.force.add(vertexIndex0, baricentric.x * ds);
+			triangles.force.add(vertexIndex1, baricentric.y * ds);
+			triangles.force.add(vertexIndex2, baricentric.z * ds);
+
 		}
 
 	set_particle_values:
 
-		cells.particles.velocity.set(particleId, velocity);
+		bloodCells.particles.velocity.set(particleId, velocity);
 
 		// propagate velocities into positions
-		cells.particles.position.add(particleId, dt * velocity);
+		bloodCells.particles.position.add(particleId, dt * velocity);
 
 		// zero forces
-		cells.particles.force.set(particleId, make_float3(0, 0, 0));
+		bloodCells.particles.force.set(particleId, make_float3(0, 0, 0));
 	}
 
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid  triangleGrid)
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells bloodCells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid  triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (particleId >= cells.particleCount)
+		if (particleId >= bloodCells.particleCount)
 			return;
 
 		// propagate force into velocities
-		float3 F = cells.particles.force.get(particleId);
-		float3 velocity = cells.particles.velocity.get(particleId);
-		float3 pos = cells.particles.position.get(particleId);
+		float3 F = bloodCells.particles.force.get(particleId);
+		float3 velocity = bloodCells.particles.velocity.get(particleId);
+		float3 pos = bloodCells.particles.position.get(particleId);
 
 		velocity = velocity + dt * F;
 		float3 velocityDir = normalize(velocity);
@@ -308,20 +315,21 @@ namespace sim
 		int checksAmount = 0;
 		for (int triangleId = 0; triangleId < triangles.triangleCount; ++triangleId)
 		{
+			constexpr float EPS = 1e-7f;
 			// triangle vectices and edges
-			float3 v0 = triangles.position.get(triangles.getIndex(i, vertex0));
-			float3 v1 = triangles.position.get(triangles.getIndex(i, vertex1));
-			float3 v2 = triangles.position.get(triangles.getIndex(i, vertex2));
+			float3 v0 = triangles.position.get(triangles.getIndex(triangleId, vertex0));
+			float3 v1 = triangles.position.get(triangles.getIndex(triangleId, vertex1));
+			float3 v2 = triangles.position.get(triangles.getIndex(triangleId, vertex2));
 			const float3 edge1 = v1 - v0;
 			const float3 edge2 = v2 - v0;
 
-			const float3 h = cross(velocityRay.direction, edge2);
+			const float3 h = cross(r.direction, edge2);
 			const float a = dot(edge1, h);
 			if (a > -EPS && a < EPS)
 				continue; // ray parallel to triangle
 			
 			const float f = 1 / a;
-			const float3 s = velocityRay.origin - v0;
+			const float3 s = r.origin - v0;
 			const float u = f * dot(s, h);
 			if (u < 0 || u > 1)
 			checksAmount++;
@@ -341,27 +349,31 @@ namespace sim
 			float speed = length(velocity);
 			velocity = velocityCollisionDamping * speed * reflectedVelociy;
 
-			float3 v0 = triangles.get(r.objectIndex, vertex0);
-			float3 v1 = triangles.get(r.objectIndex, vertex1);
-			float3 v2 = triangles.get(r.objectIndex, vertex2);
+			unsigned int vertexIndex0 = triangles.getIndex(r.objectIndex, vertex0);
+			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
+			unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
+
+			float3 v0 = triangles.position.get(vertexIndex0);
+			float3 v1 = triangles.position.get(vertexIndex1);
+			float3 v2 = triangles.position.get(vertexIndex2);
 			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
 			// move triangle a bit
 			// here we probably should use atomicAdd
-			triangles.add(r.objectIndex, vertex0, baricentric.x * ds);
-			triangles.add(r.objectIndex, vertex1, baricentric.y * ds);
-			triangles.add(r.objectIndex, vertex2, baricentric.z * ds);
+			triangles.position.add(vertexIndex0, baricentric.x * ds);
+			triangles.position.add(vertexIndex1, baricentric.y * ds);
+			triangles.position.add(vertexIndex2, baricentric.z * ds);
 		}
 
 	set_particle_values:
 
-		cells.particles.velocity.set(particleId, velocity);
+		bloodCells.particles.velocity.set(particleId, velocity);
 
 		// propagate velocities into positions
-		cells.particles.position.add(particleId, dt * velocity);
+		bloodCells.particles.position.add(particleId, dt * velocity);
 
 		// zero forces
-		cells.particles.force.set(particleId, make_float3(0, 0, 0));
+		bloodCells.particles.force.set(particleId, make_float3(0, 0, 0));
 	}
 
 
@@ -370,14 +382,14 @@ namespace sim
 	// (xMin=0, xMax=width, xMin=0.15*height, yMax=0.85*height, zMin=0, zMax=depth)
 	// Keep in mind that yMin, yMax values are strictly bounded due to
 	// position of our vein in cubical space (lower and upper vein bounds are at 0.1 and 0.9 of height)
-	// (I took 0.05 margin to support situation of intensified falling out of cells at the both ends of vein)
+	// (I took 0.05 margin to support situation of intensified falling out of bloodCells at the both ends of vein)
 	// these values might have been changed in the future !
 	__device__ bool modifyVelocityIfPositionOutOfBounds(float3& position, float3& velocity, float3 normalizedVelocity)
 	{
 		// experimental value
 		// I had one situation of "Position out of bounds" log from calculateCellId function
 		// when EPS was 0.001f
-		const float EPS = 0.01f;
+		constexpr float EPS = 0.01f;
 
 		float3 newPosition = position + dt * velocity;
 
@@ -435,7 +447,7 @@ namespace sim
 	}
 
 	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>
-	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid)
+	__device__ bool calculateSideCollisions(float3 position, ray& r, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid)
 	{
 		unsigned int cellId = triangleGrid.calculateCellId(position);
 
@@ -453,14 +465,14 @@ namespace sim
 					{
 						// triangle vectices and edges
 						unsigned int triangleId = triangleGrid.particleIds[i];
-						float3 v0 = triangles.get(triangleId, vertex0);
-						float3 v1 = triangles.get(triangleId, vertex1);
-						float3 v2 = triangles.get(triangleId, vertex2);
+						float3 v0 = triangles.position.get(triangles.getIndex(triangleId, vertex0));
+						float3 v1 = triangles.position.get(triangles.getIndex(triangleId, vertex1));
+						float3 v2 = triangles.position.get(triangles.getIndex(triangleId, vertex2));
 
-						if (!realCollisionDetection(v0, v1, v2, velocityRay, reflectionVector))
+						if (!realCollisionDetection(v0, v1, v2, r, reflectionVector))
 							continue;
 
-						velocityRay.objectIndex = triangleId;
+						r.objectIndex = triangleId;
 						return true;
 					}
 				}

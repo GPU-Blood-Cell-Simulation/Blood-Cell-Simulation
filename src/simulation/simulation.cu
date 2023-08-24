@@ -15,9 +15,10 @@ namespace sim
 {
 	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int particleCount);
 
-	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const int particleCount, glm::vec3 cylinderBaseCenter/*, float cylinderRadius, float cylinderHeight*/);
+	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const unsigned int particleCount, glm::vec3 cylinderBaseCenter/*, float cylinderRadius, float cylinderHeight*/);
 
-	SimulationController::SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid grid) : bloodCells(bloodCells), triangles(triangles), grid(grid)
+	SimulationController::SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid particleGrid, Grid triangleGrid) :
+		bloodCells(bloodCells), triangles(triangles), particleGrid(particleGrid), triangleGrid(triangleGrid)
 	{
 		// Generate random particle positions
 		generateRandomPositions();
@@ -53,19 +54,23 @@ namespace sim
 	}
 
 	// Generate random positions and velocities at the beginning
-	__global__ void generateRandomPositionsKernel(curandState* states, Particles p, const int particleCount, glm::vec3 cylinderBaseCenter/*, float cylinderRadius, float cylinderHeight*/)
+	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const unsigned int particleCount, glm::vec3 cylinderBaseCenter/*, float cylinderRadius, float cylinderHeight*/)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= particleCount)
 			return;
 
-		p.position.x[id] = cylinderBaseCenter.x - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
-		p.position.y[id] = cylinderBaseCenter.y - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius + cylinderHeight/2;
-		p.position.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
+		particles.position.x[id] = cylinderBaseCenter.x - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
+		particles.position.y[id] = cylinderBaseCenter.y - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius + cylinderHeight/2;
+		particles.position.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
 
-		p.force.x[id] = 0;
-		p.force.y[id] = 0;
-		p.force.z[id] = 0;
+		particles.velocity.x[id] = 0;
+		particles.velocity.y[id] = 0;
+		particles.velocity.z[id] = 0;
+
+		particles.force.x[id] = 0;
+		particles.force.y[id] = 0;
+		particles.force.z[id] = 0;
 	}
 
 	// Main simulation function, called every frame
@@ -76,7 +81,7 @@ namespace sim
 			{
 				// 1. Calculate grids
 				g1->calculateGrid(bloodCells.particles, bloodCells.particleCount);
-				g2->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangleCount);
+				g2->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
 
 				// anything above 768 threads (25 warps) trigger an error
 				// 'too many resources requested for launch'
@@ -90,24 +95,24 @@ namespace sim
 
 				// 3. Propagate particle forces into neighbors
 
-        bloodCells.propagateForces();
-        HANDLE_ERROR(cudaPeekAtLastError());
+				bloodCells.propagateForces();
+				HANDLE_ERROR(cudaPeekAtLastError());
     
-        // 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
+				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
 
-        detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles);
-        HANDLE_ERROR(cudaPeekAtLastError());
+				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, particleGrid, triangleGrid);
+				HANDLE_ERROR(cudaPeekAtLastError());
     
-        // 5. Gather forces from neighbors
+				// 5. Gather forces from neighbors
 
-        triangles.gatherForcesFromNeighbors();
-        HANDLE_ERROR(cudaPeekAtLastError());
+				triangles.gatherForcesFromNeighbors();
+				HANDLE_ERROR(cudaPeekAtLastError());
     
-        // 6. Propagate forces -> velocities, velocities -> positions for vein triangles
-        triangles.propagateForcesIntoPositions();
-        HANDLE_ERROR(cudaPeekAtLastError());
+				// 6. Propagate forces -> velocities, velocities -> positions for vein triangles
+				triangles.propagateForcesIntoPositions();
+				HANDLE_ERROR(cudaPeekAtLastError());
     
-				// 5. Recalculate triangles centers
+				// 7. Recalculate triangles centers
 				triangles.calculateCenters();
 				HANDLE_ERROR(cudaPeekAtLastError());
 

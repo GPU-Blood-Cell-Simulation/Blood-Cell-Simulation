@@ -14,8 +14,8 @@ class CylinderMesh
 
 public:
 	CylinderMesh(glm::vec3 basisOrigin, float height, float radius,
-		unsigned int verticalLayers, unsigned int horizontalLayers) : basisOrigin(basisOrigin), 
-		radius(radius), height(height), vLayers(verticalLayers), hLayers(horizontalLayers)
+		unsigned int cylinderVerticalLayers, unsigned int cylinderHorizontalLayers) : basisOrigin(basisOrigin), 
+		radius(radius), height(height), vLayers(cylinderVerticalLayers), hLayers(cylinderHorizontalLayers)
 	{
 		float triangleH = height / vLayers;
 		float radianBatch = 2 * glm::pi<float>() / hLayers;

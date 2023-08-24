@@ -45,10 +45,10 @@ namespace sim
 	#pragma endregion
 
 	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>
-	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid);
+	__device__ bool calculateSideCollisions(float3 position, ray& r, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid);
 
 
-	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& velocityRay, float3& reflectionVector);
+	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& r, float3& reflectionVector);
 
 	__device__ float3 calculateBaricentric(float3 point, float3 v0, float3 v1, float3 v2);
 

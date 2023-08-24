@@ -96,14 +96,12 @@ void programLoop(GLFWwindow* window)
     DeviceTriangles triangles(glController.getGridMesh());
 
     // Create grids
-    UniformGrid grid(PARTICLE_COUNT, 20, 20, 20), triangleCentersGrid(triangles.triangleCount,10, 10, 10);
-    //NoGrid grid, triangleCentersGrid;
+    UniformGrid particleGrid(PARTICLE_COUNT, 20, 20, 20);
+    UniformGrid triangleCentersGrid(triangles.triangleCount, 10, 10, 10);
+    //NoGrid particleGrid, triangleCentersGrid;
 
     // Create the main simulation controller and inject its dependencies
-    sim::SimulationController simulationController(bloodCells, triangles, &grid);
-
-    // Generate random positions
-    simulationController.generateRandomPositions(cells.particles, PARTICLE_COUNT);
+    sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
 
     // MAIN LOOP HERE - dictated by glfw
 
