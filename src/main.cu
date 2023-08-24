@@ -96,11 +96,14 @@ void programLoop(GLFWwindow* window)
     DeviceTriangles triangles(glController.getGridMesh());
 
     // Create grids
-    UniformGrid grid(PARTICLE_COUNT), triangleCentersGrid(triangles.triangleCount);
+    UniformGrid grid(PARTICLE_COUNT, 20, 20, 20), triangleCentersGrid(triangles.triangleCount,10, 10, 10);
     //NoGrid grid, triangleCentersGrid;
 
     // Create the main simulation controller and inject its dependencies
     sim::SimulationController simulationController(bloodCells, triangles, &grid);
+
+    // Generate random positions
+    simulationController.generateRandomPositions(cells.particles, PARTICLE_COUNT);
 
     // MAIN LOOP HERE - dictated by glfw
 
@@ -112,6 +115,7 @@ void programLoop(GLFWwindow* window)
 
         // Calculate particle positions using CUDA
         simulationController.calculateNextFrame();
+
 
         // Pass positions to OpenGL
         glController.calculateOffsets(bloodCells.particles.position.x,

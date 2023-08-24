@@ -51,4 +51,15 @@ private:
 
 	const unsigned int threadsPerBlock;
 	const unsigned int blDim;
+
+	/// !!! STILL NOT IMPLEMENTED !!!
+	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>
+	/// <returns></returns>
+	__device__ inline void atomicAdd(int triangleIndex, VertexIndex vertexIndex, float3 value)
+	{
+		int index = indices[3 * triangleIndex + vertexIndex];
+		vertices.atomicAddVec3(index, value);
+	}
+
+	void calculateCenters();
 };

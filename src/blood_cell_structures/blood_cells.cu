@@ -35,7 +35,10 @@ __global__ void PropagateForcesOnDevice(BloodCells cells);
 
 void BloodCells::propagateForces()
 {
-	int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
+	// anything above 768 threads (25 warps) trigger an error
+	// 'too many resources requested for launch'
+	// maybe possible to solve
+	int threadsPerBlock = particleCount > 768 ? 768 : particleCount;
 	int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
 
 	PropagateForcesOnDevice << <blocks, threadsPerBlock >> > (*this);
