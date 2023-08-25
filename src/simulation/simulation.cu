@@ -17,8 +17,21 @@ namespace sim
 
 	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, const unsigned int particleCount, glm::vec3 cylinderBaseCenter/*, float cylinderRadius, float cylinderHeight*/);
 
-	SimulationController::SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid particleGrid, Grid triangleGrid) :
-		bloodCells(bloodCells), triangles(triangles), particleGrid(particleGrid), triangleGrid(triangleGrid)
+
+	// TODO :
+	// anything above 768 threads (25 warps) trigger an error
+	// 'too many resources requested for launch'
+	// maybe possible to solve
+	inline constexpr unsigned int maxThreads = 768;
+
+	SimulationController::SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid) :
+		bloodCells(bloodCells), triangles(triangles), particleGrid(particleGrid), triangleGrid(triangleGrid),
+		bloodCellsThreadsPerBlock(bloodCells.particleCount > maxThreads ? maxThreads : bloodCells.particleCount),
+		bloodCellsBlocks(std::ceil(static_cast<float>(bloodCells.particleCount) / bloodCellsThreadsPerBlock)),
+		veinVerticesThreadsPerBlock(triangles.vertexCount > maxThreads ? maxThreads : triangles.vertexCount),
+		veinVerticesBlocks(std::ceil(static_cast<float>(triangles.vertexCount) / veinVerticesThreadsPerBlock)),
+		veinTrianglesThreadsPerBlock(triangles.triangleCount > maxThreads ? maxThreads : triangles.triangleCount),
+		veinTrianglesBlocks(std::ceil(static_cast<float>(triangles.triangleCount) / veinTrianglesThreadsPerBlock))
 	{
 		// Generate random particle positions
 		generateRandomPositions();
@@ -27,19 +40,17 @@ namespace sim
 	// Generate initial positions and velocities of particles
 	void SimulationController::generateRandomPositions()
 	{
-		int threadsPerBlock = bloodCells.particleCount > 1024 ? 1024 : bloodCells.particleCount;
-		int blocks = (bloodCells.particleCount + threadsPerBlock - 1) / threadsPerBlock;
 
 		// Set up random seeds
 		curandState* devStates;
 		HANDLE_ERROR(cudaMalloc(&devStates, bloodCells.particleCount * sizeof(curandState)));
 		srand(static_cast<unsigned int>(time(0)));
 		int seed = rand();
-		setupCurandStatesKernel << <blocks, threadsPerBlock >> > (devStates, seed, bloodCells.particleCount);
+		setupCurandStatesKernel << <bloodCellsBlocks, bloodCellsThreadsPerBlock >> > (devStates, seed, bloodCells.particleCount);
 
 		// Generate random positions and velocity vectors
 
-		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, bloodCells.particles, bloodCells.particleCount, cylinderBaseCenter);
+		generateRandomPositionsKernel << <bloodCellsBlocks, bloodCellsThreadsPerBlock >> > (devStates, bloodCells.particles, bloodCells.particleCount, cylinderBaseCenter);
 
 
 		HANDLE_ERROR(cudaFree(devStates));
@@ -76,44 +87,37 @@ namespace sim
 	// Main simulation function, called every frame
 	void SimulationController::calculateNextFrame()
 	{
-    // 1. Calculate grids
 		std::visit([&](auto&& g1, auto&& g2)
 			{
 				// 1. Calculate grids
 				g1->calculateGrid(bloodCells.particles, bloodCells.particleCount);
 				g2->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
 
-				// anything above 768 threads (25 warps) trigger an error
-				// 'too many resources requested for launch'
-				// maybe possible to solve
-				int threadsPerBlock = bloodCells.particleCount > 768 ? 768 : bloodCells.particleCount;
-				int blDim = std::ceil(float(bloodCells.particleCount) / threadsPerBlock);
-
 				// 2. Detect particle collisions
-				calculateParticleCollisions << < dim3(blDim), threadsPerBlock >> > (bloodCells, *g1);
+				calculateParticleCollisions << < bloodCellsBlocks, bloodCellsThreadsPerBlock >> > (bloodCells, *g1);
 				HANDLE_ERROR(cudaPeekAtLastError());
 
 				// 3. Propagate particle forces into neighbors
 
-				bloodCells.propagateForces();
+				bloodCells.gatherForcesFromNeighbors(bloodCellsBlocks, bloodCellsThreadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
 
-				detectVeinCollisionsAndPropagateParticles << < dim3(blDim), threadsPerBlock >> > (bloodCells, triangles, *g1, *g2);
+				detectVeinCollisionsAndPropagateParticles << < bloodCellsBlocks, bloodCellsThreadsPerBlock >> > (bloodCells, triangles, *g1, *g2);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 5. Gather forces from neighbors
 
-				triangles.gatherForcesFromNeighbors();
+				triangles.gatherForcesFromNeighbors(veinVerticesBlocks, veinVerticesThreadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 6. Propagate forces -> velocities, velocities -> positions for vein triangles
-				triangles.propagateForcesIntoPositions();
+				triangles.propagateForcesIntoPositions(veinVerticesBlocks, veinVerticesThreadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 7. Recalculate triangles centers
-				triangles.calculateCenters();
+				triangles.calculateCenters(veinTrianglesBlocks, veinTrianglesThreadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
 
 			}, particleGrid, triangleGrid);

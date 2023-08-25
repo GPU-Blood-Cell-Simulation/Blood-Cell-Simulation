@@ -5,7 +5,7 @@
 #include "inputcontroller.hpp"
 #include "light.hpp"
 #include "../defines.hpp"
-#include "../objects/device_triangles.cuh"
+#include "../objects/vein_triangles.cuh"
 
 #include <memory>
 #include <glm/mat4x4.hpp>
@@ -20,7 +20,7 @@ namespace graphics
 
 		explicit GLController(GLFWwindow* window, Mesh veinMesh);
 		void calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount);
-		void calculateTriangles(DeviceTriangles triangles);
+		void calculateTriangles(VeinTriangles triangles);
 		void draw();
 		inline void handleInput()
 		{

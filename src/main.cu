@@ -13,7 +13,7 @@
 
 #include "objects/blood_cells.cuh"
 #include "objects/blood_cells_factory.hpp"
-#include "objects/device_triangles.cuh"
+#include "objects/vein_triangles.cuh"
 #include "objects/cylindermesh.hpp"
 
 #include <GLFW/glfw3.h>
@@ -96,7 +96,7 @@ void programLoop(GLFWwindow* window)
     Mesh veinMesh = veinMeshDefinition.CreateMesh();
 
     // Create vein triangles
-    DeviceTriangles triangles(veinMesh, veinMeshDefinition.getSpringLengths());
+    VeinTriangles triangles(veinMesh, veinMeshDefinition.getSpringLengths());
 
     // Create grids
     UniformGrid particleGrid(PARTICLE_COUNT, 20, 20, 20);

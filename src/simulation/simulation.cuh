@@ -2,7 +2,7 @@
 #define SIMULATION_H
 
 #include "../objects/blood_cells.cuh"
-#include "../objects/device_triangles.cuh"
+#include "../objects/vein_triangles.cuh"
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
 
@@ -17,14 +17,23 @@ namespace sim
 	class SimulationController
 	{
 	public:
-		SimulationController(BloodCells& bloodCells, DeviceTriangles& triangles, Grid particleGrid, Grid triangleGrid);
+		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid);
 
 		void calculateNextFrame();
 	private:
 		BloodCells& bloodCells;
-		DeviceTriangles& triangles;
+		VeinTriangles& triangles;
 		Grid particleGrid;
 		Grid triangleGrid;
+
+		const unsigned int bloodCellsThreadsPerBlock;
+		const unsigned int bloodCellsBlocks;
+
+		const unsigned int veinVerticesThreadsPerBlock;
+		const unsigned int veinVerticesBlocks;
+
+		const unsigned int veinTrianglesThreadsPerBlock;
+		const unsigned int veinTrianglesBlocks;
 
 		void generateRandomPositions();
 	};

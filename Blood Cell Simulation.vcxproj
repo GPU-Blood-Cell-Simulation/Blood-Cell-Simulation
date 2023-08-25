@@ -107,7 +107,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="src\objects\blood_cells.cu" />
-    <CudaCompile Include="src\objects\device_triangles.cu" />
+    <CudaCompile Include="src\objects\vein_triangles.cu" />
     <CudaCompile Include="src\graphics\glcontroller.cu" />
     <CudaCompile Include="src\simulation\vein_collisions.cu" />
     <CudaCompile Include="src\grids\uniform_grid.cu" />
@@ -496,7 +496,7 @@
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
     <ClInclude Include="src\objects\blood_cells.cuh" />
     <ClInclude Include="src\objects\blood_cells_factory.hpp" />
-    <ClInclude Include="src\objects\device_triangles.cuh" />
+    <ClInclude Include="src\objects\vein_triangles.cuh" />
     <ClInclude Include="src\objects\particles.cuh" />
     <ClInclude Include="src\defines.hpp" />
     <ClInclude Include="src\graphics\camera.hpp" />

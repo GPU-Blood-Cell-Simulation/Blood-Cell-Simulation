@@ -14,7 +14,7 @@
 /// <summary>
 /// Vein triangles
 /// </summary>
-class DeviceTriangles
+class VeinTriangles
 {
 public:
 	const unsigned int triangleCount;
@@ -30,9 +30,9 @@ public:
 	const float veinVertexHorizontalDistance;
 	const float veinVertexNonHorizontalDistances[3];
 
-	DeviceTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths);
-	DeviceTriangles(const DeviceTriangles& other);
-	~DeviceTriangles();
+	VeinTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths);
+	VeinTriangles(const VeinTriangles& other);
+	~VeinTriangles();
 
 
 	__device__ inline unsigned int getIndex(int triangleIndex, VertexIndex vertexIndex) const
@@ -45,16 +45,13 @@ public:
 		return (length(p1 - p2) - springLength)* vein_k_sniff + dot(normalize(p1 - p2), (v1 - v2)) * vein_d_fact;
 	}
 
-	void gatherForcesFromNeighbors();
-	void propagateForcesIntoPositions();
+	void gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock);
+	void propagateForcesIntoPositions(unsigned int blocks, unsigned int threadsPerBlock);
 
-	void calculateCenters();
+	void calculateCenters(unsigned int blocks, unsigned int threadsPerBlock);
 
 private:
 	bool isCopy = false;
-
-	const unsigned int threadsPerBlock;
-	const unsigned int blDim;
 
 	/// !!! STILL NOT IMPLEMENTED !!!
 	/// <param name="vertexIndex">0, 1 or 2 as triangle vertices</param>

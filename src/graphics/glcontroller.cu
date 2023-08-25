@@ -19,7 +19,7 @@
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/cuda_vec3.cuh"
 
-#include "../objects/device_triangles.cuh"
+#include "../objects/vein_triangles.cuh"
 
 
 namespace graphics
@@ -155,7 +155,7 @@ namespace graphics
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
 	}
 
-	void graphics::GLController::calculateTriangles(DeviceTriangles triangles)
+	void graphics::GLController::calculateTriangles(VeinTriangles triangles)
 	{
 		// map vertices
 		float* vboPtr = (float*)mapResourceAndGetPointer(cudaVeinVBOResource);

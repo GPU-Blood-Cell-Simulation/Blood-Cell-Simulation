@@ -25,7 +25,7 @@ public:
 
 	~BloodCells();
 
-	void propagateForces();
+	void gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock);
 
 	__device__ inline float calculateParticleSpringForce(float3 p1, float3 p2, float3 v1, float3 v2, float springLength)
 	{

@@ -1,4 +1,4 @@
-#include "device_triangles.cuh"
+#include "vein_triangles.cuh"
 
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/math.cuh"
@@ -25,17 +25,14 @@ __global__ void calculateCentersKernel(cudaVec3 position, unsigned int* indices,
 	centers.set(id, make_float3(x, y, z));
 }
 
-void DeviceTriangles::calculateCenters()
+void VeinTriangles::calculateCenters(unsigned int blocks, unsigned int threadsPerBlock)
 {
-	int threadsPerBlock = triangleCount > 1024 ? 1024 : triangleCount;
-	int blocks = (triangleCount + threadsPerBlock - 1) / threadsPerBlock;
 	calculateCentersKernel << <blocks, threadsPerBlock >> > (position, indices, centers, triangleCount);
 }
 
-DeviceTriangles::DeviceTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths) :
+VeinTriangles::VeinTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths) :
 	triangleCount(mesh.indices.size() / 3), vertexCount(mesh.vertices.size()),
 	centers(triangleCount), position(vertexCount), velocity(vertexCount), force(vertexCount),
-	threadsPerBlock(vertexCount > 1024 ? 1024 : vertexCount), blDim(std::ceil(float(vertexCount) / threadsPerBlock)),
 	veinVertexHorizontalDistance(std::get<0>(springLengths)),
 	veinVertexNonHorizontalDistances{ std::get<2>(springLengths), std::get<1>(springLengths), std::get<2>(springLengths) }
 {
@@ -63,17 +60,18 @@ DeviceTriangles::DeviceTriangles(const Mesh& mesh, const std::tuple<float, float
 	HANDLE_ERROR(cudaMemcpy(position.z, vz.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
 
 	// centers
-	calculateCenters();
+	unsigned int threadsPerBlock = triangleCount > 1024 ? 1024 : triangleCount;
+	unsigned int blocks = std::ceil(static_cast<float>(triangleCount) / threadsPerBlock);
+	calculateCenters(triangleCount > 1024 ? 1024 : triangleCount, std::ceil(static_cast<float>(triangleCount) / threadsPerBlock));
 }
 
-DeviceTriangles::DeviceTriangles(const DeviceTriangles& other) : isCopy(true), triangleCount(other.triangleCount), vertexCount(other.vertexCount),
+VeinTriangles::VeinTriangles(const VeinTriangles& other) : isCopy(true), triangleCount(other.triangleCount), vertexCount(other.vertexCount),
 	position(other.position), velocity(other.velocity), force(other.force), indices(other.indices), centers(other.centers),
-	blDim(other.blDim), threadsPerBlock(other.threadsPerBlock),
 	veinVertexHorizontalDistance(other.veinVertexHorizontalDistance),
 	veinVertexNonHorizontalDistances{other.veinVertexNonHorizontalDistances[0], other.veinVertexNonHorizontalDistances[1], other.veinVertexNonHorizontalDistances[2] }
 {}
 
-DeviceTriangles::~DeviceTriangles()
+VeinTriangles::~VeinTriangles()
 {
 	if (!isCopy)
 	{
@@ -81,7 +79,7 @@ DeviceTriangles::~DeviceTriangles()
 	}
 }
 
-__global__ void propagateForcesIntoPositionsKernel(DeviceTriangles triangles)
+__global__ void propagateForcesIntoPositionsKernel(VeinTriangles triangles)
 {
 	int vertex = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -101,9 +99,9 @@ __global__ void propagateForcesIntoPositionsKernel(DeviceTriangles triangles)
 /// <summary>
 /// Propagate forces -> velocities and velocities->positions
 /// </summary>
-void DeviceTriangles::propagateForcesIntoPositions()
+void VeinTriangles::propagateForcesIntoPositions(unsigned int blocks, unsigned int threadsPerBlock)
 {
-	propagateForcesIntoPositionsKernel << <blDim, threadsPerBlock >> > (*this);
+	propagateForcesIntoPositionsKernel << <blocks, threadsPerBlock >> > (*this);
 }
 
 
@@ -113,7 +111,7 @@ void DeviceTriangles::propagateForcesIntoPositions()
 /// <param name="force">Vertex force vector</param>horizontalLayers
 /// <param name="tempForceBuffer">Temporary buffer necessary to synchronize</param>
 /// <returns></returns>
-__global__ void gatherForcesKernel(DeviceTriangles triangles)
+__global__ static void gatherForcesKernel(VeinTriangles triangles)
 {
 	int vertex = blockDim.x * blockIdx.x + threadIdx.x;
 	if (vertex >= triangles.vertexCount)
@@ -196,7 +194,7 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 /// <summary>
 /// Gather forces from neighboring vertices, synchronize and then update forces for each vertex
 /// </summary>
-void DeviceTriangles::gatherForcesFromNeighbors()
+void VeinTriangles::gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock)
 {
-	gatherForcesKernel << <blDim, threadsPerBlock >> > (*this);
+	gatherForcesKernel << <blocks, threadsPerBlock >> > (*this);
 }

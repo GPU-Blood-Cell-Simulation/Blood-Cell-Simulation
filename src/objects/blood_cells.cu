@@ -30,22 +30,16 @@ BloodCells::~BloodCells()
 }
 
 
-__global__ void PropagateForcesOnDevice(BloodCells cells);
+__global__ static void gatherForcesKernel(BloodCells cells);
 
 
-void BloodCells::propagateForces()
+void BloodCells::gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock)
 {
-	// anything above 768 threads (25 warps) trigger an error
-	// 'too many resources requested for launch'
-	// maybe possible to solve
-	int threadsPerBlock = particleCount > 768 ? 768 : particleCount;
-	int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
-
-	PropagateForcesOnDevice << <blocks, threadsPerBlock >> > (*this);
+	gatherForcesKernel << <blocks, threadsPerBlock >> > (*this);
 }
 
 
-__global__ void PropagateForcesOnDevice(BloodCells cells)
+__global__ static void gatherForcesKernel(BloodCells cells)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int inCellIndex = index % cells.particlesInCell;

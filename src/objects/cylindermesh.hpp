@@ -32,10 +32,12 @@ public:
 			{
 				glm::vec3 position = glm::vec3(radius * cos(j * radianBatch),
 					h, radius * sin(j * radianBatch)) + basisOrigin;
-				Vertex v;
-				v.Position = position;
-				v.Normal = glm::vec3(glm::normalize(position - glm::vec3(basisOrigin.x, basisOrigin.y, basisOrigin.z + h)));
-				v.TexCoords = glm::vec2(0); // no textures
+				Vertex v
+				{
+					position,
+					glm::vec3(glm::normalize(position - glm::vec3(basisOrigin.x, basisOrigin.y, basisOrigin.z + h))),
+					glm::vec2(0) // no textures
+				};
 
 				vertices.push_back(v);
 				if (i < vLayers - 1)
