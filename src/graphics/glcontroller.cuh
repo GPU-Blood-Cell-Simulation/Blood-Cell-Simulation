@@ -5,12 +5,12 @@
 #include "inputcontroller.hpp"
 #include "light.hpp"
 #include "../defines.hpp"
-#include "../blood_cell_structures/device_triangles.cuh"
+#include "../objects/device_triangles.cuh"
 
 #include <memory>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
-#include "cylindermesh.hpp"
+#include "../objects/cylindermesh.hpp"
 
 namespace graphics
 {
@@ -18,7 +18,7 @@ namespace graphics
 	class GLController {
 	public:
 
-		explicit GLController(GLFWwindow* window);
+		explicit GLController(GLFWwindow* window, Mesh veinMesh);
 		void calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount);
 		void calculateTriangles(DeviceTriangles triangles);
 		void draw();
@@ -44,8 +44,7 @@ namespace graphics
 
 		Model particleModel = Model("Models/Earth/low_poly_earth.fbx");
 
-		Model veinModel = Model(CylinderMesh(cylinderBaseCenter, cylinderHeight, cylinderRadius, 
-			cylinderVerticalLayers, cylinderHorizontalLayers).CreateMesh());
+		Model veinModel;
 
 		Camera camera;
 		InputController inputController;

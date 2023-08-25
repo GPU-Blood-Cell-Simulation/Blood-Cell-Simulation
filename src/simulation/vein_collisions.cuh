@@ -1,7 +1,7 @@
 #pragma once
 #include "../utilities/math.cuh"
-#include "../blood_cell_structures/blood_cells.cuh"
-#include "../blood_cell_structures/device_triangles.cuh"
+#include "../objects/blood_cells.cuh"
+#include "../objects/device_triangles.cuh"
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
 #include <variant>

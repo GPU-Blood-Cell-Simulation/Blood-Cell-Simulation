@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base_grid.cuh"
-#include "../blood_cell_structures/particles.cuh"
+#include "../objects/particles.cuh"
 
 class NoGrid : public BaseGrid<NoGrid>
 {

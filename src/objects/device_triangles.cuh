@@ -6,6 +6,7 @@
 #include "../graphics/mesh.hpp"
 
 #include <vector>
+#include <tuple>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -26,9 +27,10 @@ public:
 	unsigned int* indices;
 	cudaVec3 centers;
 
-	cudaVec3 tempForceBuffer;
+	const float veinVertexHorizontalDistance;
+	const float veinVertexNonHorizontalDistances[3];
 
-	DeviceTriangles(const Mesh& mesh);
+	DeviceTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths);
 	DeviceTriangles(const DeviceTriangles& other);
 	~DeviceTriangles();
 

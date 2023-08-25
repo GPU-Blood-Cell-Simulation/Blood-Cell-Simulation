@@ -19,7 +19,7 @@
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/cuda_vec3.cuh"
 
-#include "../blood_cell_structures/device_triangles.cuh"
+#include "../objects/device_triangles.cuh"
 
 
 namespace graphics
@@ -66,7 +66,7 @@ namespace graphics
 	}
 
 
-	graphics::GLController::GLController(GLFWwindow* window)
+	graphics::GLController::GLController(GLFWwindow* window, Mesh veinMesh) : veinModel(veinMesh)
 	{
 		// Set up GLFW to work with inputController
 		glfwSetWindowUserPointer(window, &inputController);

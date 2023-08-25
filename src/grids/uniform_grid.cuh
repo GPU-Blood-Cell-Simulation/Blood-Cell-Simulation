@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../blood_cell_structures/particles.cuh"
+#include "../objects/particles.cuh"
 #include "base_grid.cuh"
 
 /// <summary>

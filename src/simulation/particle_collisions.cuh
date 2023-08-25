@@ -2,7 +2,7 @@
 
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
-#include "../blood_cell_structures/blood_cells.cuh"
+#include "../objects/blood_cells.cuh"
 #include "../utilities/math.cuh"
 
 #include "cuda_runtime.h"

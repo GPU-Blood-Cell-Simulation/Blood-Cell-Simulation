@@ -11,9 +11,10 @@
 #include "grids/uniform_grid.cuh"
 #include "grids/no_grid.cuh"
 
-#include "blood_cell_structures/blood_cells.cuh"
-#include "blood_cell_structures/blood_cells_factory.hpp"
-#include "blood_cell_structures/device_triangles.cuh"
+#include "objects/blood_cells.cuh"
+#include "objects/blood_cells_factory.hpp"
+#include "objects/device_triangles.cuh"
+#include "objects/cylindermesh.hpp"
 
 #include <GLFW/glfw3.h>
 #include <sstream>
@@ -86,14 +87,16 @@ void programLoop(GLFWwindow* window)
 {
     double lastTime = glfwGetTime();
     int frameCount = 0;
-    // Create a graphics controller
-    graphics::GLController glController(window);
 
     // Create dipols
     BloodCells bloodCells = BloodCellsFactory::createDipols(PARTICLE_COUNT / 2, springsInCellsLength);
 
+    // Create vein mesh
+    CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);
+    Mesh veinMesh = veinMeshDefinition.CreateMesh();
+
     // Create vein triangles
-    DeviceTriangles triangles(glController.getGridMesh());
+    DeviceTriangles triangles(veinMesh, veinMeshDefinition.getSpringLengths());
 
     // Create grids
     UniformGrid particleGrid(PARTICLE_COUNT, 20, 20, 20);
@@ -102,6 +105,9 @@ void programLoop(GLFWwindow* window)
 
     // Create the main simulation controller and inject its dependencies
     sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
+
+    // Create a graphics controller
+    graphics::GLController glController(window, veinMesh);
 
     // MAIN LOOP HERE - dictated by glfw
 

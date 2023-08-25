@@ -23,7 +23,6 @@ public:
 	float* x = 0;
 	float* y = 0;
 	float* z = 0;
-	int size = 0;
 
 	// allocated on host
 	cudaVec3(int n);

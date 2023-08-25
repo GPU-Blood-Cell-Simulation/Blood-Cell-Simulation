@@ -32,9 +32,12 @@ void DeviceTriangles::calculateCenters()
 	calculateCentersKernel << <blocks, threadsPerBlock >> > (position, indices, centers, triangleCount);
 }
 
-DeviceTriangles::DeviceTriangles(const Mesh& mesh) : triangleCount(mesh.indices.size() / 3), vertexCount(mesh.vertices.size()),
-	centers(triangleCount), position(vertexCount), velocity(vertexCount), force(vertexCount), tempForceBuffer(vertexCount),
-	threadsPerBlock(vertexCount > 1024 ? 1024 : vertexCount), blDim(std::ceil(float(vertexCount) / threadsPerBlock))
+DeviceTriangles::DeviceTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths) :
+	triangleCount(mesh.indices.size() / 3), vertexCount(mesh.vertices.size()),
+	centers(triangleCount), position(vertexCount), velocity(vertexCount), force(vertexCount),
+	threadsPerBlock(vertexCount > 1024 ? 1024 : vertexCount), blDim(std::ceil(float(vertexCount) / threadsPerBlock)),
+	veinVertexHorizontalDistance(std::get<0>(springLengths)),
+	veinVertexNonHorizontalDistances{ std::get<2>(springLengths), std::get<1>(springLengths), std::get<2>(springLengths) }
 {
 	// allocate
 	HANDLE_ERROR(cudaMalloc((void**)&indices, 3 * triangleCount * sizeof(int)));
@@ -64,8 +67,11 @@ DeviceTriangles::DeviceTriangles(const Mesh& mesh) : triangleCount(mesh.indices.
 }
 
 DeviceTriangles::DeviceTriangles(const DeviceTriangles& other) : isCopy(true), triangleCount(other.triangleCount), vertexCount(other.vertexCount),
-	position(other.position), velocity(other.velocity), force(other.force), indices(other.indices), centers(other.centers), tempForceBuffer(other.tempForceBuffer),
-	blDim(other.blDim), threadsPerBlock(other.threadsPerBlock) {}
+	position(other.position), velocity(other.velocity), force(other.force), indices(other.indices), centers(other.centers),
+	blDim(other.blDim), threadsPerBlock(other.threadsPerBlock),
+	veinVertexHorizontalDistance(other.veinVertexHorizontalDistance),
+	veinVertexNonHorizontalDistances{other.veinVertexNonHorizontalDistances[0], other.veinVertexNonHorizontalDistances[1], other.veinVertexNonHorizontalDistances[2] }
+{}
 
 DeviceTriangles::~DeviceTriangles()
 {
@@ -110,12 +116,8 @@ void DeviceTriangles::propagateForcesIntoPositions()
 __global__ void gatherForcesKernel(DeviceTriangles triangles)
 {
 	int vertex = blockDim.x * blockIdx.x + threadIdx.x;
-	if (vertex >= triangles.force.size)
+	if (vertex >= triangles.vertexCount)
 		return;
-
-	// TODO: vertex distances (spring lengths) are hardcoded for now, ideally we'd like to calculate them for every possible vein model
-	constexpr float veinVertexHorizontalDistance = 20.9057f;
-	constexpr float veinVertexNonHorizontalDistances[] = { 21.5597f, 5.26999f, 21.5597f };
 
 	float springForce;
 	float3 neighborPosition;
@@ -144,12 +146,14 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 
 	// Previous horizontally
 	neighborPosition = triangles.position.get(vertexHorizontalPrev);
-	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalPrev), veinVertexHorizontalDistance);
+	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalPrev),
+		triangles.veinVertexHorizontalDistance);
 	vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
 
 	// Next horizontally
 	neighborPosition = triangles.position.get(vertexHorizontalNext);
-	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalNext), veinVertexHorizontalDistance);
+	springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexHorizontalNext),
+		triangles.veinVertexHorizontalDistance);
 	vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
 
 	
@@ -163,7 +167,8 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 		{
 			unsigned int vertexVerticalPrev = (i - 1) * cylinderHorizontalLayers + jSpan[jIndex];
 			neighborPosition = triangles.position.get(vertexVerticalPrev);
-			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalPrev), veinVertexNonHorizontalDistances[jIndex]);
+			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalPrev),
+				triangles.veinVertexNonHorizontalDistances[jIndex]);
 			vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
 		}
 		
@@ -178,22 +183,14 @@ __global__ void gatherForcesKernel(DeviceTriangles triangles)
 		{
 			unsigned int vertexVerticalNext = (i + 1) * cylinderHorizontalLayers + jSpan[jIndex];
 			neighborPosition = triangles.position.get(vertexVerticalNext);
-			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalNext), veinVertexNonHorizontalDistances[jIndex]);
+			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocity.get(vertexVerticalNext),
+				triangles.veinVertexNonHorizontalDistances[jIndex]);
 			vertexForce = vertexForce + springForce * normalize(neighborPosition - vertexPosition);
 		}
 		
 	}
 
-	triangles.tempForceBuffer.set(vertex, vertexForce);
-}
-
-__global__ void updateForcesKernel(cudaVec3 force, const cudaVec3 tempForceBuffer)
-{
-	int vertex = blockDim.x * blockIdx.x + threadIdx.x;
-	if (vertex >= force.size)
-		return;
-
-	force.add(vertex, tempForceBuffer.get(vertex));
+	triangles.force.add(vertex, vertexForce);
 }
 
 /// <summary>
@@ -202,8 +199,4 @@ __global__ void updateForcesKernel(cudaVec3 force, const cudaVec3 tempForceBuffe
 void DeviceTriangles::gatherForcesFromNeighbors()
 {
 	gatherForcesKernel << <blDim, threadsPerBlock >> > (*this);
-
-	// Global synchronize - unfortunately necessary as neighboring vertices are not limited to blocks
-
-	updateForcesKernel << <blDim, threadsPerBlock >> > (force, tempForceBuffer);
 }
