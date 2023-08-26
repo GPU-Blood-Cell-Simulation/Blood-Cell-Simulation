@@ -71,17 +71,17 @@ namespace sim
 		if (id >= particleCount)
 			return;
 
-		particles.position.x[id] = cylinderBaseCenter.x - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
-		particles.position.y[id] = cylinderBaseCenter.y - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius + cylinderHeight/2;
-		particles.position.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
+		particles.positions.x[id] = cylinderBaseCenter.x - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
+		particles.positions.y[id] = cylinderBaseCenter.y - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius + cylinderHeight/2;
+		particles.positions.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
 
-		particles.velocity.x[id] = 0;
-		particles.velocity.y[id] = 0;
-		particles.velocity.z[id] = 0;
+		particles.velocities.x[id] = 0;
+		particles.velocities.y[id] = 0;
+		particles.velocities.z[id] = 0;
 
-		particles.force.x[id] = 0;
-		particles.force.y[id] = 0;
-		particles.force.z[id] = 0;
+		particles.forces.x[id] = 0;
+		particles.forces.y[id] = 0;
+		particles.forces.z[id] = 0;
 	}
 
 	// Main simulation function, called every frame
@@ -102,12 +102,12 @@ namespace sim
 				bloodCells.gatherForcesFromNeighbors(bloodCellsBlocks, bloodCellsThreadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
-				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions
+				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions for particles
 
 				detectVeinCollisionsAndPropagateParticles << < bloodCellsBlocks, bloodCellsThreadsPerBlock >> > (bloodCells, triangles, *g1, *g2);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
-				// 5. Gather forces from neighbors
+				// 5. Propagate triangle forces into neighbors
 
 				triangles.gatherForcesFromNeighbors(veinVerticesBlocks, veinVerticesThreadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());

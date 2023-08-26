@@ -122,9 +122,9 @@ void programLoop(GLFWwindow* window)
 
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(bloodCells.particles.position.x,
-            bloodCells.particles.position.y,
-            bloodCells.particles.position.z,
+        glController.calculateOffsets(bloodCells.particles.positions.x,
+            bloodCells.particles.positions.y,
+            bloodCells.particles.positions.z,
             bloodCells.particleCount);
         glController.calculateTriangles(triangles);
         // OpenGL render

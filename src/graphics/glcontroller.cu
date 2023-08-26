@@ -38,7 +38,7 @@ namespace graphics
 
 	}
 
-	__global__ void calculateVerticesKernel(float* devVeinVBOBuffer, cudaVec3 position, int vertexCount)
+	__global__ void calculateVerticesKernel(float* devVeinVBOBuffer, cudaVec3 positions, int vertexCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= vertexCount)
@@ -46,7 +46,7 @@ namespace graphics
 
 		// Insert any debug position changes here
 
-		float3 v = position.get(id);
+		float3 v = positions.get(id);
 		devVeinVBOBuffer[8 * id] = v.x;
 		devVeinVBOBuffer[8 * id + 1] = v.y;
 		devVeinVBOBuffer[8 * id + 2] = v.z;
@@ -161,7 +161,7 @@ namespace graphics
 		float* vboPtr = (float*)mapResourceAndGetPointer(cudaVeinVBOResource);
 		int threadsPerBlock = triangles.vertexCount > 1024 ? 1024 : triangles.vertexCount;
 		int blocks = (triangles.vertexCount + threadsPerBlock - 1) / threadsPerBlock;
-		calculateVerticesKernel << <blocks, threadsPerBlock >> > (vboPtr, triangles.position, triangles.vertexCount);
+		calculateVerticesKernel << <blocks, threadsPerBlock >> > (vboPtr, triangles.positions, triangles.vertexCount);
 		cudaDeviceSynchronize();
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinVBOResource, 0));
 

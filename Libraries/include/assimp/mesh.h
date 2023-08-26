@@ -390,7 +390,7 @@ enum aiPrimitiveType {
 
     /** A line primitive.
      *
-     * This is a line defined through a start and an end position.
+     * This is a line defined through a start and an end positions.
      * #aiFace contains exactly two indices for such a primitive.
      */
     aiPrimitiveType_LINE = 0x2,

@@ -71,9 +71,9 @@ namespace sim
 		if (particleId >= bloodCells.particleCount)
 			return;
 
-		float3 F = bloodCells.particles.force.get(particleId);
-		float3 velocity = bloodCells.particles.velocity.get(particleId);
-		float3 pos = bloodCells.particles.position.get(particleId);
+		float3 F = bloodCells.particles.forces.get(particleId);
+		float3 velocity = bloodCells.particles.velocities.get(particleId);
+		float3 pos = bloodCells.particles.positions.get(particleId);
 
 		// upper and lower bound
 		if (pos.y >= 0.9f * height)
@@ -267,9 +267,9 @@ namespace sim
 			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
 			unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
 
-			float3 v0 = triangles.position.get(vertexIndex0);
-			float3 v1 = triangles.position.get(vertexIndex1);
-			float3 v2 = triangles.position.get(vertexIndex2);
+			float3 v0 = triangles.positions.get(vertexIndex0);
+			float3 v1 = triangles.positions.get(vertexIndex1);
+			float3 v2 = triangles.positions.get(vertexIndex2);
 
 			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
@@ -277,21 +277,21 @@ namespace sim
 			// Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it. - Filip
 			// Here we probably should use atomicAdd. - Hubert
 			// move triangle a bit
-			triangles.force.add(vertexIndex0, baricentric.x * ds);
-			triangles.force.add(vertexIndex1, baricentric.y * ds);
-			triangles.force.add(vertexIndex2, baricentric.z * ds);
+			triangles.forces.add(vertexIndex0, baricentric.x * ds);
+			triangles.forces.add(vertexIndex1, baricentric.y * ds);
+			triangles.forces.add(vertexIndex2, baricentric.z * ds);
 
 		}
 
 	set_particle_values:
 
-		bloodCells.particles.velocity.set(particleId, velocity);
+		bloodCells.particles.velocities.set(particleId, velocity);
 
 		// propagate velocities into positions
-		bloodCells.particles.position.add(particleId, dt * velocity);
+		bloodCells.particles.positions.add(particleId, dt * velocity);
 
 		// zero forces
-		bloodCells.particles.force.set(particleId, make_float3(0, 0, 0));
+		bloodCells.particles.forces.set(particleId, make_float3(0, 0, 0));
 	}
 
 	// 1. Calculate collisions between particles and vein triangles
@@ -305,9 +305,9 @@ namespace sim
 			return;
 
 		// propagate force into velocities
-		float3 F = bloodCells.particles.force.get(particleId);
-		float3 velocity = bloodCells.particles.velocity.get(particleId);
-		float3 pos = bloodCells.particles.position.get(particleId);
+		float3 F = bloodCells.particles.forces.get(particleId);
+		float3 velocity = bloodCells.particles.velocities.get(particleId);
+		float3 pos = bloodCells.particles.positions.get(particleId);
 
 		velocity = velocity + dt * F;
 		float3 velocityDir = normalize(velocity);
@@ -326,9 +326,9 @@ namespace sim
 		{
 			constexpr float EPS = 1e-7f;
 			// triangle vectices and edges
-			float3 v0 = triangles.position.get(triangles.getIndex(triangleId, vertex0));
-			float3 v1 = triangles.position.get(triangles.getIndex(triangleId, vertex1));
-			float3 v2 = triangles.position.get(triangles.getIndex(triangleId, vertex2));
+			float3 v0 = triangles.positions.get(triangles.getIndex(triangleId, vertex0));
+			float3 v1 = triangles.positions.get(triangles.getIndex(triangleId, vertex1));
+			float3 v2 = triangles.positions.get(triangles.getIndex(triangleId, vertex2));
 			const float3 edge1 = v1 - v0;
 			const float3 edge2 = v2 - v0;
 
@@ -361,27 +361,27 @@ namespace sim
 			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
 			unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
 
-			float3 v0 = triangles.position.get(vertexIndex0);
-			float3 v1 = triangles.position.get(vertexIndex1);
-			float3 v2 = triangles.position.get(vertexIndex2);
+			float3 v0 = triangles.positions.get(vertexIndex0);
+			float3 v1 = triangles.positions.get(vertexIndex1);
+			float3 v2 = triangles.positions.get(vertexIndex2);
 			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
 
 			// move triangle a bit
 			// here we probably should use atomicAdd
-			triangles.position.add(vertexIndex0, baricentric.x * ds);
-			triangles.position.add(vertexIndex1, baricentric.y * ds);
-			triangles.position.add(vertexIndex2, baricentric.z * ds);
+			triangles.positions.add(vertexIndex0, baricentric.x * ds);
+			triangles.positions.add(vertexIndex1, baricentric.y * ds);
+			triangles.positions.add(vertexIndex2, baricentric.z * ds);
 		}
 
 	set_particle_values:
 
-		bloodCells.particles.velocity.set(particleId, velocity);
+		bloodCells.particles.velocities.set(particleId, velocity);
 
 		// propagate velocities into positions
-		bloodCells.particles.position.add(particleId, dt * velocity);
+		bloodCells.particles.positions.add(particleId, dt * velocity);
 
 		// zero forces
-		bloodCells.particles.force.set(particleId, make_float3(0, 0, 0));
+		bloodCells.particles.forces.set(particleId, make_float3(0, 0, 0));
 	}
 
 
@@ -473,9 +473,9 @@ namespace sim
 					{
 						// triangle vectices and edges
 						unsigned int triangleId = triangleGrid.particleIds[i];
-						float3 v0 = triangles.position.get(triangles.getIndex(triangleId, vertex0));
-						float3 v1 = triangles.position.get(triangles.getIndex(triangleId, vertex1));
-						float3 v2 = triangles.position.get(triangles.getIndex(triangleId, vertex2));
+						float3 v0 = triangles.positions.get(triangles.getIndex(triangleId, vertex0));
+						float3 v1 = triangles.positions.get(triangles.getIndex(triangleId, vertex1));
+						float3 v2 = triangles.positions.get(triangles.getIndex(triangleId, vertex2));
 
 						if (!realCollisionDetection(v0, v1, v2, r, reflectionVector))
 							continue;

@@ -57,7 +57,7 @@ namespace Assimp {
 
 // ------------------------------------------------------------------------------------------------
 /** A little helper class to quickly find all vertices in the epsilon environment of a given
- * position. Construct an instance with an array of positions. The class stores the given positions
+ * positions. Construct an instance with an array of positions. The class stores the given positions
  * by their indices and sorts them by their distance to an arbitrary chosen plane.
  * You can then query the instance for all vertices close to a given position in an average O(log n)
  * time, with O(n) worst case complexity when all vertices lay on the plane. The plane is chosen
@@ -112,7 +112,7 @@ public:
     void Finalize();
 
     // ------------------------------------------------------------------------------------
-    /** Returns an iterator for all positions close to the given position.
+    /** Returns an iterator for all positions close to the given positions.
      * @param pPosition The position to look for vertices.
      * @param pRadius Maximal distance from the position a vertex may have to be counted in.
      * @param poResults The container to store the indices of the found positions.
@@ -122,7 +122,7 @@ public:
             std::vector<unsigned int> &poResults) const;
 
     // ------------------------------------------------------------------------------------
-    /** Fills an array with indices of all positions identical to the given position. In
+    /** Fills an array with indices of all positions identical to the given positions. In
      *  opposite to FindPositions(), not an epsilon is used but a (very low) tolerance of
      *  four floating-point units.
      * @param pPosition The position to look for vertices.

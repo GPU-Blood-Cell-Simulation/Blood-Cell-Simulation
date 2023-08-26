@@ -20,13 +20,14 @@ public:
 	const unsigned int triangleCount;
 	const unsigned int vertexCount;
 
-	cudaVec3 position;
-	cudaVec3 velocity;
-	cudaVec3 force;
+	cudaVec3 positions;
+	cudaVec3 velocities;
+	cudaVec3 forces;
 
 	unsigned int* indices;
 	cudaVec3 centers;
 
+	// TODO: move these out of the class
 	const float veinVertexHorizontalDistance;
 	const float veinVertexNonHorizontalDistances[3];
 
@@ -59,6 +60,6 @@ private:
 	__device__ inline void atomicAdd(int triangleIndex, VertexIndex vertexIndex, float3 value)
 	{
 		int index = indices[3 * triangleIndex + vertexIndex];
-		position.atomicAddVec3(index, value);
+		positions.atomicAddVec3(index, value);
 	}
 };

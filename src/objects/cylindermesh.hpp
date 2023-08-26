@@ -60,9 +60,9 @@ public:
 		exit(0);*/
 
 		springLengths = std::make_tuple(
-			length(vertices[0].Position - vertices[1].Position),
-			length(vertices[0].Position - vertices[hLayers].Position),
-			length(vertices[0].Position - vertices[hLayers + 1].Position)
+			length(vertices[0].position - vertices[1].position),
+			length(vertices[0].position - vertices[hLayers].position),
+			length(vertices[0].position - vertices[hLayers + 1].position)
 		);
 	}
 

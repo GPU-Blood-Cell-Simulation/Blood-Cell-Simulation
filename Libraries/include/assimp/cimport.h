@@ -942,7 +942,7 @@ ASSIMP_API void aiMatrix4FromMatrix3(
         const C_STRUCT aiMatrix3x3 *mat);
 
 // --------------------------------------------------------------------------------
-/** Construct a 4x4 matrix from scaling, rotation and position.
+/** Construct a 4x4 matrix from scaling, rotation and positions.
  *  @param mat Receives the output matrix.
  *  @param scaling The scaling for the x,y,z axes
  *  @param rotation The rotation as a hamilton quaternion

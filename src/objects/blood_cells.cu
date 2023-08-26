@@ -47,8 +47,8 @@ __global__ static void gatherForcesKernel(BloodCells cells)
 	if (index >= cells.particleCount)
 		return;
 
-	float3 pos = cells.particles.position.get(index);
-	float3 velo = cells.particles.velocity.get(index);
+	float3 pos = cells.particles.positions.get(index);
+	float3 velo = cells.particles.velocities.get(index);
 
 	for (int neighbourCellindex = 0; neighbourCellindex < cells.particlesInCell; neighbourCellindex++)
 	{
@@ -59,11 +59,11 @@ __global__ static void gatherForcesKernel(BloodCells cells)
 
 		int neighbourIndex = index - inCellIndex + neighbourCellindex;
 
-		float3 neighbourPos = cells.particles.position.get(neighbourIndex);
-		float3 neighbourVelo = cells.particles.velocity.get(neighbourIndex);
+		float3 neighbourPos = cells.particles.positions.get(neighbourIndex);
+		float3 neighbourVelo = cells.particles.velocities.get(neighbourIndex);
 
 		float springForce = cells.calculateParticleSpringForce(pos, neighbourPos, velo, neighbourVelo, springLen);
 
-		cells.particles.force.add(index, springForce * normalize(neighbourPos - pos));
+		cells.particles.forces.add(index, springForce * normalize(neighbourPos - pos));
 	}
 }
