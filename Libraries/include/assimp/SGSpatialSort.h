@@ -93,7 +93,7 @@ public:
     ~SGSpatialSort();
 
     // -------------------------------------------------------------------
-    /** Returns an iterator for all positions close to the given positions.
+    /** Returns an iterator for all positions close to the given position.
      * @param pPosition The position to look for vertices.
      * @param pSG Only included vertices with at least one shared smooth group
      * @param pRadius Maximal distance from the position a vertex may have

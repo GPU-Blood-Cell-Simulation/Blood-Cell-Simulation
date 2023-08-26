@@ -51,16 +51,16 @@ namespace glm
 			vec<3, T, Q> const dist = orig - vert0;
 
 			// calculate U parameter and test bounds
-			barypositions.x = glm::dot(dist, p);
-			if(barypositions.x < static_cast<T>(0) || barypositions.x > det)
+			baryPosition.x = glm::dot(dist, p);
+			if(baryPosition.x < static_cast<T>(0) || baryPosition.x > det)
 				return false;
 
 			// prepare to test V parameter
 			Perpendicular = glm::cross(dist, edge1);
 
 			// calculate V parameter and test bounds
-			barypositions.y = glm::dot(dir, Perpendicular);
-			if((barypositions.y < static_cast<T>(0)) || ((barypositions.x + barypositions.y) > det))
+			baryPosition.y = glm::dot(dir, Perpendicular);
+			if((baryPosition.y < static_cast<T>(0)) || ((baryPosition.x + baryPosition.y) > det))
 				return false;
 		}
 		else if(det < -std::numeric_limits<T>::epsilon())
@@ -69,16 +69,16 @@ namespace glm
 			vec<3, T, Q> const dist = orig - vert0;
 
 			// calculate U parameter and test bounds
-			barypositions.x = glm::dot(dist, p);
-			if((barypositions.x > static_cast<T>(0)) || (barypositions.x < det))
+			baryPosition.x = glm::dot(dist, p);
+			if((baryPosition.x > static_cast<T>(0)) || (baryPosition.x < det))
 				return false;
 
 			// prepare to test V parameter
 			Perpendicular = glm::cross(dist, edge1);
 
 			// calculate V parameter and test bounds
-			barypositions.y = glm::dot(dir, Perpendicular);
-			if((barypositions.y > static_cast<T>(0)) || (barypositions.x + barypositions.y < det))
+			baryPosition.y = glm::dot(dir, Perpendicular);
+			if((baryPosition.y > static_cast<T>(0)) || (baryPosition.x + baryPosition.y < det))
 				return false;
 		}
 		else
@@ -116,17 +116,17 @@ namespace glm
 
 		genType Tangent = orig - vert0;
 
-		positions.y = dot(Tangent, Perpendicular) * inv_det;
-		if (positions.y < typename genType::value_type(0) || positions.y > typename genType::value_type(1))
+		position.y = dot(Tangent, Perpendicular) * inv_det;
+		if (position.y < typename genType::value_type(0) || position.y > typename genType::value_type(1))
 			return false;
 
 		genType Cotangent = cross(Tangent, edge1);
 
-		positions.z = dot(dir, Cotangent) * inv_det;
-		if (positions.z < typename genType::value_type(0) || positions.y + positions.z > typename genType::value_type(1))
+		position.z = dot(dir, Cotangent) * inv_det;
+		if (position.z < typename genType::value_type(0) || position.y + position.z > typename genType::value_type(1))
 			return false;
 
-		positions.x = dot(edge2, Cotangent) * inv_det;
+		position.x = dot(edge2, Cotangent) * inv_det;
 
 		return true;
 	}

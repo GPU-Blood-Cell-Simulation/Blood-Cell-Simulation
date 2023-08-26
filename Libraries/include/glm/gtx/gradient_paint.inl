@@ -31,6 +31,6 @@ namespace glm
 	)
 	{
 		vec<2, T, Q> Dist = Point1 - Point0;
-		return (Dist.x * (positions.x - Point0.x) + Dist.y * (positions.y - Point0.y)) / glm::dot(Dist, Dist);
+		return (Dist.x * (Position.x - Point0.x) + Dist.y * (Position.y - Point0.y)) / glm::dot(Dist, Dist);
 	}
 }//namespace glm
