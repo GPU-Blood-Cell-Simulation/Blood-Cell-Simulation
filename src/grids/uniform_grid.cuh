@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../blood_cell_structures/particles.cuh"
+#include "../objects/particles.cuh"
 #include "base_grid.cuh"
 
 /// <summary>
@@ -33,7 +33,7 @@ public:
 
 	inline void calculateGrid(const Particles& particles, unsigned int particleCount)
 	{
-		calculateGrid(particles.position.x, particles.position.y, particles.position.z, particleCount);
+		calculateGrid(particles.positions.x, particles.positions.y, particles.positions.z, particleCount);
 	}
 
 	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);

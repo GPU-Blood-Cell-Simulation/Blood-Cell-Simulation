@@ -2,7 +2,7 @@
 
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
-#include "../blood_cell_structures/blood_cells.cuh"
+#include "../objects/blood_cells.cuh"
 #include "../utilities/math.cuh"
 
 #include "cuda_runtime.h"
@@ -13,14 +13,14 @@ namespace sim
 {
 	__device__ inline void detectCollision(BloodCells& bloodCells, float3 position1, float3 velocity1, int particleId1, int particleId2)
 	{
-		float3 position2 = bloodCells.particles.position.get(particleId2);
+		float3 position2 = bloodCells.particles.positions.get(particleId2);
 
 		float3 relativePosition = position1 - position2;
 		float distanceSquared = length_squared(relativePosition);
 
 		if (distanceSquared <= particleRadious * particleRadious)
 		{
-			float3 relativeVelocity = velocity1 - bloodCells.particles.velocity.get(particleId2);
+			float3 relativeVelocity = velocity1 - bloodCells.particles.velocities.get(particleId2);
 			float3 relativeDirection = normalize(relativePosition);
 
 			float3 tangentialVelocity = relativeVelocity - dot(relativeVelocity, relativeDirection) * relativeDirection;
@@ -30,7 +30,7 @@ namespace sim
 			float3 shearForce = collistionShearCoeff * tangentialVelocity;
 
 			// Uncoalesced writes - area for optimization
-			bloodCells.particles.force.add(particleId1, springForce + damplingForce + shearForce);
+			bloodCells.particles.forces.add(particleId1, springForce + damplingForce + shearForce);
 		}
 	}
 
@@ -81,13 +81,13 @@ namespace sim
 			return;
 
 		int particleId = grid.particleIds[id];
-		float3 p1 = bloodCells.particles.position.get(particleId);
-		float3 v1 = bloodCells.particles.velocity.get(particleId);
+		float3 p1 = bloodCells.particles.positions.get(particleId);
+		float3 v1 = bloodCells.particles.velocities.get(particleId);
 
 		int cellId = grid.gridCellIds[id];
-		int xId = static_cast<unsigned int>(bloodCells.particles.position.x[particleId] / grid.cellWidth);
-		int yId = static_cast<unsigned int>(bloodCells.particles.position.y[particleId] / grid.cellHeight);
-		int zId = static_cast<unsigned int>(bloodCells.particles.position.z[particleId] / grid.cellDepth);
+		int xId = static_cast<unsigned int>(bloodCells.particles.positions.x[particleId] / grid.cellWidth);
+		int yId = static_cast<unsigned int>(bloodCells.particles.positions.y[particleId] / grid.cellHeight);
+		int zId = static_cast<unsigned int>(bloodCells.particles.positions.z[particleId] / grid.cellDepth);
 
 		// Check all corner cases and call the appropriate function specialization
 		// Ugly but fast
@@ -245,8 +245,8 @@ namespace sim
 		if (id >= bloodCells.particleCount)
 			return;
 
-		float3 p1 = bloodCells.particles.position.get(id);
-		float3 v1 = bloodCells.particles.position.get(id);
+		float3 p1 = bloodCells.particles.positions.get(id);
+		float3 v1 = bloodCells.particles.positions.get(id);
 
 		// Naive implementation
 		for (int i = 0; i < bloodCells.particleCount; i++)

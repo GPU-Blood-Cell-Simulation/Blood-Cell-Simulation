@@ -57,12 +57,13 @@ __host__ __device__ inline float length(float3 v)
 	return sqrtf(length_squared(v));
 }
 
+// TODO: is there a way to compute the inverse square root faster?
 __host__ __device__ inline float3 normalize(float3 v) // versor
 {
 	float3 vn = v / sqrtf(dot(v, v));
 	if (isnan(vn.x) || isnan(vn.y) || isnan(vn.z))
 	{
-		printf("NAN");
+		printf("NAN ");
 	}
 	return vn;
 }

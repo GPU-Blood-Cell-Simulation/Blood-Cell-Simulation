@@ -19,7 +19,7 @@
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/cuda_vec3.cuh"
 
-#include "../blood_cell_structures/device_triangles.cuh"
+#include "../objects/vein_triangles.cuh"
 
 
 namespace graphics
@@ -38,7 +38,7 @@ namespace graphics
 
 	}
 
-	__global__ void calculateVerticesKernel(float* devVeinVBOBuffer, cudaVec3 vertices, int vertexCount)
+	__global__ void calculateVerticesKernel(float* devVeinVBOBuffer, cudaVec3 positions, int vertexCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= vertexCount)
@@ -46,7 +46,7 @@ namespace graphics
 
 		// Insert any debug position changes here
 
-		float3 v = vertices.get(id);
+		float3 v = positions.get(id);
 		devVeinVBOBuffer[8 * id] = v.x;
 		devVeinVBOBuffer[8 * id + 1] = v.y;
 		devVeinVBOBuffer[8 * id + 2] = v.z;
@@ -66,7 +66,7 @@ namespace graphics
 	}
 
 
-	graphics::GLController::GLController(GLFWwindow* window)
+	graphics::GLController::GLController(GLFWwindow* window, Mesh veinMesh) : veinModel(veinMesh)
 	{
 		// Set up GLFW to work with inputController
 		glfwSetWindowUserPointer(window, &inputController);
@@ -155,13 +155,13 @@ namespace graphics
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
 	}
 
-	void graphics::GLController::calculateTriangles(DeviceTriangles triangles)
+	void graphics::GLController::calculateTriangles(VeinTriangles triangles)
 	{
 		// map vertices
 		float* vboPtr = (float*)mapResourceAndGetPointer(cudaVeinVBOResource);
 		int threadsPerBlock = triangles.vertexCount > 1024 ? 1024 : triangles.vertexCount;
 		int blocks = (triangles.vertexCount + threadsPerBlock - 1) / threadsPerBlock;
-		calculateVerticesKernel << <blocks, threadsPerBlock >> > (vboPtr, triangles.vertices, triangles.vertexCount);
+		calculateVerticesKernel << <blocks, threadsPerBlock >> > (vboPtr, triangles.positions, triangles.vertexCount);
 		cudaDeviceSynchronize();
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaVeinVBOResource, 0));
 

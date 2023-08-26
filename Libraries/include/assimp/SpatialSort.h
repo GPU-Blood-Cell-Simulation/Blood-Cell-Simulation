@@ -57,7 +57,7 @@ namespace Assimp {
 
 // ------------------------------------------------------------------------------------------------
 /** A little helper class to quickly find all vertices in the epsilon environment of a given
- * position. Construct an instance with an array of positions. The class stores the given positions
+ * positions. Construct an instance with an array of positions. The class stores the given position
  * by their indices and sorts them by their distance to an arbitrary chosen plane.
  * You can then query the instance for all vertices close to a given position in an average O(log n)
  * time, with O(n) worst case complexity when all vertices lay on the plane. The plane is chosen
