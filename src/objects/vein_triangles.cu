@@ -121,7 +121,7 @@ __global__ static void gatherForcesKernel(VeinTriangles triangles)
 	float3 neighborPosition;
 
 	float3 vertexPosition = triangles.position.get(vertex);
-	float3 vertexVelocity = triangles.position.get(vertex);
+float3 vertexVelocity = triangles.velocity.get(vertex);
 	float3 vertexForce = { 0,0,0 };
 
 	// Calculate our own spatial indices
