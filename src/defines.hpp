@@ -15,10 +15,22 @@ inline glm::vec3 cylinderBaseCenter = glm::vec3(width / 2.0f, 0.1f * height, dep
 inline constexpr unsigned int cylinderVerticalLayers = 100;
 inline constexpr unsigned int cylinderHorizontalLayers = 30;
 
+inline constexpr unsigned int veinHeight = static_cast<unsigned int>(cylinderHeight);
+inline constexpr unsigned int veinRadius = static_cast<unsigned int>(cylinderRadius);
+
+inline constexpr unsigned int cellWidth = 20;
+inline constexpr unsigned int cellHeight = 20;
+inline constexpr unsigned int cellDepth = 20;
+
+inline constexpr unsigned int cellCountX = static_cast<unsigned int>(width / cellWidth);
+inline constexpr unsigned int cellCountY = static_cast<unsigned int>(height / cellHeight);
+inline constexpr unsigned int cellCountZ = static_cast<unsigned int>(depth / cellDepth);
+
 // blood cell parameters
 inline constexpr unsigned int PARTICLE_COUNT = 1000;
 inline constexpr float springsInCellsLength = 10;
 inline constexpr float particleRadious = 5;
+
 // debug
 inline unsigned int FRAME = 0;
 inline unsigned int VEIN_POLYGON_MODE = 0;
@@ -43,16 +55,18 @@ inline constexpr float velocityCollisionDamping = 0.8f;
 
 // ! this value should be determined experimentally !
 // Hooks law k factor from F = k*x
-inline constexpr float k_sniff = 0.1f;
+inline constexpr float particle_k_sniff = 0.1f;
+inline constexpr float vein_k_sniff = 0.3f;
 
 // ! this value should be determined experimentally !
 // Damping factor 
-inline constexpr float d_fact = 0.1f;
+inline constexpr float particle_d_fact = 0.1f;
+inline constexpr float vein_d_fact = 0;
 
 // Particle-particle collision coefficients
-inline constexpr float collisionSpringCoeff = 0.2;
-inline constexpr float collisionDampingCoeff = 0.02;
-inline constexpr float collistionShearCoeff = 0.05;
+inline constexpr float collisionSpringCoeff = 0.2f;
+inline constexpr float collisionDampingCoeff = 0.02f;
+inline constexpr float collistionShearCoeff = 0.05f;
 
 // Lighting
 inline constexpr bool useLighting = true;

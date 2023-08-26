@@ -1,7 +1,7 @@
 #pragma once
 #include "../utilities/math.cuh"
-#include "../blood_cell_structures/blood_cells.cuh"
-#include "../blood_cell_structures/device_triangles.cuh"
+#include "../objects/blood_cells.cuh"
+#include "../objects/vein_triangles.cuh"
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
 #include <variant>
@@ -35,20 +35,20 @@ namespace sim
 
 	#pragma region Main Collision Template Kernels
 	template<typename T1, typename T2>
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, DeviceTriangles triangles, T1 particleGrid, T2 triangleGrid) {}
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, VeinTriangles triangles, T1 particleGrid, T2 triangleGrid) {}
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid);
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid);
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells cells, DeviceTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid);
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid);
 	#pragma endregion
 
 	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>
-	__device__ bool calculateSideCollisions(float3 position, ray& velocityRay, float3& reflectionVector, DeviceTriangles& triangles, UniformGrid& triangleGrid);
+	__device__ bool calculateSideCollisions(float3 position, ray& r, float3& reflectionVector, VeinTriangles& triangles, UniformGrid& triangleGrid);
 
 
-	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& velocityRay, float3& reflectionVector);
+	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& r, float3& reflectionVector);
 
 	__device__ float3 calculateBaricentric(float3 point, float3 v0, float3 v1, float3 v2);
 

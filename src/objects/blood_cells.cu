@@ -30,27 +30,16 @@ BloodCells::~BloodCells()
 }
 
 
-__global__ void PropagateForcesOnDevice(BloodCells cells);
+__global__ static void gatherForcesKernel(BloodCells cells);
 
 
-void BloodCells::propagateForces()
+void BloodCells::gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock)
 {
-	// anything above 768 threads (25 warps) trigger an error
-	// 'too many resources requested for launch'
-	// maybe possible to solve
-	int threadsPerBlock = particleCount > 768 ? 768 : particleCount;
-	int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
-
-	PropagateForcesOnDevice << <blocks, threadsPerBlock >> > (*this);
+	gatherForcesKernel << <blocks, threadsPerBlock >> > (*this);
 }
 
 
-__device__ inline float CalculateSpringForce(float3 p1, float3 p2, float3 v1, float3 v2, float springLen) {
-	return (length(p1 - p2) - springLen) * k_sniff + dot(normalize(p1 - p2), (v1 - v2)) * d_fact;
-}
-
-
-__global__ void PropagateForcesOnDevice(BloodCells cells)
+__global__ static void gatherForcesKernel(BloodCells cells)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	int inCellIndex = index % cells.particlesInCell;
@@ -58,8 +47,8 @@ __global__ void PropagateForcesOnDevice(BloodCells cells)
 	if (index >= cells.particleCount)
 		return;
 
-	float3 pos = cells.particles.position.get(index);
-	float3 velo = cells.particles.velocity.get(index);
+	float3 pos = cells.particles.positions.get(index);
+	float3 velo = cells.particles.velocities.get(index);
 
 	for (int neighbourCellindex = 0; neighbourCellindex < cells.particlesInCell; neighbourCellindex++)
 	{
@@ -70,11 +59,11 @@ __global__ void PropagateForcesOnDevice(BloodCells cells)
 
 		int neighbourIndex = index - inCellIndex + neighbourCellindex;
 
-		float3 neighbourPos = cells.particles.position.get(neighbourIndex);
-		float3 neighbourVelo = cells.particles.velocity.get(neighbourIndex);
+		float3 neighbourPos = cells.particles.positions.get(neighbourIndex);
+		float3 neighbourVelo = cells.particles.velocities.get(neighbourIndex);
 
-		float springForce = CalculateSpringForce(pos, neighbourPos, velo, neighbourVelo, springLen);
+		float springForce = cells.calculateParticleSpringForce(pos, neighbourPos, velo, neighbourVelo, springLen);
 
-		cells.particles.force.add(index, springForce * normalize(neighbourPos - pos));
+		cells.particles.forces.add(index, springForce * normalize(neighbourPos - pos));
 	}
 }

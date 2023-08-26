@@ -1,8 +1,8 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
-#include "../blood_cell_structures/blood_cells.cuh"
-#include "../blood_cell_structures/device_triangles.cuh"
+#include "../objects/blood_cells.cuh"
+#include "../objects/vein_triangles.cuh"
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
 
@@ -14,9 +14,29 @@ using Grid = std::variant<UniformGrid*, NoGrid*>;
 
 namespace sim
 {
-	void generateRandomPositions(Particles& particles, const int particleCount);
+	class SimulationController
+	{
+	public:
+		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid);
 
-	void calculateNextFrame(BloodCells& cells, DeviceTriangles& triangles, Grid grid, Grid triangleGrid, unsigned int triangleCount);
+		void calculateNextFrame();
+	private:
+		BloodCells& bloodCells;
+		VeinTriangles& triangles;
+		Grid particleGrid;
+		Grid triangleGrid;
+
+		const unsigned int bloodCellsThreadsPerBlock;
+		const unsigned int bloodCellsBlocks;
+
+		const unsigned int veinVerticesThreadsPerBlock;
+		const unsigned int veinVerticesBlocks;
+
+		const unsigned int veinTrianglesThreadsPerBlock;
+		const unsigned int veinTrianglesBlocks;
+
+		void generateRandomPositions();
+	};
 }
 
 #endif

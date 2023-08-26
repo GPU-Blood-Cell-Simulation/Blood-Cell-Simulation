@@ -6,9 +6,9 @@
 /// </summary>
 struct Particles
 {
-	cudaVec3 position;
-	cudaVec3 velocity;
-	cudaVec3 force;
+	cudaVec3 positions;
+	cudaVec3 velocities;
+	cudaVec3 forces;
 
-	Particles(int n) : position(n), velocity(n), force(n) {}
+	Particles(int n) : positions(n), velocities(n), forces(n) {}
 };
