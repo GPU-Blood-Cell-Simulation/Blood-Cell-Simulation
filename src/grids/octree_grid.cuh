@@ -30,7 +30,7 @@ public:
 	unsigned int levels;
 	unsigned int treeNodesCount;
 	unsigned int* treeData;
-	int16_t* masks;
+	unsigned char* masks;
 
 	OctreeGrid(const unsigned int objectCount, const unsigned int levels);
 	OctreeGrid(const OctreeGrid& other);

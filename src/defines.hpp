@@ -26,6 +26,9 @@ inline constexpr unsigned int cellCountX = static_cast<unsigned int>(width / cel
 inline constexpr unsigned int cellCountY = static_cast<unsigned int>(height / cellHeight);
 inline constexpr unsigned int cellCountZ = static_cast<unsigned int>(depth / cellDepth);
 
+// octree
+inline constexpr unsigned int maxOctreeDepth = 10;
+
 // blood cell parameters
 inline constexpr unsigned int PARTICLE_COUNT = 1000;
 inline constexpr float springsInCellsLength = 10;

@@ -10,95 +10,97 @@
 #define MANTIS_OR_MASK 0x00800000
 
 
+#define MORTON_POSITION_MASK 0x07
+
 #define max(a,b) ( a > b ? a : b)
 #define min(a,b) ( a > b ? b : a)
 
 __device__ unsigned int partEveryByteByTwo(unsigned int n)
 {
-	n = (n ∧ (n << 16)) & 0xff0000ff;
-	n = (n ∧ (n << 8))  & 0x0300f00f;
-	n = (n ∧ (n << 4))  & 0x030c30c3;
-	n = (n ∧ (n << 2))  & 0x09249249;
+	n = (n ^ (n << 16)) & 0xff0000ff;
+	n = (n ^ (n << 8)) & 0x0300f00f;
+	n = (n ^ (n << 4)) & 0x030c30c3;
+	n = (n ^ (n << 2)) & 0x09249249;
 	return n;
 }
 
-	__device__ unsigned int calculateMortonCodeIdForCell(unsigned int xId, unsigned int yId, unsigned int zId)
+__device__ unsigned int calculateMortonCodeIdForCell(unsigned int xId, unsigned int yId, unsigned int zId)
+{
+	return (partEveryByteByTwo(zId) << 2) | (partEveryByteByTwo(yId) << 1) | partEveryByteByTwo(xId);
+}
+
+__global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
+	unsigned int* cellIds, unsigned int* particleIds, const unsigned int particleCount,
+	unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
+{
+	unsigned int particleId = blockIdx.x * blockDim.x + threadIdx.x;
+	if (particleId >= particleCount)
+		return;
+
+	unsigned int cellId = calculateMortonCodeIdForCell(unsigned int(positionX[particleId] / cellWidth),
+		unsigned int(positionY[particleId] / cellHeight), unsigned int(positionZ[particleId] / cellDepth));
+
+	particleIds[particleId] = particleId;
+	cellIds[particleId] = cellId;
+}
+
+__global__ void calculateStartAndEndOfCellKernel(const float* positionX, const float* positionY, const float* positionZ,
+	const unsigned int* cellIds, const unsigned int* particleIds,
+	unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+{
+	unsigned int id = blockIdx.x * blockDim.x + threadIdx.x;
+	if (id >= particleCount)
+		return;
+
+	unsigned int currentCellId = cellIds[id];
+
+	// Check if the previous cell id was different - it would mean we found the start of a cell
+	if (id > 0 && currentCellId != cellIds[id - 1])
 	{
-		return (partEveryByteByTwo(z) << 2) | (partEveryByteByTwo(y) << 1) | partEveryByteByTwo(x);
+		cellStarts[currentCellId] = id;
 	}
 
-	__global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
-		unsigned int* cellIds, unsigned int* particleIds, const unsigned int particleCount,
-		unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
+	// Check if the next cell id was different - it would mean we found the end of a cell
+	if (id < particleCount - 1 && currentCellId != cellIds[id + 1])
 	{
-		unsigned int particleId = blockIdx.x * blockDim.x + threadIdx.x;
-		if (particleId >= particleCount)
-			return;
-
-		unsigned int cellId = calculateMortonCodeIdForCell(unsigned int(positionX[particleId]/cellWidth), 
-			unsigned int(positionY[particleId]/cellHeight), unsigned int(positionZ[particleId]/cellDepth));
-
-		particleIds[particleId] = particleId;
-		cellIds[particleId] = cellId;
+		cellEnds[currentCellId] = id;
 	}
 
-	__global__ void calculateStartAndEndOfCellKernel(const float* positionX, const float* positionY, const float* positionZ,
-		const unsigned int* cellIds, const unsigned int* particleIds,
-		unsigned int* cellStarts, unsigned int* cellEnds, unsigned int particleCount)
+	if (id == 0)
 	{
-		unsigned int id = blockIdx.x * blockDim.x + threadIdx.x;
-		if (id >= particleCount)
-			return;
-
-		unsigned int currentCellId = cellIds[id];
-
-		// Check if the previous cell id was different - it would mean we found the start of a cell
-		if (id > 0 && currentCellId != cellIds[id - 1])
-		{
-			cellStarts[currentCellId] = id;
-		}
-
-		// Check if the next cell id was different - it would mean we found the end of a cell
-		if (id < particleCount - 1 && currentCellId != cellIds[id + 1])
-		{
-			cellEnds[currentCellId] = id;
-		}
-
-		if (id == 0)
-		{
-			cellStarts[cellIds[0]] = 0;
-		}
-		if (id == particleCount - 1)
-		{
-			cellStarts[cellIds[particleCount - 1]] = particleCount - 1;
-		}
+		cellStarts[cellIds[0]] = 0;
 	}
-
-	void createOctreeGridData(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds, 
-		unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* gridCelLStarts, 
-		unsigned int* gridCellEnds, unsigned int objectCount)
+	if (id == particleCount - 1)
 	{
-		// Calculate launch parameters
-
-		const int threadsPerBlock = objectCount > 1024 ? 1024 : objectCount;
-		const int blocks = (objectCount + threadsPerBlock - 1) / threadsPerBlock;
-
-		// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
-		gridHelpers::calculateCellIdKernel << <blocks, threadsPerBlock >> >
-			(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount, cellWidth, cellHeight, cellDepth);
-
-		// 2. Sort particle ids by cell id
-
-		thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast<unsigned int>(gridCellIds);
-		thrust::device_ptr<unsigned int> values = thrust::device_pointer_cast<unsigned int>(particleIds);
-
-		thrust::stable_sort_by_key(keys, keys + objectCount, values);
-
-		// 3. Find the start and end of every cell
-
-		gridHelpers::calculateStartAndEndOfCellKernel << <blocks, threadsPerBlock >> >
-			(positionX, positionY, positionZ, gridCellIds, particleIds, gridCellStarts, gridCellEnds, objectCount);
+		cellStarts[cellIds[particleCount - 1]] = particleCount - 1;
 	}
+}
+
+void createOctreeGridData(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds,
+	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* gridCelLStarts,
+	unsigned int* gridCellEnds, unsigned int objectCount)
+{
+	// Calculate launch parameters
+
+	const int threadsPerBlock = objectCount > 1024 ? 1024 : objectCount;
+	const int blocks = (objectCount + threadsPerBlock - 1) / threadsPerBlock;
+
+	// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
+	gridHelpers::calculateCellIdKernel << <blocks, threadsPerBlock >> >
+		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount, cellWidth, cellHeight, cellDepth);
+
+	// 2. Sort particle ids by cell id
+
+	thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast<unsigned int>(gridCellIds);
+	thrust::device_ptr<unsigned int> values = thrust::device_pointer_cast<unsigned int>(particleIds);
+
+	thrust::stable_sort_by_key(keys, keys + objectCount, values);
+
+	// 3. Find the start and end of every cell
+
+	gridHelpers::calculateStartAndEndOfCellKernel << <blocks, threadsPerBlock >> >
+		(positionX, positionY, positionZ, gridCellIds, particleIds, gridCellStarts, gridCellEnds, objectCount);
+}
 
 
 
@@ -106,76 +108,24 @@ __device__ unsigned int partEveryByteByTwo(unsigned int n)
 __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsigned int objectCount,
 	const unsigned int cellCountX, const unsigned int cellCountY, const unsigned int cellCountZ,
 	const unsigned int cellWidth, const unsigned int cellHeight, const unsigned int cellDepth, const unsigned int divisionCount
-	, const float width, const float height, const float depth)
+	, const float width, const float height, const float depth, unsigned char* masks)
 {
 	unsigned int objectId = blockIdx.x * blockDim.x + threadIdx.x;
 	if (objectId >= objectCount)
 		return;
 
 	unsigned int cellMortonCodeId = cellIds[objectId];
-	unsigned int currentCellAbsoluteId = cellId + (pow(8, levels) - 1)/7;
-	unsigned int parentCellAbsoluteId = (cellId - 1)/8;
-
-	const unsigned int idX = (cellId % cellWidth) / 2;
-	const unsigned int idY = ((cellId / cellWidth) % cellHeight) / 2;
-	const unsigned int idZ = ((cellId / cellWidth / cellHeight) % cellDepth) / 2;
-
-	const float positionX = (2.0f * float(idX) + 0.5f) * cellWidth;
-	const float positionY = (2.0f * float(idY) + 0.5f) * cellWidth;
-	const float positionZ = (2.0f * float(idZ) + 0.5f) * cellDepth;
-
-	const float lowerBoundX = float(idX) * cellWidth;
-	const float lowerBoundY = float(idY) * cellHeight;
-	const float lowerBoundZ = float(idZ) * cellDepth;
-	
-	float relativeLocationX = ((positionX - lowerBoundX) / width);
-	float relativeLocationY = ((positionY - lowerBoundY) / height);
-	float relativeLocationZ = ((positionZ - lowerBoundZ) / depth);
-
-	const unsigned int locationCodeX = *(int*)&relativeLocationX;
-	const unsigned int locationCodeY = *(int*)&relativeLocationY;
-	const unsigned int locationCodeZ = *(int*)&relativeLocationZ;
-
+	unsigned int currentCellAbsoluteId = cellMortonCodeId + (pow(8, divisionCount) - 1) / 7;
 	unsigned int counter = 0;
-	
-
-	// shift is 23 + (126 - exponent)
-	unsigned int exponentShiftX = 149 - (locationCodeX & EXPONENTIAL_MASK) >> EXPONENTIAL_OFFSET;
-	unsigned int exponentShiftY = 149 - (locationCodeY & EXPONENTIAL_MASK) >> EXPONENTIAL_OFFSET;
-	unsigned int exponentShiftZ = 149 - (locationCodeZ & EXPONENTIAL_MASK) >> EXPONENTIAL_OFFSET;
-
-	unsigned int fullMantisX = MANTIS_OR_MASK | (locationCodeX & MANTIS_MASK);
-	unsigned int fullMantisY = MANTIS_OR_MASK | (locationCodeY & MANTIS_MASK);
-	unsigned int fullMantisZ = MANTIS_OR_MASK | (locationCodeZ & MANTIS_MASK);
 
 #pragma unroll
-	while (counter++ < divisionCount) {
-		unsigned char shift = 0x80 >> ;
-		__syncthreads();
+	while (counter++ < divisionCount - 1) {
+		unsigned int parentId = currentCellAbsoluteId >> 3;
+		unsigned char childFillMask = (unsigned char)parentId & MORTON_POSITION_MASK;
+		masks[parentId] |= childFillMask;
+		currentCellAbsoluteId = parentId;
 	}
 
-}
-
-__global__ void calculateTreeFirstLevel(const float* positionX, const float* positionY, const float* positionZ,
-	const unsigned int cellWidth, const unsigned int cellHeight, const unsigned int cellDepth, unsigned int levels,
-	unsigned int* treeData, int16_t* masks, unsigned int objectCount)
-{
-	unsigned int objectId = blockIdx.x * blockDim.x + threadIdx.x;
-	if (objectId >= objectCount)
-		return;
-
-	float positionX = positionX[objectId];
-	float positionY = positionY[objectId];
-	float positionZ = positionZ[objectId];
-
-
-
-#pragma unroll
-	for (int level = levels; level >= 0; --level)
-	{
-
-		__syncthreads();
-	}
 }
 
 OctreeGrid::OctreeGrid(const unsigned int objectCount, const unsigned int levels)
@@ -201,8 +151,8 @@ OctreeGrid::OctreeGrid(const unsigned int objectCount, const unsigned int levels
 
 	treeNodesCount = (pow(8, levels) - 1) / 7;
 	printf("Octree nodes count: %d\n", treeNodesCount);
-	HANDLE_ERROR(cudaMalloc((void**)&treeData, treeNodesCount * sizeof(unsigned int)));
-	HANDLE_ERROR(cudaMalloc((void**)&masks, treeNodesCount * sizeof(int16_t)));
+	//HANDLE_ERROR(cudaMalloc((void**)&treeData, treeNodesCount * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&masks, treeNodesCount * sizeof(unsigned char)));
 }
 
 void OctreeGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount)
