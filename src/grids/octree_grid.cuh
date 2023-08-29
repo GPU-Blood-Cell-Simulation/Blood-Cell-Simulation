@@ -1,6 +1,7 @@
 #pragma once
 #include "base_grid.cuh"
-#include "../blood_cell_structures/particles.cuh"
+#include "../objects/particles.cuh"
+#include <vector>
 
 /// <summary>
 /// Represents an implementation of a Sparse voxel octree
@@ -26,16 +27,21 @@ public:
 	unsigned int* gridCellStarts = 0;
 	unsigned int* gridCellEnds = 0;
 
-	OctreeGrid(const unsigned int particleCount, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth);
+	unsigned int levels;
+	unsigned int treeNodesCount;
+	unsigned int* treeData;
+	int16_t* masks;
+
+	OctreeGrid(const unsigned int objectCount, const unsigned int levels);
 	OctreeGrid(const OctreeGrid& other);
 	~OctreeGrid();
 
 	inline void calculateGrid(const Particles& particles, unsigned int particleCount)
 	{
-		calculateGrid(particles.position.x, particles.position.y, particles.position.z, particleCount);
+		calculateGrid(particles.positions.x, particles.positions.y, particles.positions.z, particleCount);
 	}
 
-	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount) {}
+	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);
 
 	__device__ unsigned int calculateCellId(float3 position) {}
 };

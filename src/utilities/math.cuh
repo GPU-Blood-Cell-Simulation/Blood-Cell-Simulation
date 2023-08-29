@@ -30,6 +30,11 @@ __host__ __device__ inline float3 operator/(float3 v, float a)
 	return make_float3(v.x / a, v.y / a, v.z / a);
 }
 
+__host__ __device__ inline float3 operator/(float3 v1, float3 v2)
+{
+	return make_float3(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
+}
+
 __host__ __device__ inline bool isEmpty(float3 v)
 {
 	return v.x == 0 && v.y == 0 && v.z == 0;

@@ -495,6 +495,7 @@
     <ClInclude Include="Libraries\include\glm\vec3.hpp" />
     <ClInclude Include="Libraries\include\glm\vec4.hpp" />
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
+    <ClInclude Include="src\grids\grid_helpers.cuh" />
     <ClInclude Include="src\objects\blood_cells.cuh" />
     <ClInclude Include="src\objects\blood_cells_factory.hpp" />
     <ClInclude Include="src\objects\vein_triangles.cuh" />
