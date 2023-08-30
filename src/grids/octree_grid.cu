@@ -86,7 +86,7 @@ void createOctreeGridData(const float* positionX, const float* positionY, const 
 	const int blocks = (objectCount + threadsPerBlock - 1) / threadsPerBlock;
 
 	// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
-	gridHelpers::calculateCellIdKernel << <blocks, threadsPerBlock >> >
+	calculateCellIdKernel << <blocks, threadsPerBlock >> >
 		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount, cellWidth, cellHeight, cellDepth);
 
 	// 2. Sort particle ids by cell id
@@ -118,11 +118,16 @@ __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsig
 	unsigned int currentCellAbsoluteId = cellMortonCodeId + (pow(8, divisionCount) - 1) / 7;
 	unsigned int counter = 0;
 
+
 #pragma unroll
 	while (counter++ < divisionCount - 1) {
 		unsigned int parentId = currentCellAbsoluteId >> 3;
-		unsigned char childFillMask = (unsigned char)parentId & MORTON_POSITION_MASK;
-		masks[parentId] |= childFillMask;
+		unsigned char childFillMask = 1 << (currentCellAbsoluteId & MORTON_POSITION_MASK);
+
+		if (!(masks[parentId] & childFillMask))
+			atomicOr(masks + parentId, childFillMask);
+			masks[parentId] |= childFillMask;
+		
 		currentCellAbsoluteId = parentId;
 	}
 
