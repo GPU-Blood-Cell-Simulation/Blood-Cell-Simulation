@@ -24,11 +24,13 @@ public:
 
 	unsigned int* gridCellIds = 0;
 	unsigned int* particleIds = 0;
-	unsigned int* gridCellStarts = 0;
-	unsigned int* gridCellEnds = 0;
+	/*unsigned int* gridCellStarts = 0;
+	unsigned int* gridCellEnds = 0;*/
 
 	unsigned int levels;
 	unsigned int treeNodesCount;
+	unsigned int lastNonLeafLayerCount;
+	
 	unsigned int* treeData;
 	unsigned char* masks;
 
@@ -42,6 +44,8 @@ public:
 	}
 
 	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);
+
+	__device__ void traverseGrid(float3 origin, float3 direction, float tmax);
 
 	__device__ unsigned int calculateCellId(float3 position) {}
 };

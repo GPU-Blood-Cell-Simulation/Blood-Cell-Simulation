@@ -5,6 +5,12 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+#ifndef MIN_MAX
+#define MIN_MAX
+#define max(a,b) ( a > b ? a : b)
+#define min(a,b) ( a > b ? b : a)
+#endif // !MIN_MAX
+
 __host__ __device__ inline float3 operator*(float a, float3 v)
 {
 	return make_float3(a * v.x, a * v.y, a * v.z);
@@ -33,6 +39,16 @@ __host__ __device__ inline float3 operator/(float3 v, float a)
 __host__ __device__ inline float3 operator/(float3 v1, float3 v2)
 {
 	return make_float3(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
+}
+
+__host__ __device__ inline float vmin(float3 v)
+{
+	return min(min(v.x, v.y), v.z);
+}
+
+__host__ __device__ inline float vmax(float3 v)
+{
+	return max(max(v.x, v.y), v.z);
 }
 
 __host__ __device__ inline bool isEmpty(float3 v)
