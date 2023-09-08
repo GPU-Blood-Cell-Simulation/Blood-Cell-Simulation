@@ -171,6 +171,10 @@ __device__ float3 calculateLeafCellFromMorton(float3 cellDimension, float3 bound
 	return leafCell;
 }
 
+struct positive_float_transformation {
+
+};
+
 __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsigned char* masks, unsigned int* treeData, const unsigned int maxLevel)
 {
 	// necessary parameters
@@ -221,6 +225,8 @@ __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsign
 			fmodf(pos.y, childCellSize.y), fmodf(pos.z, childCellSize.z));
 
 		tBegin = tEnd;
+
+		// maybe ifs instead of directionSigns ???
 		tEnd = calculateRayTValue(relativeOrigin, inversedDirection, cellBeginning + directionSigns*childCellSize);
 		float tMax = vmin(tEnd);
 
@@ -245,12 +251,17 @@ __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsign
 		}
 		
 		if (changeParent) {
+			// TODO
 
 		}
 		else {
 
 			// calculate new childId
 			childId ^= 1 << bitChange;
+			unsigned int realChildId = 8 * parentId + childId + 1;
+
+			if (!(masks[realChildId] & (1 << childId))) // empty cell
+				break;
 
 			// calculate new pos
 			if (bitChange > 1) {
