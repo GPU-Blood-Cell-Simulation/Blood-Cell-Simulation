@@ -22,7 +22,7 @@ void Mesh::setupMesh()
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int),
 		&indices[0], GL_STATIC_DRAW);
 
 	// vertex positions
@@ -44,7 +44,7 @@ void Mesh::draw(const std::shared_ptr<Shader> shader, bool instanced) const
 	glBindVertexArray(VAO);
 	if (instanced)
 	{
-		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, PARTICLE_COUNT);
+		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, particleCount);
 	}
 	else
 	{

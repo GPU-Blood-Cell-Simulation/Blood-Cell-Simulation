@@ -18,14 +18,14 @@ namespace sim
 		float3 relativePosition = position1 - position2;
 		float distanceSquared = length_squared(relativePosition);
 
-		if (distanceSquared <= particleRadious * particleRadious)
+		if (distanceSquared <= particleRadius * particleRadius)
 		{
 			float3 relativeVelocity = velocity1 - bloodCells.particles.velocities.get(particleId2);
 			float3 relativeDirection = normalize(relativePosition);
 
 			float3 tangentialVelocity = relativeVelocity - dot(relativeVelocity, relativeDirection) * relativeDirection;
 
-			float3 springForce = -collisionSpringCoeff * (particleRadious * 2 - sqrtf(distanceSquared)) * relativeDirection;
+			float3 springForce = -collisionSpringCoeff * (particleRadius * 2 - sqrtf(distanceSquared)) * relativeDirection;
 			float3 damplingForce = collisionDampingCoeff * relativeVelocity;
 			float3 shearForce = collistionShearCoeff * tangentialVelocity;
 
@@ -33,7 +33,6 @@ namespace sim
 			bloodCells.particles.forces.add(particleId1, springForce + damplingForce + shearForce);
 		}
 	}
-
 
 	// Detect Colllisions in all 27 cells unless some corner cases are present - specified by template parameters. 
 	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax> 
@@ -77,7 +76,7 @@ namespace sim
 	__global__ void calculateParticleCollisions<UniformGrid>(BloodCells bloodCells, UniformGrid grid)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
-		if (id >= bloodCells.particleCount)
+		if (id >= particleCount)
 			return;
 
 		int particleId = grid.particleIds[id];
@@ -85,9 +84,9 @@ namespace sim
 		float3 v1 = bloodCells.particles.velocities.get(particleId);
 
 		int cellId = grid.gridCellIds[id];
-		int xId = static_cast<unsigned int>(bloodCells.particles.positions.x[particleId] / grid.cellWidth);
-		int yId = static_cast<unsigned int>(bloodCells.particles.positions.y[particleId] / grid.cellHeight);
-		int zId = static_cast<unsigned int>(bloodCells.particles.positions.z[particleId] / grid.cellDepth);
+		int xId = static_cast<int>(bloodCells.particles.positions.x[particleId] / grid.cellWidth);
+		int yId = static_cast<int>(bloodCells.particles.positions.y[particleId] / grid.cellHeight);
+		int zId = static_cast<int>(bloodCells.particles.positions.z[particleId] / grid.cellDepth);
 
 		// Check all corner cases and call the appropriate function specialization
 		// Ugly but fast
@@ -242,14 +241,14 @@ namespace sim
 	__global__ void calculateParticleCollisions<NoGrid>(BloodCells bloodCells, NoGrid grid)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
-		if (id >= bloodCells.particleCount)
+		if (id >= particleCount)
 			return;
 
 		float3 p1 = bloodCells.particles.positions.get(id);
 		float3 v1 = bloodCells.particles.positions.get(id);
 
 		// Naive implementation
-		for (int i = 0; i < bloodCells.particleCount; i++)
+		for (int i = 0; i < particleCount; i++)
 		{
 			if (id == i)
 				continue;

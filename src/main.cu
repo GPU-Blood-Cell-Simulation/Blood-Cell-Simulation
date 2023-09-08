@@ -89,7 +89,8 @@ void programLoop(GLFWwindow* window)
     int frameCount = 0;
 
     // Create dipols
-    BloodCells bloodCells = BloodCellsFactory::createDipols(PARTICLE_COUNT / 2, springsInCellsLength);
+    BloodCellsFactory factory;
+    BloodCells bloodCells = factory.createBloodCells<2>();
 
     // Create vein mesh
     CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);
@@ -99,7 +100,7 @@ void programLoop(GLFWwindow* window)
     VeinTriangles triangles(veinMesh, veinMeshDefinition.getSpringLengths());
 
     // Create grids
-    UniformGrid particleGrid(PARTICLE_COUNT, 20, 20, 20);
+    UniformGrid particleGrid(particleCount, 20, 20, 20);
     UniformGrid triangleCentersGrid(triangles.triangleCount, 10, 10, 10);
     //NoGrid particleGrid, triangleCentersGrid;
 
@@ -125,7 +126,7 @@ void programLoop(GLFWwindow* window)
         glController.calculateOffsets(bloodCells.particles.positions.x,
             bloodCells.particles.positions.y,
             bloodCells.particles.positions.z,
-            bloodCells.particleCount);
+            particleCount);
         glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering
