@@ -126,15 +126,17 @@ __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsig
 
 }
 
+// transformed
 __device__ unsigned int calculateCellForPosition(float3 position, float3 cellCenter)
 {
 	return ((cellCenter.z < position.z) << 2) | ((cellCenter.y < position.y) << 1) | (cellCenter.x < position.x);
 }
 
-__device__ float3 calculateChildCenter(float3 center, unsigned int childId)
+
+__device__ float3 calculateChildCenter(float3 center, unsigned int childId, float3 childCellDimension)
 {
-	return center + make_float3(((childId & 1) ? center.x / 2 : -center.x / 2),
-		((childId & 2) ? center.y / 2 : -center.y / 2), ((childId & 4) ? center.z / 2 : -center.z / 2));
+	return center + make_float3(((childId & 1) ? childCellDimension.x : -childCellDimension.x),
+		((childId & 2) ? childCellDimension.y : -childCellDimension.y), ((childId & 4) ? childCellDimension.z : -childCellDimension.z));
 }
 
 __device__ float3 calculateParentCenter(float3 center, unsigned int childId)
@@ -171,36 +173,40 @@ __device__ float3 calculateLeafCellFromMorton(float3 cellDimension, float3 bound
 
 __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsigned char* masks, unsigned int* treeData, const unsigned int maxLevel)
 {
-	unsigned int parentId = 0; // root;
-	float3 inversedDirection = make_float3(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
-	float3 bounding = make_float3(width, height, depth);
-	float3 scale = bounding /2;
-	float3 parentCellCenter = scale;
-	float3 directionSigns = make_float3(!(direction.x < 0), !(direction.y < 0), !(direction.z < 0)); // 1 plus or zero, 0 minus
-	unsigned int leafShift = (pow(8, maxLevel - 1) - 1) / 7;
-	unsigned int childId = calculateCellForPosition(origin, parentCellCenter);
-	unsigned int realChildId = 8 * parentId + childId;
-	float3 tempCenter;
-	unsigned int currentLevel = 1;
-	float3 currentPosition = origin;
-	float3 tBegin = origin;
-	float3 tEnd = origin;
+	// necessary parameters
+	const float3 bounding = make_float3(width, height, depth);
+	const unsigned int s_max = maxLevel;
+	const unsigned int leafShift = (ldexp(1, 3 * (maxLevel - 1)) - 1) / 7; // (8^(maxL - 1) - 1)/7
+	const float3 relativeOrigin = origin / bounding;
+	const float3 directionSigns = make_float3(!(direction.x < 0), !(direction.y < 0), !(direction.z < 0)); // 1 plus or zero, 0 minus
+	const float3 inversedDirection = make_float3(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
+
+	// values
+	unsigned int parentId = 0; // root
+	float3 pos = { 0.5f, 0.5f, 0.5f }; // initial pos is center of root
+	unsigned int scale = s_max - 1;
+	unsigned int childId = calculateCellForPosition(relativeOrigin, pos);
+	unsigned int realChildId = 8 * parentId + childId + 1;
+	float3 childCellSize = 0.5f*bounding;
+	float3 tBegin = relativeOrigin;
+	float3 tEnd = relativeOrigin;
 
 	while (true) {
 
 		// traversing down the stack
-		if (currentLevel < maxLevel) {
+		if (scale > 0) {
+			childCellSize = 0.5f*childCellSize;
 			parentId = realChildId;
-			tempCenter = calculateChildCenter(parentCellCenter, childId);
-			childId = calculateCellForPosition(currentPosition, tempCenter);
-			unsigned int realChildId = 8 * parentId + childId;
+			pos = calculateChildCenter(pos, childId, childCellSize);
+			childId = calculateCellForPosition(relativeOrigin, pos);
+			unsigned int realChildId = 8 * parentId + childId + 1;
 			
 			if (!(masks[realChildId] & (1 << childId))) // empty cell
 				break;
 
-			parentCellCenter = tempCenter; // maybe do not need tempCenter ??? 
-			currentLevel++;
-			scale = scale / 2;
+			//parentCellCenter = tempCenter; // maybe do not need tempCenter ??? 
+			scale--;
+			//scale = scale / 2;
 			continue;
 		}
 
@@ -210,9 +216,12 @@ __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsign
 		// calculate neighbour cell
 		unsigned int leafMortonCode = treeData[realChildId - leafShift];
 
-		float3 cellBegining = calculateLeafCellFromMorton(scale, bounding, leafMortonCode, currentLevel);
+		//float3 cellBegining = calculateLeafCellFromMorton(scale, bounding, leafMortonCode, currentLevel);
+		float3 cellBeginning = pos - make_float3(fmodf(pos.x, childCellSize.x),
+			fmodf(pos.y, childCellSize.y), fmodf(pos.z, childCellSize.z));
+
 		tBegin = tEnd;
-		tEnd = calculateRayTValue(origin, direction, cellBegining + directionSigns*scale);
+		tEnd = calculateRayTValue(relativeOrigin, inversedDirection, cellBeginning + directionSigns*childCellSize);
 		float tMax = vmin(tEnd);
 
 		bool changeParent = false;
@@ -239,7 +248,30 @@ __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsign
 
 		}
 		else {
+
+			// calculate new childId
 			childId ^= 1 << bitChange;
+
+			// calculate new pos
+			if (bitChange > 1) {
+				if(direction.z < 0)
+					pos.z -= childCellSize.z;
+				else
+					pos.z += childCellSize.z;
+			}
+			else if (bitChange) {
+				if(direction.y < 0)
+					pos.y -= childCellSize.y;
+				else
+					pos.y += childCellSize.y;
+			}
+			else {
+				if (direction.x < 0)
+					pos.x -= childCellSize.x;
+				else
+					pos.x += childCellSize.x;
+			}
+
 		}
 
 	}
