@@ -8,11 +8,25 @@
 #define EXPONENTIAL_MASK 0x7f800000
 #define EXPONENTIAL_OFFSET 23
 #define MANTIS_MASK 0x007fffff
+#define MANTIS_OFFSET_LEFTSHIFTED 9
+
 #define MANTIS_OR_MASK 0x00800000
 
 
 #define MORTON_POSITION_MASK 0x07
 
+
+struct positive_float_structure {
+
+	unsigned int mantis;
+	unsigned char exponent;
+	
+	positive_float_structure(float value) {
+		unsigned int valueCasted = *(int*)&value;
+		exponent = (valueCasted & EXPONENTIAL_MASK) >> EXPONENTIAL_OFFSET;
+		mantis = valueCasted << MANTIS_OFFSET_LEFTSHIFTED;
+	}
+};
 
 __device__ unsigned int partEveryByteByTwo(unsigned int n)
 {
@@ -118,7 +132,7 @@ __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsig
 		unsigned char childFillMask = 1 << (currentCellAbsoluteId & MORTON_POSITION_MASK);
 
 		if (!(masks[parentId] & childFillMask))
-			atomicOr(masks + parentId, childFillMask);
+			atomicOr_system(masks + parentId, childFillMask);
 			masks[parentId] |= childFillMask;
 		
 		currentCellAbsoluteId = parentId;
@@ -171,9 +185,30 @@ __device__ float3 calculateLeafCellFromMorton(float3 cellDimension, float3 bound
 	return leafCell;
 }
 
-struct positive_float_transformation {
+__device__ float3 calculateNeighbourLeafPos(float3 pos, float3 direction, float3 childCellSize, unsigned char bitChange)
+{
+	float3 newPos = pos;
+	if (bitChange > 1) {
+		if (direction.z < 0)
+			newPos.z -= childCellSize.z;
+		else
+			newPos.z += childCellSize.z;
+	}
+	else if (bitChange) {
+		if (direction.y < 0)
+			newPos.y -= childCellSize.y;
+		else
+			newPos.y += childCellSize.y;
+	}
+	else {
+		if (direction.x < 0)
+			newPos.x -= childCellSize.x;
+		else
+			newPos.x += childCellSize.x;
+	}
+	return newPos;
 
-};
+}
 
 __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsigned char* masks, unsigned int* treeData, const unsigned int maxLevel)
 {
@@ -232,7 +267,7 @@ __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsign
 
 		bool changeParent = false;
 
-		unsigned short bitChange = 0;
+		unsigned char bitChange = 0;
 		// bit changing && should be + && is minus
 		if (!(tMax > tEnd.x) && (childId & 1) && direction.x < 0) {
 			changeParent = true;
@@ -251,8 +286,27 @@ __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsign
 		}
 		
 		if (changeParent) {
-			// TODO
+			// calculate new pos
+			float3 newPos = calculateNeighbourLeafPos(pos, direction, childCellSize, bitChange);
 
+			positive_float_structure posX(pos.x), posY(pos.y), posZ(pos.z);
+			positive_float_structure newPosX(newPos.x), newPosY(newPos.y), newPosZ(newPos.z);
+
+			unsigned char minBinaryPlacesPos = 127 - max(posX.exponent, max(posY.exponent, posZ.exponent));
+			unsigned char minBinaryPlacesNewPos = 127 - max(newPosX.exponent, max(newPosY.exponent, newPosZ.exponent));
+
+			if (minBinaryPlacesPos > minBinaryPlacesNewPos) {
+				scale = s_max - minBinaryPlacesNewPos;
+				childCellSize = ldexp(1, scale - s_max) * bounding;
+				// childId =
+				// parentId = 
+			}
+			else if (minBinaryPlacesPos < minBinaryPlacesNewPos) {
+
+			}
+			else { // the same, check mantisa
+
+			}
 		}
 		else {
 
@@ -264,29 +318,9 @@ __device__ void traverseGrid(float3 origin, float3 direction, float tmax, unsign
 				break;
 
 			// calculate new pos
-			if (bitChange > 1) {
-				if(direction.z < 0)
-					pos.z -= childCellSize.z;
-				else
-					pos.z += childCellSize.z;
-			}
-			else if (bitChange) {
-				if(direction.y < 0)
-					pos.y -= childCellSize.y;
-				else
-					pos.y += childCellSize.y;
-			}
-			else {
-				if (direction.x < 0)
-					pos.x -= childCellSize.x;
-				else
-					pos.x += childCellSize.x;
-			}
-
+			pos = calculateNeighbourLeafPos(pos, direction, childCellSize, bitChange);
 		}
-
 	}
-
 }
 
 OctreeGrid::OctreeGrid(const unsigned int objectCount, const unsigned int levels)
