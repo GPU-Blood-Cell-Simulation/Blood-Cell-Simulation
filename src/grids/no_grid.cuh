@@ -8,9 +8,9 @@ class NoGrid : public BaseGrid<NoGrid>
 public:
 	__host__ __device__ NoGrid() {}
 
-	inline void calculateGrid(const Particles& particles, unsigned int particleCount) {}
+	inline void calculateGrid(const Particles& particles, int objectCount) {}
 
-	inline void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount) {}
+	inline void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount) {}
 
-	inline unsigned int calculateCellId(float3 position) {}
+	inline int calculateCellId(float3 position) {}
 };

@@ -26,14 +26,14 @@ namespace sim
 		Grid particleGrid;
 		Grid triangleGrid;
 
-		const unsigned int bloodCellsThreadsPerBlock;
-		const unsigned int bloodCellsBlocks;
+		const int bloodCellsThreadsPerBlock;
+		const int bloodCellsBlocks;
 
-		const unsigned int veinVerticesThreadsPerBlock;
-		const unsigned int veinVerticesBlocks;
+		const int veinVerticesThreadsPerBlock;
+		const int veinVerticesBlocks;
 
-		const unsigned int veinTrianglesThreadsPerBlock;
-		const unsigned int veinTrianglesBlocks;
+		const int veinTrianglesThreadsPerBlock;
+		const int veinTrianglesBlocks;
 
 		void generateRandomPositions();
 	};

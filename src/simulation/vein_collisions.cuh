@@ -26,7 +26,7 @@ namespace sim
 
 		// rays may be used to determine intersection with objects
 		// so its easy to store object index inside ray
-		unsigned int objectIndex = 0;
+		int objectIndex = 0;
 
 		__device__ ray(float3 origin, float3 direction);
 	};

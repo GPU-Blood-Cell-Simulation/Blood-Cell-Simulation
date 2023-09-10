@@ -9,7 +9,7 @@
 
 
 BloodCells::BloodCells(int cellCount, int particlesInCell, const float* graphDesc) :
-	particles(cellCount * particlesInCell), particlesInCell(particlesInCell), particleCount(cellCount * particlesInCell)
+	particles(cellCount * particlesInCell)
 {
 	int graphSize = particlesInCell * particlesInCell;
 
@@ -17,8 +17,7 @@ BloodCells::BloodCells(int cellCount, int particlesInCell, const float* graphDes
 	HANDLE_ERROR(cudaMemcpy(springsGraph, graphDesc, sizeof(float) * graphSize, cudaMemcpyHostToDevice));
 }
 
-BloodCells::BloodCells(const BloodCells& other) : isCopy(true), particles(other.particles), particlesInCell(other.particlesInCell),
-particleCount(other.particleCount), springsGraph(other.springsGraph) {}
+BloodCells::BloodCells(const BloodCells& other) : isCopy(true), particles(other.particles), springsGraph(other.springsGraph) {}
 
 
 BloodCells::~BloodCells()
@@ -33,7 +32,7 @@ BloodCells::~BloodCells()
 __global__ static void gatherForcesKernel(BloodCells cells);
 
 
-void BloodCells::gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock)
+void BloodCells::gatherForcesFromNeighbors(int blocks, int threadsPerBlock)
 {
 	gatherForcesKernel << <blocks, threadsPerBlock >> > (*this);
 }
@@ -42,17 +41,17 @@ void BloodCells::gatherForcesFromNeighbors(unsigned int blocks, unsigned int thr
 __global__ static void gatherForcesKernel(BloodCells cells)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int inCellIndex = index % cells.particlesInCell;
+	int inCellIndex = index % particlesInCell;
 
-	if (index >= cells.particleCount)
+	if (index >= particleCount)
 		return;
 
 	float3 pos = cells.particles.positions.get(index);
 	float3 velo = cells.particles.velocities.get(index);
 
-	for (int neighbourCellindex = 0; neighbourCellindex < cells.particlesInCell; neighbourCellindex++)
+	for (int neighbourCellindex = 0; neighbourCellindex < particlesInCell; neighbourCellindex++)
 	{
-		float springLen = cells.springsGraph[inCellIndex * cells.particlesInCell + neighbourCellindex];
+		float springLen = cells.springsGraph[inCellIndex * particlesInCell + neighbourCellindex];
 
 		if (springLen == NO_SPRING)
 			continue;

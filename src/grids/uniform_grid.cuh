@@ -2,6 +2,7 @@
 
 #include "../objects/particles.cuh"
 #include "base_grid.cuh"
+#include "../defines.hpp"
 
 /// <summary>
 /// Represents a grid of uniform cell size
@@ -13,30 +14,30 @@ private:
 
 public:
 
-	unsigned int cellWidth;
-	unsigned int cellHeight;
-	unsigned int cellDepth;
-	unsigned int cellCountX;
-	unsigned int cellCountY;
-	unsigned int cellCountZ;
-	unsigned int cellAmount;
-	unsigned int objectsCount;
+	int cellWidth;
+	int cellHeight;
+	int cellDepth;
+	int cellCountX;
+	int cellCountY;
+	int cellCountZ;
+	int cellAmount;
+	int objectCount;
 
-	unsigned int* gridCellIds = 0;
-	unsigned int* particleIds = 0;
-	unsigned int* gridCellStarts = 0;
-	unsigned int* gridCellEnds = 0;
+	int* gridCellIds = 0;
+	int* particleIds = 0;
+	int* gridCellStarts = 0;
+	int* gridCellEnds = 0;
 
-	UniformGrid(const unsigned int particleCount, unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth);
+	UniformGrid(const int objectCount, int cellWidth, int cellHeight, int cellDepth);
 	UniformGrid(const UniformGrid& other);
 	~UniformGrid();
 
-	inline void calculateGrid(const Particles& particles, unsigned int particleCount)
+	inline void calculateGrid(const Particles& particles, int objectCount)
 	{
-		calculateGrid(particles.positions.x, particles.positions.y, particles.positions.z, particleCount);
+		calculateGrid(particles.positions.x, particles.positions.y, particles.positions.z, objectCount);
 	}
 
-	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount);
+	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount);
 
-	__device__ unsigned int calculateCellId(float3 position);
+	__device__ int calculateCellId(float3 position);
 };

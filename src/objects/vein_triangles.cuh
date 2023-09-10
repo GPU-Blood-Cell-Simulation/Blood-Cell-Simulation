@@ -46,10 +46,10 @@ public:
 		return (length(p1 - p2) - springLength)* vein_k_sniff + dot(normalize(p1 - p2), (v1 - v2)) * vein_d_fact;
 	}
 
-	void gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock);
-	void propagateForcesIntoPositions(unsigned int blocks, unsigned int threadsPerBlock);
+	void gatherForcesFromNeighbors(int blocks, int threadsPerBlock);
+	void propagateForcesIntoPositions(int blocks, int threadsPerBlock);
 
-	void calculateCenters(unsigned int blocks, unsigned int threadsPerBlock);
+	void calculateCenters(int blocks, int threadsPerBlock);
 
 private:
 	bool isCopy = false;

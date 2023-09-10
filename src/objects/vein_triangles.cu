@@ -9,7 +9,7 @@
 
 
 
-__global__ void calculateCentersKernel(cudaVec3 positions, unsigned int* indices, cudaVec3 centers, unsigned int triangleCount)
+__global__ void calculateCentersKernel(cudaVec3 positions, unsigned int* indices, cudaVec3 centers, int triangleCount)
 
 {
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -25,7 +25,7 @@ __global__ void calculateCentersKernel(cudaVec3 positions, unsigned int* indices
 	centers.set(id, make_float3(x, y, z));
 }
 
-void VeinTriangles::calculateCenters(unsigned int blocks, unsigned int threadsPerBlock)
+void VeinTriangles::calculateCenters(int blocks, int threadsPerBlock)
 {
 	calculateCentersKernel << <blocks, threadsPerBlock >> > (positions, indices, centers, triangleCount);
 }
@@ -60,8 +60,8 @@ VeinTriangles::VeinTriangles(const Mesh& mesh, const std::tuple<float, float, fl
 	HANDLE_ERROR(cudaMemcpy(positions.z, vz.data(), vertexCount * sizeof(float), cudaMemcpyHostToDevice));
 
 	// centers
-	unsigned int threadsPerBlock = triangleCount > 1024 ? 1024 : triangleCount;
-	unsigned int blocks = std::ceil(static_cast<float>(triangleCount) / threadsPerBlock);
+	int threadsPerBlock = triangleCount > 1024 ? 1024 : triangleCount;
+	int blocks = std::ceil(static_cast<float>(triangleCount) / threadsPerBlock);
 	calculateCenters(triangleCount > 1024 ? 1024 : triangleCount, std::ceil(static_cast<float>(triangleCount) / threadsPerBlock));
 }
 
@@ -99,7 +99,7 @@ __global__ void propagateForcesIntoPositionsKernel(VeinTriangles triangles)
 /// <summary>
 /// Propagate forces -> velocities and velocities->positions
 /// </summary>
-void VeinTriangles::propagateForcesIntoPositions(unsigned int blocks, unsigned int threadsPerBlock)
+void VeinTriangles::propagateForcesIntoPositions(int blocks, int threadsPerBlock)
 {
 	propagateForcesIntoPositionsKernel << <blocks, threadsPerBlock >> > (*this);
 }
@@ -125,12 +125,12 @@ float3 vertexVelocity = triangles.velocities.get(vertex);
 	float3 vertexForce = { 0,0,0 };
 
 	// Calculate our own spatial indices
-	unsigned int i = vertex / cylinderHorizontalLayers;
-	unsigned int j = vertex - i * cylinderHorizontalLayers;
+	 int i = vertex / cylinderHorizontalLayers;
+	 int j = vertex - i * cylinderHorizontalLayers;
 
 	// vertically adjacent vertices
 
-	unsigned int jSpan[] =
+	int jSpan[] =
 	{
 		j != 0 ? j - 1 : cylinderHorizontalLayers - 1,
 		j,
@@ -138,8 +138,8 @@ float3 vertexVelocity = triangles.velocities.get(vertex);
 	};
 
 
-	unsigned int vertexHorizontalPrev = i * cylinderHorizontalLayers + jSpan[0];
-	unsigned int vertexHorizontalNext = i * cylinderHorizontalLayers + jSpan[2];
+	int vertexHorizontalPrev = i * cylinderHorizontalLayers + jSpan[0];
+	int vertexHorizontalNext = i * cylinderHorizontalLayers + jSpan[2];
 
 
 	// Previous horizontally
@@ -163,7 +163,7 @@ float3 vertexVelocity = triangles.velocities.get(vertex);
 		#pragma unroll
 		for (int jIndex = 0; jIndex < 3; jIndex++)
 		{
-			unsigned int vertexVerticalPrev = (i - 1) * cylinderHorizontalLayers + jSpan[jIndex];
+			int vertexVerticalPrev = (i - 1) * cylinderHorizontalLayers + jSpan[jIndex];
 			neighborPosition = triangles.positions.get(vertexVerticalPrev);
 			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocities.get(vertexVerticalPrev),
 				triangles.veinVertexNonHorizontalDistances[jIndex]);
@@ -179,7 +179,7 @@ float3 vertexVelocity = triangles.velocities.get(vertex);
 		#pragma unroll
 		for (int jIndex = 0; jIndex < 3; jIndex++)
 		{
-			unsigned int vertexVerticalNext = (i + 1) * cylinderHorizontalLayers + jSpan[jIndex];
+			int vertexVerticalNext = (i + 1) * cylinderHorizontalLayers + jSpan[jIndex];
 			neighborPosition = triangles.positions.get(vertexVerticalNext);
 			springForce = triangles.calculateVeinSpringForce(vertexPosition, neighborPosition, vertexVelocity, triangles.velocities.get(vertexVerticalNext),
 				triangles.veinVertexNonHorizontalDistances[jIndex]);
@@ -194,7 +194,7 @@ float3 vertexVelocity = triangles.velocities.get(vertex);
 /// <summary>
 /// Gather forces from neighboring vertices, synchronize and then update forces for each vertex
 /// </summary>
-void VeinTriangles::gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock)
+void VeinTriangles::gatherForcesFromNeighbors(int blocks, int threadsPerBlock)
 {
 	gatherForcesKernel << <blocks, threadsPerBlock >> > (*this);
 }

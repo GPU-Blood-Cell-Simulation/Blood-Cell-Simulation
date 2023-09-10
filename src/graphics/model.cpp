@@ -22,7 +22,7 @@ Model::Model(Mesh mesh)
     // Set up offset buffer for the model
     glGenBuffers(1, &cudaOffsetBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
-    glBufferData(GL_ARRAY_BUFFER, PARTICLE_COUNT * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, particleCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
 
     // Set up vertex attrubute
     for (Mesh& mesh : meshes)
@@ -77,7 +77,7 @@ void Model::loadModel(std::string path)
     // Set up offset buffer for the model
     glGenBuffers(1, &cudaOffsetBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
-    glBufferData(GL_ARRAY_BUFFER, PARTICLE_COUNT * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, particleCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
 
     // Set up vertex attrubute
     for (Mesh& mesh : meshes)

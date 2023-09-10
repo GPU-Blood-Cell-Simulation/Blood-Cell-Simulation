@@ -68,7 +68,7 @@ namespace sim
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (particleId >= bloodCells.particleCount)
+		if (particleId >= particleCount)
 			return;
 
 		float3 F = bloodCells.particles.forces.get(particleId);
@@ -301,7 +301,7 @@ namespace sim
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (particleId >= bloodCells.particleCount)
+		if (particleId >= particleCount)
 			return;
 
 		// propagate force into velocities
