@@ -11,7 +11,7 @@ TEST(OneInstance, CudaThreadsTests) {
 
 
 TEST(LessThanMaxThreads, CudaThreadsTests) {
-	const int instances = CudaThreads::maxThreads / 2;
+	const int instances = CudaThreads::maxThreadsInBlock / 2;
 
 	CudaThreads threads(instances);
 
@@ -21,24 +21,24 @@ TEST(LessThanMaxThreads, CudaThreadsTests) {
 
 
 TEST(MaxThreads, CudaThreadsTests) {
-	CudaThreads threads(CudaThreads::maxThreads);
+	CudaThreads threads(CudaThreads::maxThreadsInBlock);
 
 	EXPECT_EQ(1, threads.blocks);
-	EXPECT_EQ(CudaThreads::maxThreads, threads.threadsPerBlock);
+	EXPECT_EQ(CudaThreads::maxThreadsInBlock, threads.threadsPerBlock);
 }
 
 
 TEST(TwoTimesMaxThreads, CudaThreadsTests) {
-	CudaThreads threads(CudaThreads::maxThreads * 2);
+	CudaThreads threads(CudaThreads::maxThreadsInBlock * 2);
 
 	EXPECT_EQ(2, threads.blocks);
-	EXPECT_EQ(CudaThreads::maxThreads, threads.threadsPerBlock);
+	EXPECT_EQ(CudaThreads::maxThreadsInBlock, threads.threadsPerBlock);
 }
 
 
 TEST(TwoAndAHalfTimesMaxThreads, CudaThreadsTests) {
-	CudaThreads threads(CudaThreads::maxThreads * 2.5);
+	CudaThreads threads(CudaThreads::maxThreadsInBlock * 2.5);
 
 	EXPECT_EQ(3, threads.blocks);
-	EXPECT_EQ(CudaThreads::maxThreads, threads.threadsPerBlock);
+	EXPECT_EQ(CudaThreads::maxThreadsInBlock, threads.threadsPerBlock);
 }

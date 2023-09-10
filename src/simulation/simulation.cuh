@@ -6,6 +6,7 @@
 #include "../objects/vein_triangles.cuh"
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
+#include "vein_end.cuh"
 
 #include <curand.h>
 #include <curand_kernel.h>
@@ -30,6 +31,8 @@ namespace sim
 		CudaThreads bloodCellsThreads;
 		CudaThreads veinVerticesThreads;
 		CudaThreads veinTrianglesThreads;
+
+		EndVeinHandler endVeinHandler;
 
 		void generateRandomPositions();
 	};

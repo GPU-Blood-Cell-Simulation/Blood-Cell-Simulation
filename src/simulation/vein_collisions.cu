@@ -75,13 +75,6 @@ namespace sim
 		float3 velocity = bloodCells.particles.velocities.get(particleId);
 		float3 pos = bloodCells.particles.positions.get(particleId);
 
-		// upper and lower bound
-		if (pos.y >= 0.9f * height)
-			velocity.y -= 5;
-
-		if (pos.y <= 0.1f * height)
-			velocity.y += 5;
-
 		// TEST
 		//velocity = velocity + float3{ 0, 0.1f , 0 };
 		//return;
@@ -289,7 +282,7 @@ namespace sim
 
 		// propagate velocities into positions
 		bloodCells.particles.positions.add(particleId, dt * velocity);
-
+		
 		// zero forces
 		bloodCells.particles.forces.set(particleId, make_float3(0, 0, 0));
 	}

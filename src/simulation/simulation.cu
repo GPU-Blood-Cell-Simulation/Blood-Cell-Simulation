@@ -67,7 +67,7 @@ namespace sim
 		particles.positions.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
 
 		particles.velocities.x[id] = 0;
-		particles.velocities.y[id] = 0;
+		particles.velocities.y[id] = -10;
 		particles.velocities.z[id] = 0;
 
 		particles.forces.x[id] = 0;
@@ -110,6 +110,9 @@ namespace sim
     
 				// 7. Recalculate triangles centers
 				triangles.calculateCenters(veinTrianglesThreads.blocks, veinTrianglesThreads.threadsPerBlock);
+				HANDLE_ERROR(cudaPeekAtLastError());
+
+				endVeinHandler.Handle(bloodCells);
 				HANDLE_ERROR(cudaPeekAtLastError());
 
 			}, particleGrid, triangleGrid);

@@ -99,6 +99,7 @@
       <Include>$(SolutionDir)Libraries\include</Include>
       <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" --expt-relaxed-constexpr --ptxas-options=-v -maxrregcount 68 %(AdditionalOptions)</AdditionalOptions>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+      <CodeGeneration>compute_52,sm_52</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CudaToolkitBinDir)/crt;$(SolutionDir)Libraries\lib</AdditionalLibraryDirectories>
@@ -113,6 +114,7 @@
     <CudaCompile Include="src\grids\uniform_grid.cu" />
     <CudaCompile Include="src\main.cu" />
     <CudaCompile Include="src\simulation\simulation.cu" />
+    <CudaCompile Include="src\simulation\vein_end.cu" />
     <CudaCompile Include="src\utilities\cuda_vec3.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -125,6 +127,7 @@
     <ClCompile Include="src\graphics\model.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\graphics\textures\texture_loading.cpp" />
+    <ClCompile Include="src\utilities\constexpr_functions.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\assimp\aabb.h" />
@@ -516,6 +519,7 @@
     <ClInclude Include="src\grids\uniform_grid.cuh" />
     <ClInclude Include="src\simulation\vein_collisions.cuh" />
     <ClInclude Include="src\simulation\simulation.cuh" />
+    <ClInclude Include="src\simulation\vein_end.cuh" />
     <ClInclude Include="src\utilities\cuda_handle_error.cuh" />
     <ClInclude Include="src\utilities\cuda_vec3.cuh" />
     <ClInclude Include="src\utilities\math.cuh" />
