@@ -1,7 +1,7 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
-#include "../objects/cuda_threads.hpp"
+#include "../utilities/cuda_threads.hpp"
 #include "../objects/blood_cells.cuh"
 #include "../objects/vein_triangles.cuh"
 #include "../grids/uniform_grid.cuh"

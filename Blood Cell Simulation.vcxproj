@@ -498,7 +498,7 @@
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
     <ClInclude Include="src\objects\blood_cells.cuh" />
     <ClInclude Include="src\objects\blood_cells_factory.hpp" />
-    <ClInclude Include="src\objects\cuda_threads.hpp" />
+    <ClInclude Include="src\utilities\cuda_threads.hpp" />
     <ClInclude Include="src\objects\cylindermesh.hpp" />
     <ClInclude Include="src\objects\vein_triangles.cuh" />
     <ClInclude Include="src\objects\particles.cuh" />

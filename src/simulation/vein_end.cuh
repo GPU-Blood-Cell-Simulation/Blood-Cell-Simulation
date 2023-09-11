@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../objects/cuda_threads.hpp"
+#include "../utilities/cuda_threads.hpp"
 #include "../objects/blood_cells.cuh"
 
 
