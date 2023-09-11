@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "../src/objects/cuda_threads.hpp"
+#include "../src/utilities/cuda_threads.hpp"
 
 TEST(OneInstance, CudaThreadsTests) {
 	CudaThreads threads(1);
