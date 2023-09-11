@@ -1,13 +1,12 @@
 #include "vein_end.cuh"
 #include "../defines.hpp"
-#include "../utilities/constexpr_functions.hpp"
+#include "../utilities/math.cuh"
 
 #include "cuda_runtime.h"
 
-#include "cstdio"
-
 static enum SynchronizationType { warpSync, blockSync };
 
+// TODO: implement warpSync version
 constexpr SynchronizationType veinEndSyncType = blockSync;
 	//(CudaThreads::threadsInWarp % particlesInBloodCell == 0) ? warpSync : blockSync;
 
@@ -30,7 +29,7 @@ constexpr int CalculateThreadsPerBlock()
 
 constexpr int CalculateBlocksCount()
 {
-	return ceilToInt(static_cast<float>(particleCount) / CalculateThreadsPerBlock());
+	return constCeil(static_cast<float>(particleCount) / CalculateThreadsPerBlock());
 }
 
 

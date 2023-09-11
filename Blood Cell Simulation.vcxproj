@@ -127,7 +127,6 @@
     <ClCompile Include="src\graphics\model.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\graphics\textures\texture_loading.cpp" />
-    <ClCompile Include="src\utilities\constexpr_functions.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\assimp\aabb.h" />
