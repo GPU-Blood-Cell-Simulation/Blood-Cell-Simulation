@@ -1,7 +1,7 @@
 #include "vein_collisions.cuh"
 #include "../utilities/vertex_index_enum.h"
 #include "../utilities/cuda_handle_error.cuh"
-
+#include "octree_helper.cuh"
 
 namespace sim
 {
@@ -60,6 +60,60 @@ namespace sim
 	}
 
 
+
+
+	template<>
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, OctreeGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, OctreeGrid triangleGrid)
+	{
+		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
+
+		if (particleId >= cells.particleCount)
+			return;
+
+		float3 F = cells.particles.forces.get(particleId);
+		float3 velocity = cells.particles.velocities.get(particleId);
+		float3 pos = cells.particles.positions.get(particleId);
+
+		// upper and lower bound
+		if (pos.y >= 0.9f * height)
+			velocity.y -= 5;
+
+		if (pos.y <= 0.1f * height)
+			velocity.y += 5;
+
+		// TEST
+		//velocity = velocity + float3{ 0, 0.1f , 0 };
+		//return;
+
+
+		// propagate particle forces into velocities
+		velocity = velocity + dt * F;
+
+		// TODO: is there a faster way to calculate this?
+		/*if (velocity.x != 0 && velocity.y != 0 && velocity.z != 0)
+			goto set_particle_values;*/
+
+		float3 velocityDir = normalize(velocity);
+
+		// cubical bounds
+		if (modifyVelocityIfPositionOutOfBounds(pos, velocity, velocityDir)) {
+			goto set_particle_values_octree;
+		}
+
+		ray r(pos, velocityDir);
+		float3 reflectedVelociy = make_float3(0, 0, 0);
+		octreeHelpers::traverseGrid(pos, r.direction, r.);
+
+set_particle_values_octree:
+
+		cells.particles.velocities.set(particleId, velocity);
+
+		// propagate velocities into positions
+		cells.particles.positions.add(particleId, dt * velocity);
+
+		// zero forces
+		cells.particles.forces.set(particleId, make_float3(0, 0, 0));
+	}
 	
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
@@ -98,7 +152,7 @@ namespace sim
 
 		// cubical bounds
 		if (modifyVelocityIfPositionOutOfBounds(pos, velocity, velocityDir)) {
-			goto set_particle_values;
+			goto set_particle_values_uniform_grid;
 		}
 
 		ray r(pos, velocityDir);
@@ -283,7 +337,7 @@ namespace sim
 
 		}
 
-	set_particle_values:
+	set_particle_values_uniform_grid:
 
 		bloodCells.particles.velocities.set(particleId, velocity);
 
@@ -315,7 +369,7 @@ namespace sim
 
 		// cubical bounds
 		if (modifyVelocityIfPositionOutOfBounds(pos, velocity, velocityDir)) {
-			goto set_particle_values;
+			goto set_particle_values_no_grid;
 		}
 
 		ray r(pos, velocityDir);
@@ -373,7 +427,7 @@ namespace sim
 			triangles.positions.add(vertexIndex2, baricentric.z * ds);
 		}
 
-	set_particle_values:
+	set_particle_values_no_grid:
 
 		bloodCells.particles.velocities.set(particleId, velocity);
 

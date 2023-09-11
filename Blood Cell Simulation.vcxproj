@@ -513,6 +513,7 @@
     <ClInclude Include="src\grids\base_grid.cuh" />
     <ClInclude Include="src\grids\no_grid.cuh" />
     <ClInclude Include="src\grids\octree_grid.cuh" />
+    <ClInclude Include="src\simulation\octree_helper.cuh" />
     <ClInclude Include="src\simulation\particle_collisions.cuh" />
     <ClInclude Include="src\grids\uniform_grid.cuh" />
     <ClInclude Include="src\simulation\vein_collisions.cuh" />
