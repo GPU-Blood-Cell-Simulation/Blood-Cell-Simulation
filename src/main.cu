@@ -90,7 +90,7 @@ void programLoop(GLFWwindow* window)
 
     // Create dipols
     BloodCellsFactory factory;
-    BloodCells bloodCells = factory.createBloodCells<particlesInCell>();
+    BloodCells bloodCells = factory.createBloodCells<particlesInBloodCell>();
 
     // Create vein mesh
     CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);

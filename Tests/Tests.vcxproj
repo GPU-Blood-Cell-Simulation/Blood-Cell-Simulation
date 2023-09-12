@@ -39,6 +39,7 @@
     <ClInclude Include="sample_cuda_code.cuh" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="cuda_threads_tests.cpp" />
     <ClCompile Include="sample_tests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

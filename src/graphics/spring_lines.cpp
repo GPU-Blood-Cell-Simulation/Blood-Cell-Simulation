@@ -2,20 +2,19 @@
 #include "../defines.hpp"
 
 #include <glad/glad.h>
-#include <iostream>
 
 SpringLines::SpringLines(std::vector<unsigned int>&& indexDataTemplate, unsigned int VBO) : indexData(indexDataTemplate)
 {
-	if constexpr (particlesInCell == 1)
+	if constexpr (particlesInBloodCell == 1)
 		return;
 
 	// multiply the index data
 	int indexDataSize = indexData.size();
-	for (int i = 1; i < bloodCellCount; i++)
+	for (int i = 1; i < bloodCellsCount; i++)
 	{
 		for (int j = 0; j < indexDataSize; j++)
 		{
-			indexData.push_back(i * particlesInCell + indexData[j]);
+			indexData.push_back(i * particlesInBloodCell + indexData[j]);
 		}
 	}
 
@@ -36,7 +35,7 @@ SpringLines::SpringLines(std::vector<unsigned int>&& indexDataTemplate, unsigned
 
 void SpringLines::draw(const Shader* shader) const
 {
-	if constexpr (particlesInCell == 1)
+	if constexpr (particlesInBloodCell == 1)
 		return;
 
 	glBindVertexArray(VAO);
