@@ -27,6 +27,7 @@ public:
 	BloodCells createBloodCells<2>()
 	{
 		addSpring(0, 1, springsInCellsLength);
+
 		return getBloodCells();
 	}
 
@@ -37,6 +38,8 @@ public:
 		addSpring(1, 2, springsInCellsLength);
 		addSpring(2, 3, springsInCellsLength);
 		addSpring(3, 0, springsInCellsLength);
+
+		return getBloodCells();
 	}
 
 	template<>
@@ -56,10 +59,18 @@ public:
 		addSpring(1, 5, springsInCellsLength);
 		addSpring(2, 6, springsInCellsLength);
 		addSpring(3, 7, springsInCellsLength);
+
+		return getBloodCells();
+	}
+
+	inline std::vector<unsigned int> getSpringIndices() const
+	{
+		return springIndices;
 	}
 
 private:
 	std::vector<float> springGraph;
+	std::vector<unsigned int> springIndices;
 };
 
 #endif

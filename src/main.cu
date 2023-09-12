@@ -90,7 +90,7 @@ void programLoop(GLFWwindow* window)
 
     // Create dipols
     BloodCellsFactory factory;
-    BloodCells bloodCells = factory.createBloodCells<2>();
+    BloodCells bloodCells = factory.createBloodCells<particlesInCell>();
 
     // Create vein mesh
     CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);
@@ -108,7 +108,7 @@ void programLoop(GLFWwindow* window)
     sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
 
     // Create a graphics controller
-    graphics::GLController glController(window, veinMesh);
+    graphics::GLController glController(window, veinMesh, factory.getSpringIndices());
 
     // MAIN LOOP HERE - dictated by glfw
 
@@ -123,10 +123,7 @@ void programLoop(GLFWwindow* window)
 
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(bloodCells.particles.positions.x,
-            bloodCells.particles.positions.y,
-            bloodCells.particles.positions.z,
-            particleCount);
+        glController.calculateOffsets(bloodCells.particles.positions);
         glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering

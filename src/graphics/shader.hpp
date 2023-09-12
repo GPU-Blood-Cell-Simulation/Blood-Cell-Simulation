@@ -61,3 +61,9 @@ class CylinderSolidColorShader : public Shader
 public:
     CylinderSolidColorShader();
 };
+
+class SpringShader : public Shader
+{
+public:
+    SpringShader();
+};

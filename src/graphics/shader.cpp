@@ -159,3 +159,5 @@ PhongForwardShader::PhongForwardShader() : Shader("Shaders\\phong_forward.vert",
 CylinderSolidColorShader::CylinderSolidColorShader() : Shader("Shaders\\cylindersolidcolor.vert", "Shaders\\cylindersolidcolor.frag")
 {}
 
+SpringShader::SpringShader() : Shader("Shaders\\spring.vert", "Shaders\\spring.frag")
+{}

@@ -27,8 +27,10 @@ inline constexpr int cellCountY = static_cast<int>(height / cellHeight);
 inline constexpr int cellCountZ = static_cast<int>(depth / cellDepth);
 
 // blood cell parameters
-inline constexpr int particleCount = 1000;
+inline constexpr int bloodCellCount = 500;
 inline constexpr int particlesInCell = 2;
+
+inline constexpr int particleCount = bloodCellCount * particlesInCell;
 
 inline constexpr float springsInCellsLength = 10;
 inline constexpr float particleRadius = 5;

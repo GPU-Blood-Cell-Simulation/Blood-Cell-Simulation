@@ -31,7 +31,7 @@ Model::Model(Mesh mesh)
     }
 }
 
-void Model::draw(const std::shared_ptr<Shader> shader, bool instanced) const
+void Model::draw(const Shader* shader, bool instanced) const
 {
     for (const Mesh& mesh : meshes)
         mesh.draw(shader, instanced);

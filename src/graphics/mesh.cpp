@@ -38,7 +38,7 @@ void Mesh::setupMesh()
 	glBindVertexArray(0);
 }
 
-void Mesh::draw(const std::shared_ptr<Shader> shader, bool instanced) const
+void Mesh::draw(const Shader* shader, bool instanced) const
 {
 	// draw mesh
 	glBindVertexArray(VAO);
