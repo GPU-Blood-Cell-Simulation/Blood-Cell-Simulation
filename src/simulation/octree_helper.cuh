@@ -9,7 +9,6 @@
 #define MANTIS_MASK 0x007fffff
 #define MANTIS_OFFSET_LEFTSHIFTED 8
 #define MANTIS_OR_MASK 0x00800000
-#define MORTON_POSITION_MASK 0x07
 #define MANTISA_BASE 127
 
 namespace octreeHelpers
@@ -41,10 +40,10 @@ namespace octreeHelpers
 	}
 
 
-	__device__ float3 calculateChildCenter(float3 center, unsigned int childId, float3 childCellDimension)
+	__device__ float3 calculateChildCenter(float3 center, unsigned int childId, float childCellSize)
 	{
-		return center + make_float3(((childId & 1) ? childCellDimension.x : -childCellDimension.x),
-			((childId & 2) ? childCellDimension.y : -childCellDimension.y), ((childId & 4) ? childCellDimension.z : -childCellDimension.z));
+		return center + make_float3(((childId & 1) ? childCellSize : -childCellSize),
+			((childId & 2) ? childCellSize : childCellSize), ((childId & 4) ? childCellSize : -childCellSize));
 	}
 
 	__device__ float3 calculateParentCenter(float3 center, unsigned int childId)
@@ -79,26 +78,26 @@ namespace octreeHelpers
 		return leafCell;
 	}
 
-	__device__ float3 calculateNeighbourLeafPos(float3 pos, float3 direction, float3 childCellSize, unsigned char bitChange)
+	__device__ float3 calculateNeighbourLeafPos(float3 pos, float3 direction, float childCellSize, unsigned char bitChange)
 	{
 		float3 newPos = pos;
 		if (bitChange > 1) {
 			if (direction.z < 0)
-				newPos.z -= childCellSize.z;
+				newPos.z -= childCellSize;
 			else
-				newPos.z += childCellSize.z;
+				newPos.z += childCellSize;
 		}
 		else if (bitChange) {
 			if (direction.y < 0)
-				newPos.y -= childCellSize.y;
+				newPos.y -= childCellSize;
 			else
-				newPos.y += childCellSize.y;
+				newPos.y += childCellSize;
 		}
 		else {
 			if (direction.x < 0)
-				newPos.x -= childCellSize.x;
+				newPos.x -= childCellSize;
 			else
-				newPos.x += childCellSize.x;
+				newPos.x += childCellSize;
 		}
 		return newPos;
 
@@ -121,11 +120,13 @@ namespace octreeHelpers
 		const float3 bounding = make_float3(width, height, depth);
 		const uint8_t s_max = maxLevel;
 		const unsigned int leafShift = (ldexp((double)1, 3 * (maxLevel - 1)) - 1) / 7; // (8^(maxL - 1) - 1)/7
+		
 		const float3 normalizedOrigin = origin / bounding;
 		const float3 normalizedEnd = end / bounding;
+		const float3 normalizedDirection = direction / bounding;
 
 		const float3 directionSigns = make_float3(!(direction.x < 0), !(direction.y < 0), !(direction.z < 0)); // 1 plus or zero, 0 minus
-		const float3 inversedDirection = make_float3(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
+		const float3 inversedDirection = make_float3(1.0f / normalizedDirection.x, 1.0f / normalizedDirection.y, 1.0f / normalizedDirection.z);
 
 		// values
 		unsigned int parentId = 0; // root
@@ -133,15 +134,15 @@ namespace octreeHelpers
 		uint8_t scale = s_max - 1;
 		uint8_t childId = calculateCellForPosition(normalizedOrigin, pos);
 		unsigned int realChildId = 8 * parentId + childId + 1;
-		float3 childCellSize = 0.5f * bounding;
+		float childCellSize = .5f; // normalized cell size
 
 		float3 t = make_float3( 0,0,0 );
-		float tEnd = length(normalizedEnd - normalizedOrigin);
+		float tEndSquare = length_squared(normalizedEnd - normalizedOrigin);
 
 		while (true) {
 
-			// traversing down the stack
-			if (scale > 0) {
+			// traversing down the tree to the leaf
+			if (scale > 1) {
 				childCellSize = 0.5f * childCellSize;
 				parentId = realChildId;
 				pos = calculateChildCenter(pos, childId, childCellSize);
@@ -151,33 +152,30 @@ namespace octreeHelpers
 				if (!(masks[realChildId] & (1 << childId))) // empty cell
 					break;
 
-				//parentCellCenter = tempCenter; // maybe do not need tempCenter ??? 
 				scale--;
-				//scale = scale / 2;
 				continue;
 			}
 
+			unsigned int leafMortonCode = treeData[realChildId - leafShift];
 			// compute intersections in current cell
 			// TODO
 
-			// calculate neighbour cell
-			unsigned int leafMortonCode = treeData[realChildId - leafShift];
 
 			//float3 cellBegining = calculateLeafCellFromMorton(scale, bounding, leafMortonCode, currentLevel);
-			float3 cellBeginning = pos - make_float3(fmod((double)pos.x, (double)childCellSize.x),
-				fmod((double)pos.y, (double)childCellSize.y), fmod((double)pos.z, (double)childCellSize.z));
+			float3 cellBeginning = pos - make_float3(fmodf(pos.x, childCellSize), 
+				fmod(pos.y, childCellSize), fmod(pos.z, childCellSize));
 
-			//tBegin = tEnd;
-
-			// maybe ifs instead of directionSigns ???
-			t = calculateRayTValue(normalizedOrigin, inversedDirection, cellBeginning + directionSigns * childCellSize);
+			// maybe conditions instead of directionSigns ???
+			t = calculateRayTValue(normalizedOrigin, inversedDirection, cellBeginning + childCellSize*directionSigns);
 			float tMax = vmin(t);
 
-
-
+			// break if ray ends before next cell
+			if (tMax > tEndSquare)
+				break;
+			
 			bool changeParent = false;
-
 			unsigned char bitChange = 0;
+
 			// bit changing && should be + && is minus
 			if (!(tMax > t.x) && (childId & 1) && direction.x < 0) {
 				changeParent = true;
@@ -197,7 +195,7 @@ namespace octreeHelpers
 
 			if (changeParent) {
 				// calculate new pos
-				float3 newPos = calculateNeighbourLeafPos(pos, direction, childCellSize, bitChange);
+				float3 newPos = calculateNeighbourLeafPos(pos, normalizedDirection, childCellSize, bitChange);
 
 				positive_float_structure posX(pos.x), posY(pos.y), posZ(pos.z);
 				positive_float_structure newPosX(newPos.x), newPosY(newPos.y), newPosZ(newPos.z);
@@ -206,7 +204,7 @@ namespace octreeHelpers
 					max(posY.mantis ^ newPosY.mantis, posZ.mantis ^ newPosZ.mantis)));
 
 				scale = s_max - minMantisaShift - 1;
-				childCellSize = ldexp((double)1, scale - s_max) * bounding;
+				childCellSize = ldexp((double)1, scale - s_max);
 
 				realChildId = 0;
 				unsigned int shift = 0x80000000;
@@ -232,7 +230,7 @@ namespace octreeHelpers
 					break;
 
 				// calculate new pos
-				pos = calculateNeighbourLeafPos(pos, direction, childCellSize, bitChange);
+				pos = calculateNeighbourLeafPos(pos, normalizedDirection, childCellSize, bitChange);
 			}
 		}
 	}

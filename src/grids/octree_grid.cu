@@ -5,6 +5,8 @@
 #include "../utilities/math.cuh"
 #include "math_functions.h"
 
+#define MORTON_POSITION_MASK 0x07
+
 __device__ unsigned int partEveryByteByTwo(unsigned int n)
 {
 	n = (n ^ (n << 16)) & 0xff0000ff;

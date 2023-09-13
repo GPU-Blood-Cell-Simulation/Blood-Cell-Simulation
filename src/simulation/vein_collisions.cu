@@ -102,7 +102,7 @@ namespace sim
 
 		ray r(pos, velocityDir);
 		float3 reflectedVelociy = make_float3(0, 0, 0);
-		octreeHelpers::traverseGrid(pos, r.direction, r.);
+		octreeHelpers::traverseGrid(pos, r.direction, pos + dt*velocity, triangleGrid.masks, triangleGrid.treeData, triangleGrid.levels);
 
 set_particle_values_octree:
 
