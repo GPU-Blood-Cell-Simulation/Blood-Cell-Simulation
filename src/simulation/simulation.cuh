@@ -1,10 +1,12 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
+#include "../utilities/cuda_threads.hpp"
 #include "../objects/blood_cells.cuh"
 #include "../objects/vein_triangles.cuh"
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
+#include "vein_end.cuh"
 
 #include <curand.h>
 #include <curand_kernel.h>
@@ -26,14 +28,11 @@ namespace sim
 		Grid particleGrid;
 		Grid triangleGrid;
 
-		const int bloodCellsThreadsPerBlock;
-		const int bloodCellsBlocks;
+		CudaThreads bloodCellsThreads;
+		CudaThreads veinVerticesThreads;
+		CudaThreads veinTrianglesThreads;
 
-		const int veinVerticesThreadsPerBlock;
-		const int veinVerticesBlocks;
-
-		const int veinTrianglesThreadsPerBlock;
-		const int veinTrianglesBlocks;
+		EndVeinHandler endVeinHandler;
 
 		void generateRandomPositions();
 	};

@@ -41,7 +41,7 @@ void BloodCells::gatherForcesFromNeighbors(int blocks, int threadsPerBlock)
 __global__ static void gatherForcesKernel(BloodCells cells)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int inCellIndex = index % particlesInCell;
+	int inCellIndex = index % particlesInBloodCell;
 
 	if (index >= particleCount)
 		return;
@@ -49,9 +49,9 @@ __global__ static void gatherForcesKernel(BloodCells cells)
 	float3 pos = cells.particles.positions.get(index);
 	float3 velo = cells.particles.velocities.get(index);
 
-	for (int neighbourCellindex = 0; neighbourCellindex < particlesInCell; neighbourCellindex++)
+	for (int neighbourCellindex = 0; neighbourCellindex < particlesInBloodCell; neighbourCellindex++)
 	{
-		float springLen = cells.springsGraph[inCellIndex * particlesInCell + neighbourCellindex];
+		float springLen = cells.springsGraph[inCellIndex * particlesInBloodCell + neighbourCellindex];
 
 		if (springLen == NO_SPRING)
 			continue;
