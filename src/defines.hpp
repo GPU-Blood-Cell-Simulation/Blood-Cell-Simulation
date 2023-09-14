@@ -27,8 +27,8 @@ inline constexpr int cellCountY = static_cast<int>(height / cellHeight);
 inline constexpr int cellCountZ = static_cast<int>(depth / cellDepth);
 
 // blood cell parameters
-inline constexpr unsigned int particlesInBloodCell = 2;
-inline constexpr unsigned int bloodCellsCount = 500;
+inline constexpr unsigned int particlesInBloodCell = 4;
+inline constexpr unsigned int bloodCellsCount = 250;
 inline constexpr unsigned int particleCount = bloodCellsCount * particlesInBloodCell;
 
 inline constexpr float springsInCellsLength = 10;
@@ -71,10 +71,13 @@ inline constexpr float collisionSpringCoeff = 0.2f;
 inline constexpr float collisionDampingCoeff = 0.02f;
 inline constexpr float collistionShearCoeff = 0.05f;
 
-// Initaite velocity of particles
+// Initial velocity of particles
 inline constexpr float initVelocityX = 0.0f;
 inline constexpr float initVelocityY = -10.0f;
 inline constexpr float initVelocityZ = 0.0f;
+
+// Blood flow
+inline constexpr bool useBloodFlow = true;
 
 // Lighting
 inline constexpr bool useLighting = true;
