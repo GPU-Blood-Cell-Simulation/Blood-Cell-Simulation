@@ -64,7 +64,7 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid )
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid triangleGrid )
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -290,7 +290,7 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid)
+	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells bloodCells, VeinTriangles triangles, NoGrid triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
