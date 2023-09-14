@@ -96,7 +96,7 @@ namespace sim
     
 				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions for particles
 
-				detectVeinCollisionsAndPropagateParticles << < bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock >> > (bloodCells, triangles, *g1, *g2);
+				detectVeinCollisionsAndPropagateParticles << < bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock >> > (bloodCells, triangles, *g2);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 5. Propagate triangle forces into neighbors

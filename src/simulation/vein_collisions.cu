@@ -64,7 +64,7 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid )
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -290,7 +290,7 @@ namespace sim
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid)
+	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells bloodCells, VeinTriangles triangles, NoGrid triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -334,6 +334,7 @@ namespace sim
 			const float3 s = r.origin - v0;
 			const float u = f * dot(s, h);
 			if (u < 0 || u > 1)
+				continue;
 			if (!realCollisionDetection(v0, v1, v2, r, reflectedVelociy))
 				continue;
 
@@ -342,7 +343,7 @@ namespace sim
 			break;
 		}
 
-		if (collicionOccured)
+		if (collicionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;
