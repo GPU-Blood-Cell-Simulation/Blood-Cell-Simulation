@@ -127,6 +127,7 @@
     <ClCompile Include="src\graphics\model.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\graphics\textures\texture_loading.cpp" />
+    <ClCompile Include="src\graphics\spring_lines.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\assimp\aabb.h" />
@@ -498,6 +499,7 @@
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
     <ClInclude Include="src\objects\blood_cells.cuh" />
     <ClInclude Include="src\objects\blood_cells_factory.hpp" />
+    <ClInclude Include="src\graphics\spring_lines.hpp" />
     <ClInclude Include="src\utilities\cuda_threads.hpp" />
     <ClInclude Include="src\objects\cylindermesh.hpp" />
     <ClInclude Include="src\objects\vein_triangles.cuh" />
@@ -681,6 +683,8 @@
     <None Include="Shaders\phong_forward.vert" />
     <None Include="Shaders\solidcolor.frag" />
     <None Include="Shaders\solidcolor.vert" />
+    <None Include="Shaders\spring.frag" />
+    <None Include="Shaders\spring.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Libraries\lib\assimp-vc143-mt.lib" />

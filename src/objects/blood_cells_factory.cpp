@@ -18,6 +18,9 @@ void BloodCellsFactory::addSpring(int cellId1, int cellId2, float springLength)
 
 	springGraph[cellId1 * particlesInBloodCell + cellId2] = springLength;
 	springGraph[cellId2 * particlesInBloodCell + cellId1] = springLength;
+
+	springIndices.push_back(static_cast<unsigned int>(cellId1));
+	springIndices.push_back(static_cast<unsigned int>(cellId2));
 }
 
 
