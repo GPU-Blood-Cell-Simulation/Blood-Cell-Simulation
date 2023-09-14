@@ -8,7 +8,6 @@
 
 
 #include <cmath>
-
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <device_functions.h>
@@ -34,14 +33,14 @@ namespace sim
 	__device__ float3 calculateBaricentric(float3 point, float3 v1, float3 v2, float3 v3);
 
 	#pragma region Main Collision Template Kernels
-	template<typename T1, typename T2>
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, VeinTriangles triangles, T1 particleGrid, T2 triangleGrid) {}
+	template<typename T>
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, VeinTriangles triangles, T triangleGrid) {}
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid);
+	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells cells, VeinTriangles triangles, NoGrid triangleGrid);
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid);
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid triangleGrid);
 	#pragma endregion
 
 	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>

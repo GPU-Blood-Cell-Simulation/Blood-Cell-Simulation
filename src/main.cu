@@ -102,7 +102,7 @@ void programLoop(GLFWwindow* window)
     // Create grids
     UniformGrid particleGrid(particleCount, 20, 20, 20);
     UniformGrid triangleCentersGrid(triangles.triangleCount, 10, 10, 10);
-    //NoGrid particleGrid, triangleCentersGrid;
+    //NoGrid triangleCentersGrid;
 
     // Create the main simulation controller and inject its dependencies
     sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
