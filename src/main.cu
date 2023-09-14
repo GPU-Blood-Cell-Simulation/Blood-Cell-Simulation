@@ -22,6 +22,8 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
+#define UNIFORM_TRIANGLES_GRID
+
 //#pragma float_control( except, on )
 //// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
 //extern "C"
@@ -101,8 +103,11 @@ void programLoop(GLFWwindow* window)
 
     // Create grids
     UniformGrid particleGrid(particleCount, 20, 20, 20);
+#ifdef UNIFORM_TRIANGLES_GRID
     UniformGrid triangleCentersGrid(triangles.triangleCount, 10, 10, 10);
-    //NoGrid triangleCentersGrid;
+#else
+    NoGrid triangleCentersGrid;
+#endif
 
     // Create the main simulation controller and inject its dependencies
     sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
