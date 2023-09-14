@@ -36,14 +36,10 @@ constexpr int CalculateBlocksCount()
 	return constCeil(static_cast<float>(particleCount) / CalculateThreadsPerBlock());
 }
 
-#include <cstdio>
 
 EndVeinHandler::EndVeinHandler():
 	threads(CalculateThreadsPerBlock(), CalculateBlocksCount())
-{
-	printf("threads per block: %d\n", threads.threadsPerBlock);
-	printf("Blocks: %d\n", threads.blocks);
-}
+{}
 
 
 __global__ void handleVeinEndsBlockSync(BloodCells bloodCells)
