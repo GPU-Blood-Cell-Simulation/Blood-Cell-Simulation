@@ -10,7 +10,7 @@
 #include <curand_kernel.h>
 #include <variant>
 
-using Grid = std::variant<UniformGrid*, NoGrid*>;
+using Grid = std::variant<UniformGrid*, NoGrid*, OctreeGrid*>
 
 namespace sim
 {

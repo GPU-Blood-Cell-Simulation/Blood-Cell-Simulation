@@ -1,11 +1,31 @@
 #include "octree_grid.cuh"
-#include "grid_helpers.cuh"
 #include "../defines.hpp"
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/math.cuh"
 #include "math_functions.h"
+#include <cuda.h>
+#include <device_functions.h>
+#include <cuda_runtime_api.h>
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include <thrust/device_vector.h>
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+//
+//#ifndef __CUDA_ARCH__
+//#define __CUDA_ARCH__
+//#endif
+#include "sm_60_atomic_functions.h"
 
 #define MORTON_POSITION_MASK 0x07
+
+#ifdef __INTELLISENSE__
+template<typename T>
+void atomicAdd_system(T*, T);
+template<typename T>
+void atomicOr_system(T*, T);
+#endif
 
 __device__ unsigned int partEveryByteByTwo(unsigned int n)
 {
@@ -36,21 +56,21 @@ __global__ void calculateCellIdKernel(const float* positionX, const float* posit
 	cellIds[particleId] = cellId;
 }
 
-__device__ unsigned int calculateCellIdFromMorton(unsigned int mortonCode, unsigned int levels)
-{
-	unsigned int mask = 8 << 3 * levels;
-	unsigned int realId = 0;
-
-#pragma unroll
-	for (int i = 3 * levels; i >= 0; i -= 3) {
-		realId += (mask & mortonCode) >> i;
-		realId *= 8;
-	}
-	return realId;
-}
+//__device__ unsigned int calculateCellIdFromMorton(unsigned int mortonCode, unsigned int levels)
+//{
+//	unsigned int mask = 8 << 3 * levels;
+//	unsigned int realId = 0;
+//
+//#pragma unroll
+//	for (int i = 3 * levels; i >= 0; i -= 3) {
+//		realId += (mask & mortonCode) >> i;
+//		realId *= 8;
+//	}
+//	return realId;
+//}
 
 __global__ void calculateCellStarts(const unsigned int* cellIds, const unsigned int* particleIds,
-	unsigned int* treeData, unsigned int cellCount, unsigned int levels)
+	unsigned int* treeData, unsigned int cellCount)
 {
 	unsigned int id = blockIdx.x * blockDim.x + threadIdx.x;
 	if (id >= cellCount)
@@ -60,16 +80,14 @@ __global__ void calculateCellStarts(const unsigned int* cellIds, const unsigned 
 
 	if (id == 0 || cellIds[id - 1] >> 3 < currentCellId >> 3)
 	{
-		levels -= 2;
-		unsigned int realId = calculateCellIdFromMorton(currentCellId, levels);
-		unsigned int index = realId - (unsigned int)(pow(8, levels) - 1) / 7;
-		treeData[index] = id;
+		treeData[currentCellId] = id;
 	}
 }
 
+
 void createOctreeGridData(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds,
-	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, /*unsigned int* gridCelLStarts,
-	unsigned int* gridCellEnds,*/ unsigned int objectCount)
+	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* treeData, unsigned char* masks,
+	unsigned int levels, unsigned int objectCount)
 {
 	// Calculate launch parameters
 
@@ -87,10 +105,12 @@ void createOctreeGridData(const float* positionX, const float* positionY, const 
 
 	thrust::stable_sort_by_key(keys, keys + objectCount, values);
 
-	// 3. Find the start and end of every cell
-	calculateCellStarts(gridCellIds, particleIds, treeData, objectCount, levels);
-	/*gridHelpers::calculateStartAndEndOfCellKernel << <blocks, threadsPerBlock >> >
-		(positionX, positionY, positionZ, gridCellIds, particleIds, gridCellStarts, gridCellEnds, objectCount);*/
+	// 3. Find the start of every cell
+	calculateCellStarts(gridCellIds, particleIds, treeData, objectCount);
+
+
+	calculateTreeLeafsCells << <blocks, threadsPerBlock >> > (gridCellIds, objectCount, cellCountX, cellCountY, cellCountZ,
+		cellWidth, cellHeight, cellDepth, levels, cellWidth, cellDepth, cellHeight, masks);
 }
 
 
@@ -98,7 +118,7 @@ void createOctreeGridData(const float* positionX, const float* positionY, const 
 
 __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsigned int objectCount,
 	const unsigned int cellCountX, const unsigned int cellCountY, const unsigned int cellCountZ,
-	const unsigned int cellWidth, const unsigned int cellHeight, const unsigned int cellDepth, const unsigned int divisionCount
+	const unsigned int cellWidth, const unsigned int cellHeight, const unsigned int cellDepth, const unsigned int levels
 	, const float width, const float height, const float depth, unsigned char* masks)
 {
 	unsigned int objectId = blockIdx.x * blockDim.x + threadIdx.x;
@@ -106,24 +126,39 @@ __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsig
 		return;
 
 	unsigned int cellMortonCodeId = cellIds[objectId];
-	unsigned int currentCellAbsoluteId = cellMortonCodeId + (pow(8, divisionCount) - 1) / 7;
+	unsigned int currentCellAbsoluteId = cellMortonCodeId + (ldexp(1,3*(levels - 1)) - 1) / 7; // ( 8^(levels - 1) - 1 ) / 7
 	unsigned int counter = 0;
 
-
 #pragma unroll
-	while (counter++ < divisionCount - 1) {
+	while (counter++ < levels - 1) {
 		unsigned int parentId = currentCellAbsoluteId >> 3;
 		unsigned char childFillMask = 1 << (currentCellAbsoluteId & MORTON_POSITION_MASK);
 
 		if (!(masks[parentId] & childFillMask))
-			atomicOr_system(masks + parentId, childFillMask);
-			masks[parentId] |= childFillMask;
+			atomicOr_system(masks + parentId, childFillMask); //masks[parentId] |= childFillMask;
 		
 		currentCellAbsoluteId = parentId;
 	}
 
 }
 
+
+	/*unsigned int levels;
+	unsigned int treeNodesCount;
+	unsigned int leafLayerCount;
+	
+	unsigned int* treeData;
+	unsigned char* masks;*/
+
+OctreeGrid::OctreeGrid(const OctreeGrid& other) : isCopy(true), gridCellIds(other.gridCellIds), particleIds(other.particleIds),
+ cellCountX(other.cellCountX), cellCountY(other.cellCountY), cellCountZ(other.cellCountZ), cellWidth(other.cellWidth), cellHeight(other.cellHeight), 
+	cellDepth(other.cellDepth), objectsCount(other.objectsCount), cellAmount(other.cellAmount), levels(other.levels), treeNodesCount(other.treeNodesCount),
+	leafLayerCount(other.leafLayerCount), treeData(other.treeData), masks(other.masks)
+{}
+
+OctreeGrid::~OctreeGrid()
+{
+}
 
 OctreeGrid::OctreeGrid(const unsigned int objectCount, const unsigned int levels)
 {
@@ -147,17 +182,15 @@ OctreeGrid::OctreeGrid(const unsigned int objectCount, const unsigned int levels
 	//HANDLE_ERROR(cudaMalloc((void**)&gridCellEnds, cellAmount * sizeof(unsigned int)));
 
 	treeNodesCount = (pow(8, levels) - 1) / 7;
+	leafLayerCount = pow(8, levels - 1);
 	printf("Octree nodes count: %d\n", treeNodesCount);
-	HANDLE_ERROR(cudaMalloc((void**)&masks, treeNodesCount * sizeof(unsigned char)));
+	HANDLE_ERROR(cudaMalloc((void**)&masks, (treeNodesCount - leafLayerCount )* sizeof(unsigned char)));
 	
-	lastNonLeafLayerCount = pow(8, levels - 2);
-	HANDLE_ERROR(cudaMalloc((void**)&treeData, lastNonLeafLayerCount * sizeof(unsigned int)));
+	HANDLE_ERROR(cudaMalloc((void**)&treeData, leafLayerCount * sizeof(unsigned int)));
 }
 
 void OctreeGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount)
 {
 	createOctreeGridData(positionX, positionY, positionZ, gridCellIds, particleIds, cellWidth,
-		cellHeight, cellDepth, /*gridCellStarts, gridCellEnds, */particleCount);
-
-
+		cellHeight, cellDepth, treeData, masks, levels, particleCount);
 }

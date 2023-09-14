@@ -3,6 +3,7 @@
 #include "../objects/blood_cells.cuh"
 #include "../objects/vein_triangles.cuh"
 #include "../grids/uniform_grid.cuh"
+#include "../grids/octree_grid.cuh"
 #include "../grids/no_grid.cuh"
 #include "../grids/octree_grid.cuh"
 #include <variant>

@@ -29,7 +29,7 @@ public:
 
 	unsigned int levels;
 	unsigned int treeNodesCount;
-	unsigned int lastNonLeafLayerCount;
+	unsigned int leafLayerCount;
 	
 	unsigned int* treeData;
 	unsigned char* masks;
