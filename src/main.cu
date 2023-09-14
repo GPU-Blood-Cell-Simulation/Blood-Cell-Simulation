@@ -1,124 +1,162 @@
-﻿
+﻿#include <glad/glad.h>
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include <glad/glad.h>
+#include "defines.hpp"
+#include "utilities/cuda_handle_error.cuh"
+
+#include "simulation/simulation.cuh"
+#include "graphics/glcontroller.cuh"
+#include "grids/uniform_grid.cuh"
+#include "grids/no_grid.cuh"
+
+#include "objects/blood_cells.cuh"
+#include "objects/blood_cells_factory.hpp"
+#include "objects/vein_triangles.cuh"
+#include "objects/cylindermesh.hpp"
+
 #include <GLFW/glfw3.h>
+#include <sstream>
 
-#include <stdio.h>
+#include <curand.h>
+#include <curand_kernel.h>
 
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
+#define UNIFORM_TRIANGLES_GRID
 
-__global__ void addKernel(int *c, const int *a, const int *b)
-{
-    int i = threadIdx.x;
-    c[i] = a[i] + b[i];
-}
+//#pragma float_control( except, on )
+//// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
+//extern "C"
+//{
+//    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+//}
+
+void programLoop(GLFWwindow* window);
 
 int main()
 {
-    const int arraySize = 5;
-    const int a[arraySize] = { 1, 2, 3, 4, 5 };
-    const int b[arraySize] = { 10, 20, 30, 40, 50 };
-    int c[arraySize] = { 0 };
+    // Choose which GPU to run on, change this on a multi-GPU system.
+    HANDLE_ERROR(cudaSetDevice(0));
 
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        return 1;
+    // OpenGL setup
+#pragma region OpenGLsetup
+    GLFWwindow* window;
+
+    if (!glfwInit())
+        return -1;
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // Create a windowed mode window and its OpenGL context
+    window = glfwCreateWindow(windowWidth, windowHeight, "Blood Cell Simulation", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
     }
 
-    printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-        c[0], c[1], c[2], c[3], c[4]);
+    // Make the window's context current
+    glfwMakeContextCurrent(window);
 
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceReset failed!");
-        return 1;
-    }
+    // Load GL and set the viewport to match window size
+    gladLoadGL();
+    glViewport(0, 0, windowWidth, windowHeight);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    VEIN_POLYGON_MODE = GL_FILL;
+
+    // debug
+    glEnable(GL_DEBUG_OUTPUT);
+    
+#pragma endregion
+    
+    // Main simulation loop
+    
+    programLoop(window);
+
+    // Cleanup
+
+    glfwTerminate();
+    HANDLE_ERROR(cudaDeviceReset());
 
     return 0;
 }
 
-// Helper function for using CUDA to add vectors in parallel.
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size)
+// Main simulation loop - upon returning from this function all memory-freeing destructors are called
+void programLoop(GLFWwindow* window)
 {
-    int *dev_a = 0;
-    int *dev_b = 0;
-    int *dev_c = 0;
-    cudaError_t cudaStatus;
+    double lastTime = glfwGetTime();
+    int frameCount = 0;
 
-    // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-        goto Error;
+    // Create dipols
+    BloodCellsFactory factory;
+    BloodCells bloodCells = factory.createBloodCells<particlesInBloodCell>();
+
+    // Create vein mesh
+    CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);
+    Mesh veinMesh = veinMeshDefinition.CreateMesh();
+
+    // Create vein triangles
+    VeinTriangles triangles(veinMesh, veinMeshDefinition.getSpringLengths());
+
+    // Create grids
+    UniformGrid particleGrid(particleCount, 20, 20, 20);
+#ifdef UNIFORM_TRIANGLES_GRID
+    UniformGrid triangleCentersGrid(triangles.triangleCount, 10, 10, 10);
+#else
+    NoGrid triangleCentersGrid;
+#endif
+
+    // Create the main simulation controller and inject its dependencies
+    sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
+
+    // Create a graphics controller
+    graphics::GLController glController(window, veinMesh, factory.getSpringIndices());
+
+    // MAIN LOOP HERE - dictated by glfw
+
+    while (!glfwWindowShouldClose(window))
+    {
+        // Clear 
+        glClearColor(1.00f, 0.75f, 0.80f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Calculate particle positions using CUDA
+        simulationController.calculateNextFrame();
+
+
+        // Pass positions to OpenGL
+        glController.calculateOffsets(bloodCells.particles.positions);
+        glController.calculateTriangles(triangles);
+        // OpenGL render
+#pragma region rendering
+
+        glController.draw();
+        glfwSwapBuffers(window);
+
+        // Show FPS in the title bar
+        double currentTime = glfwGetTime();
+        double delta = currentTime - lastTime;
+        if (delta >= 1.0)
+        {
+            double fps = double(frameCount) / delta;
+            std::stringstream ss;
+            ss << "Blood Cell Simulation" << " " << " [" << fps << " FPS]";
+
+            glfwSetWindowTitle(window, ss.str().c_str());
+            lastTime = currentTime;
+            frameCount = 0;
+        }
+        else
+        {
+            frameCount++;
+        }
+#pragma endregion
+
+        // Handle user input
+        glfwPollEvents();
+        glController.handleInput();
     }
-
-    // Allocate GPU buffers for three vectors (two input, one output)    .
-    cudaStatus = cudaMalloc((void**)&dev_c, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_a, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_b, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_a, a, size * sizeof(int), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMemcpy(dev_b, b, size * sizeof(int), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-    // Launch a kernel on the GPU with one thread for each element.
-    addKernel<<<1, size>>>(dev_c, dev_a, dev_b);
-
-    // Check for any errors launching the kernel
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        goto Error;
-    }
-    
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-        goto Error;
-    }
-
-    // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(c, dev_c, size * sizeof(int), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-Error:
-    cudaFree(dev_c);
-    cudaFree(dev_a);
-    cudaFree(dev_b);
-    
-    return cudaStatus;
 }
