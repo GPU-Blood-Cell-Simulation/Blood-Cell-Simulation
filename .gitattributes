@@ -61,3 +61,10 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# Linguist settings
+###############################################################################
+Libraries/**/* linguist-vendored
+src/glad.c linguist-vendored
+src/graphics/textures/stb_image.h linguist-vendored

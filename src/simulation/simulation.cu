@@ -15,7 +15,7 @@ namespace sim
 {
 	__global__ void setupCurandStatesKernel(curandState* states, unsigned long seed);
 
-	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, glm::vec3 cylinderBaseCenter/*, float cylinderRadius, float cylinderHeight*/);
+	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, glm::vec3 cylinderBaseCenter);
 
 
 	SimulationController::SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid) :
@@ -112,8 +112,11 @@ namespace sim
 				triangles.calculateCenters(veinTrianglesThreads.blocks, veinTrianglesThreads.threadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
 
-				endVeinHandler.Handle(bloodCells);
-				HANDLE_ERROR(cudaPeekAtLastError());
+				if constexpr (useBloodFlow)
+				{
+					endVeinHandler.Handle(bloodCells);
+					HANDLE_ERROR(cudaPeekAtLastError());
+				}		
 
 			}, particleGrid, triangleGrid);
 	}
