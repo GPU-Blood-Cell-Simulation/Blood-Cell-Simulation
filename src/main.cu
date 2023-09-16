@@ -100,7 +100,7 @@ void programLoop(GLFWwindow* window)
 
     // Create grids
     UniformGrid particleGrid(PARTICLE_COUNT, 20, 20, 20);
-    UniformGrid triangleCentersGrid(triangles.triangleCount, 10, 10, 10);
+    OctreeGrid triangleCentersGrid(triangles.triangleCount, 5);
     //NoGrid particleGrid, triangleCentersGrid;
 
     // Create the main simulation controller and inject its dependencies

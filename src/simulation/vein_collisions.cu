@@ -5,6 +5,8 @@
 
 namespace sim
 {
+	//using octreeHelpers::positive_float_structure;
+
 	__device__ ray::ray(float3 origin, float3 direction) : origin(origin), direction(direction) {}
 
 	__device__ bool realCollisionDetection(float3 v0, float3 v1, float3 v2, ray& r, float3& reflectionVector)
@@ -60,6 +62,152 @@ namespace sim
 	}
 
 
+	/// <summary>
+	/// Function to simulate traversal through octree grid
+	/// </summary>
+	/// <param name="origin">- ray origin defined in world coords</param>
+	/// <param name="direction">- ray direction</param>
+	/// <param name="end">- ray end defined in world coords</param>
+	/// <param name="masks">- octree nodes masks</param>
+	/// <param name="treeData">- pointers to leaves</param>
+	/// <param name="maxLevel">- octree depth in levels</param>
+	/// <returns>if collision occured with collision data reference parameter</returns>
+	__device__ bool traverseGrid(ray r, float3 end, OctreeGrid& grid, VeinTriangles& triangles, float3& reflectionVector)
+	{
+		// necessary parameters
+		const float3 bounding = make_float3(width, height, depth);
+		const uint8_t s_max = grid.levels;
+		const unsigned int leafShift = (ldexp((double)1, 3 * (grid.levels - 1)) - 1) / 7; // (8^(maxL - 1) - 1)/7
+
+		const float3 normalizedOrigin = r.origin / bounding;
+		const float3 normalizedEnd = end / bounding;
+		const float3 normalizedDirection = r.direction / bounding;
+
+		const float3 directionSigns = make_float3(!(r.direction.x < 0), !(r.direction.y < 0), !(r.direction.z < 0)); // 1 plus or zero, 0 minus
+		const float3 inversedDirection = make_float3(1.0f / normalizedDirection.x, 1.0f / normalizedDirection.y, 1.0f / normalizedDirection.z);
+
+		// values
+		unsigned int parentId = 0; // root
+		float3 pos = make_float3(0.5f, 0.5f, 0.5f); // initial pos is center of root
+		uint8_t scale = s_max - 1;
+		uint8_t childId = octreeHelpers::calculateCellForPosition(normalizedOrigin, pos);
+		unsigned int realChildId = 8 * parentId + childId + 1;
+		float childCellSize = .5f; // normalized cell size
+
+		float3 t = make_float3(0, 0, 0);
+		float tEndSquare = length_squared(normalizedEnd - normalizedOrigin);
+
+		while (true) {
+
+			// traversing down the tree to the leaf
+			if (scale > 1) {
+				childCellSize = 0.5f * childCellSize;
+				parentId = realChildId;
+				pos = octreeHelpers::calculateChildCenter(pos, childId, childCellSize);
+				childId = octreeHelpers::calculateCellForPosition(normalizedOrigin, pos);
+				unsigned int realChildId = 8 * parentId + childId + 1;
+
+				if (!(grid.masks[realChildId] & (1 << childId))) // empty cell
+					break;
+
+				scale--;
+				continue;
+			}
+
+			// compute intersections in current cell
+			unsigned int leafIndex = realChildId - leafShift;
+			unsigned int leafId = grid.treeData[leafIndex];
+			unsigned int cellId = grid.gridCellIds[leafId];
+			for (int i = leafId; grid.gridCellIds[i] == cellId; ++i)
+			{
+				// triangle vectices and edges
+				unsigned int triangleId = grid.particleIds[i];
+				float3 v0 = triangles.positions.get(triangles.getIndex(triangleId, vertex0));
+				float3 v1 = triangles.positions.get(triangles.getIndex(triangleId, vertex1));
+				float3 v2 = triangles.positions.get(triangles.getIndex(triangleId, vertex2));
+
+				if (!realCollisionDetection(v0, v1, v2, r, reflectionVector))
+					continue;
+
+				r.objectIndex = triangleId;
+				return true;
+			}
+
+
+			//float3 cellBegining = calculateLeafCellFromMorton(scale, bounding, leafMortonCode, currentLevel);
+			float3 cellBeginning = pos - make_float3(fmodf(pos.x, childCellSize),
+				fmod(pos.y, childCellSize), fmod(pos.z, childCellSize));
+
+			// maybe conditions instead of directionSigns ???
+			t = octreeHelpers::calculateRayTValue(normalizedOrigin, inversedDirection, cellBeginning + childCellSize * directionSigns);
+			float tMax = vmin(t);
+
+			// break if ray ends before next cell
+			if (tMax > tEndSquare)
+				break;
+
+			bool changeParent = false;
+			unsigned char bitChange = 0;
+
+			// bit changing && should be + && is minus
+			if (!(tMax > t.x) && (childId & 1) && r.direction.x < 0) {
+				changeParent = true;
+			}
+			else if (!(tMax > t.x)) {
+				bitChange = 1;
+				if ((childId & 1) && r.direction.y < 0) {
+					changeParent = true;
+				}
+			}
+			else if (!(tMax > t.x)) {
+				bitChange = 2;
+				if ((childId & 1) && r.direction.z < 0) {
+					changeParent = true;
+				}
+			}
+
+			if (changeParent) {
+				// calculate new pos
+				float3 newPos = octreeHelpers::calculateNeighbourLeafPos(pos, normalizedDirection, childCellSize, bitChange);
+
+				octreeHelpers::positive_float_structure posX(pos.x), posY(pos.y), posZ(pos.z);
+				octreeHelpers::positive_float_structure newPosX(newPos.x), newPosY(newPos.y), newPosZ(newPos.z);
+
+				uint8_t minMantisaShift = 31 - log2((double)max(posX.mantis ^ newPosX.mantis,
+					max(posY.mantis ^ newPosY.mantis, posZ.mantis ^ newPosZ.mantis)));
+
+				scale = s_max - minMantisaShift - 1;
+				childCellSize = ldexp((double)1, scale - s_max);
+
+				realChildId = 0;
+				unsigned int shift = 0x80000000;
+				uint8_t mask = 0;
+				for (int i = 31; i > 31 - minMantisaShift; --i) {
+					mask = (newPosX.mantis & shift) |
+						((newPosY.mantis & shift) << 1) | ((newPosZ.mantis & shift) << 2);
+					realChildId += mask;
+					realChildId *= 8;
+					shift >>= 1;
+				}
+				childId = mask; // last mask value;
+				parentId = (unsigned int)(realChildId * 0.125f); // divide by 8
+
+			}
+			else {
+
+				// calculate new childId
+				childId ^= 1 << bitChange;
+				unsigned int realChildId = 8 * parentId + childId + 1;
+
+				if (!(grid.masks[realChildId] & (1 << childId))) // empty cell
+					break;
+
+				// calculate new pos
+				pos = octreeHelpers::calculateNeighbourLeafPos(pos, normalizedDirection, childCellSize, bitChange);
+			}
+		}
+		return false;
+	}
 
 
 	template<>
@@ -102,7 +250,33 @@ namespace sim
 
 		ray r(pos, velocityDir);
 		float3 reflectedVelociy = make_float3(0, 0, 0);
-		octreeHelpers::traverseGrid(pos, r.direction, pos + dt*velocity, triangleGrid.masks, triangleGrid.treeData, triangleGrid.levels);
+		bool collisionOccured = traverseGrid(r, pos + dt*velocity, triangleGrid, triangles, reflectedVelociy);
+
+		if (collisionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		{
+			float3 ds = 0.8f * velocityDir;
+			float speed = length(velocity);
+			velocity = velocityCollisionDamping * speed * reflectedVelociy;
+
+			unsigned int vertexIndex0 = triangles.getIndex(r.objectIndex, vertex0);
+			unsigned int vertexIndex1 = triangles.getIndex(r.objectIndex, vertex1);
+			unsigned int vertexIndex2 = triangles.getIndex(r.objectIndex, vertex2);
+
+			float3 v0 = triangles.positions.get(vertexIndex0);
+			float3 v1 = triangles.positions.get(vertexIndex1);
+			float3 v2 = triangles.positions.get(vertexIndex2);
+
+			float3 baricentric = calculateBaricentric(pos + r.t * r.direction, v0, v1, v2);
+
+			// TODO:
+			// Can these lines generate concurrent write conflicts? Unlikely but not impossible. Think about it. - Filip
+			// Here we probably should use atomicAdd. - Hubert
+			// move triangle a bit
+			triangles.forces.add(vertexIndex0, baricentric.x * ds);
+			triangles.forces.add(vertexIndex1, baricentric.y * ds);
+			triangles.forces.add(vertexIndex2, baricentric.z * ds);
+
+		}
 
 set_particle_values_octree:
 

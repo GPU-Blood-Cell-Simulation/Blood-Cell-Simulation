@@ -7,8 +7,8 @@
 
 #ifndef MIN_MAX
 #define MIN_MAX
-#define max(a,b) ( a > b ? a : b)
-#define min(a,b) ( a > b ? b : a)
+#define custom_max(a,b) ( a > b ? a : b)
+#define custom_min(a,b) ( a > b ? b : a)
 #endif // !MIN_MAX
 
 __host__ __device__ inline float3 operator*(float a, float3 v)
@@ -43,12 +43,12 @@ __host__ __device__ inline float3 operator/(float3 v1, float3 v2)
 
 __host__ __device__ inline float vmin(float3 v)
 {
-	return min(min(v.x, v.y), v.z);
+	return custom_min(custom_min(v.x, v.y), v.z);
 }
 
 __host__ __device__ inline float vmax(float3 v)
 {
-	return max(max(v.x, v.y), v.z);
+	return custom_max(custom_max(v.x, v.y), v.z);
 }
 
 __host__ __device__ inline bool isEmpty(float3 v)

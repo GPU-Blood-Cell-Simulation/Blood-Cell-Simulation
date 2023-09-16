@@ -2,29 +2,29 @@
 #include "../defines.hpp"
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/math.cuh"
-#include "math_functions.h"
-#include <cuda.h>
-#include <device_functions.h>
-#include <cuda_runtime_api.h>
+#include <cstdio>
+#include <cstdlib>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+
 #include <thrust/device_vector.h>
 #include <thrust/device_ptr.h>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
-//
-//#ifndef __CUDA_ARCH__
-//#define __CUDA_ARCH__
-//#endif
-#include "sm_60_atomic_functions.h"
+////
+////#ifndef __CUDA_ARCH__
+////#define __CUDA_ARCH__
+////#endif
+//#include "sm_60_atomic_functions.h"
+
 
 #define MORTON_POSITION_MASK 0x07
 
 #ifdef __INTELLISENSE__
 template<typename T>
-void atomicAdd_system(T*, T);
+void atomicAdd(T*, T);
 template<typename T>
-void atomicOr_system(T*, T);
+void atomicOr(T*, T);
 #endif
 
 __device__ unsigned int partEveryByteByTwo(unsigned int n)
@@ -41,7 +41,7 @@ __device__ unsigned int calculateMortonCodeIdForCell(unsigned int xId, unsigned 
 	return (partEveryByteByTwo(zId) << 2) | (partEveryByteByTwo(yId) << 1) | partEveryByteByTwo(xId);
 }
 
-__global__ void calculateCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
+__global__ void calculateOctreeCellIdKernel(const float* positionX, const float* positionY, const float* positionZ,
 	unsigned int* cellIds, unsigned int* particleIds, const unsigned int particleCount,
 	unsigned int cellWidth, unsigned int cellHeight, unsigned int cellDepth)
 {
@@ -85,36 +85,6 @@ __global__ void calculateCellStarts(const unsigned int* cellIds, const unsigned 
 }
 
 
-void createOctreeGridData(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds,
-	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* treeData, unsigned char* masks,
-	unsigned int levels, unsigned int objectCount)
-{
-	// Calculate launch parameters
-
-	const int threadsPerBlock = objectCount > 1024 ? 1024 : objectCount;
-	const int blocks = (objectCount + threadsPerBlock - 1) / threadsPerBlock;
-
-	// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
-	calculateCellIdKernel << <blocks, threadsPerBlock >> >
-		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount, cellWidth, cellHeight, cellDepth);
-
-	// 2. Sort particle ids by cell id
-
-	thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast<unsigned int>(gridCellIds);
-	thrust::device_ptr<unsigned int> values = thrust::device_pointer_cast<unsigned int>(particleIds);
-
-	thrust::stable_sort_by_key(keys, keys + objectCount, values);
-
-	// 3. Find the start of every cell
-	calculateCellStarts(gridCellIds, particleIds, treeData, objectCount);
-
-
-	calculateTreeLeafsCells << <blocks, threadsPerBlock >> > (gridCellIds, objectCount, cellCountX, cellCountY, cellCountZ,
-		cellWidth, cellHeight, cellDepth, levels, cellWidth, cellDepth, cellHeight, masks);
-}
-
-
-
 
 __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsigned int objectCount,
 	const unsigned int cellCountX, const unsigned int cellCountY, const unsigned int cellCountZ,
@@ -126,7 +96,7 @@ __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsig
 		return;
 
 	unsigned int cellMortonCodeId = cellIds[objectId];
-	unsigned int currentCellAbsoluteId = cellMortonCodeId + (ldexp(1,3*(levels - 1)) - 1) / 7; // ( 8^(levels - 1) - 1 ) / 7
+	unsigned int currentCellAbsoluteId = cellMortonCodeId + (ldexp((double)1, 3 * (levels - 1)) - 1) / 7; // ( 8^(levels - 1) - 1 ) / 7
 	unsigned int counter = 0;
 
 #pragma unroll
@@ -134,21 +104,45 @@ __global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsig
 		unsigned int parentId = currentCellAbsoluteId >> 3;
 		unsigned char childFillMask = 1 << (currentCellAbsoluteId & MORTON_POSITION_MASK);
 
-		if (!(masks[parentId] & childFillMask))
-			atomicOr_system(masks + parentId, childFillMask); //masks[parentId] |= childFillMask;
-		
+		if (!(masks[parentId] & childFillMask)) {
+			unsigned char* memPtr = masks + parentId;
+			atomicOr((unsigned int*)memPtr, (unsigned int)childFillMask); //masks[parentId] |= childFillMask;
+		}
+
 		currentCellAbsoluteId = parentId;
 	}
 
 }
 
 
-	/*unsigned int levels;
-	unsigned int treeNodesCount;
-	unsigned int leafLayerCount;
-	
-	unsigned int* treeData;
-	unsigned char* masks;*/
+
+void createOctreeGridData(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds,
+	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* treeData, unsigned char* masks,
+	unsigned int levels, unsigned int objectCount)
+{
+	// Calculate launch parameters
+
+	const int threadsPerBlock = objectCount > 1024 ? 1024 : objectCount;
+	const int blocks = (objectCount + threadsPerBlock - 1) / threadsPerBlock;
+
+	// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
+	calculateOctreeCellIdKernel << <blocks, threadsPerBlock >> >
+		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount, cellWidth, cellHeight, cellDepth);
+
+	// 2. Sort particle ids by cell id
+
+	thrust::device_ptr<unsigned int> keys = thrust::device_pointer_cast<unsigned int>(gridCellIds);
+	thrust::device_ptr<unsigned int> values = thrust::device_pointer_cast<unsigned int>(particleIds);
+
+	thrust::stable_sort_by_key(keys, keys + objectCount, values);
+
+	// 3. Find the start of every cell
+	calculateCellStarts << <blocks, threadsPerBlock >> > (gridCellIds, particleIds, treeData, objectCount);
+
+
+	calculateTreeLeafsCells << <blocks, threadsPerBlock >> > (gridCellIds, objectCount, cellCountX, cellCountY, cellCountZ,
+		cellWidth, cellHeight, cellDepth, levels, cellWidth, cellDepth, cellHeight, masks);
+}
 
 OctreeGrid::OctreeGrid(const OctreeGrid& other) : isCopy(true), gridCellIds(other.gridCellIds), particleIds(other.particleIds),
  cellCountX(other.cellCountX), cellCountY(other.cellCountY), cellCountZ(other.cellCountZ), cellWidth(other.cellWidth), cellHeight(other.cellHeight), 

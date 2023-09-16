@@ -76,7 +76,7 @@ __global__ void calculateStartAndEndOfCellKernel(const float* positionX, const f
 }
 
 void createUniformGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds,
-	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* gridCelLStarts,
+	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* gridCellStarts,
 	unsigned int* gridCellEnds, unsigned int objectCount)
 {
 	// Calculate launch parameters
