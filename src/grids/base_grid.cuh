@@ -17,7 +17,7 @@ public:
     {
         static_cast<Derived*>(this)->calculateGrid(particles);
     }
-    inline void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount)
+    inline void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount, const cudaStream_t& stream)
     {
         static_cast<Derived*>(this)->calculateGrid(positionX, positionY, positionZ, objectCount);
     }
