@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../objects/particles.cuh"
 #include "base_grid.cuh"
 #include "../defines.hpp"
+#include "../objects/particles.cuh"
 
 /// <summary>
 /// Represents a grid of uniform cell size

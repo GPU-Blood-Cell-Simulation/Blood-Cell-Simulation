@@ -1,16 +1,18 @@
 #pragma once
-#include "../utilities/math.cuh"
-#include "../objects/blood_cells.cuh"
-#include "../objects/vein_triangles.cuh"
+
 #include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
-#include <variant>
-
+#include "../objects/blood_cells.cuh"
+#include "../objects/vein_triangles.cuh"
+#include "../utilities/math.cuh"
 
 #include <cmath>
+#include <variant>
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <device_functions.h>
+
 
 using Grid = std::variant<UniformGrid*, NoGrid*>;
 

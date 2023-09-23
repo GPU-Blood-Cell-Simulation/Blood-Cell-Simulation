@@ -1,4 +1,5 @@
 #include "spring_lines.hpp"
+
 #include "../defines.hpp"
 
 #include <glad/glad.h>

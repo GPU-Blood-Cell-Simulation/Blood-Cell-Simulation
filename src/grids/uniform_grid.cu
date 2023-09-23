@@ -1,4 +1,5 @@
 #include "uniform_grid.cuh"
+
 #include "../defines.hpp"
 #include "../utilities/cuda_handle_error.cuh"
 

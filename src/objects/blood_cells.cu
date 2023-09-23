@@ -1,7 +1,8 @@
 #include "blood_cells.cuh"
+
+#include "../defines.hpp"
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/math.cuh"
-#include "../defines.hpp"
 
 #include <vector>
 

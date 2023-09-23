@@ -3,10 +3,10 @@
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/math.cuh"
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
 #include <algorithm>
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 
 __global__ void calculateCentersKernel(cudaVec3 positions, unsigned int* indices, cudaVec3 centers, int triangleCount)

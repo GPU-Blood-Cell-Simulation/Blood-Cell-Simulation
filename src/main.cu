@@ -1,26 +1,24 @@
 ﻿#include <glad/glad.h>
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
 #include "defines.hpp"
-#include "utilities/cuda_handle_error.cuh"
-
-#include "simulation/simulation.cuh"
 #include "graphics/glcontroller.cuh"
 #include "grids/uniform_grid.cuh"
 #include "grids/no_grid.cuh"
-
 #include "objects/blood_cells.cuh"
 #include "objects/blood_cells_factory.hpp"
 #include "objects/vein_triangles.cuh"
 #include "objects/cylindermesh.hpp"
-
-#include <GLFW/glfw3.h>
-#include <sstream>
+#include "simulation/simulation_controller.cuh"
+#include "utilities/cuda_handle_error.cuh"
 
 #include <curand.h>
 #include <curand_kernel.h>
+#include <GLFW/glfw3.h>
+#include <sstream>
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+
 
 #define UNIFORM_TRIANGLES_GRID
 

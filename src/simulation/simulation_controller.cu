@@ -1,11 +1,15 @@
-#include "simulation.cuh"
+#include "simulation_controller.cuh"
+
 #include "../defines.hpp"
-#include "vein_collisions.cuh"
+#include "../objects/particles.cuh"
 #include "particle_collisions.cuh"
 #include "../utilities/cuda_handle_error.cuh"
+#include "vein_collisions.cuh"
 
 #include <cmath>
 #include <ctime>
+#include <curand.h>
+#include <curand_kernel.h>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"

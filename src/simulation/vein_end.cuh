@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../utilities/cuda_threads.hpp"
 #include "../objects/blood_cells.cuh"
+#include "../utilities/cuda_threads.hpp"
 
 
 class EndVeinHandler

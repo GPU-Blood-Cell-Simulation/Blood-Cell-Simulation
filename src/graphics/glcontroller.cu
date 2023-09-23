@@ -2,24 +2,20 @@
 
 #include "glcontroller.cuh"
 
-#ifdef _WIN32
-
-#include <windows.h>
-
-#endif
-
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include <iostream>
-
-#include "cudaGL.h"
-#include "cuda_gl_interop.h"
-
+#include "../objects/vein_triangles.cuh"
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/cuda_vec3.cuh"
 
-#include "../objects/vein_triangles.cuh"
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#include <iostream>
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include "cudaGL.h"
+#include "cuda_gl_interop.h"
 
 
 namespace graphics

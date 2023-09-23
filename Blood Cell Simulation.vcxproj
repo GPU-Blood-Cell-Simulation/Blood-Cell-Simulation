@@ -113,7 +113,7 @@
     <CudaCompile Include="src\simulation\vein_collisions.cu" />
     <CudaCompile Include="src\grids\uniform_grid.cu" />
     <CudaCompile Include="src\main.cu" />
-    <CudaCompile Include="src\simulation\simulation.cu" />
+    <CudaCompile Include="src\simulation\simulation_controller.cu" />
     <CudaCompile Include="src\simulation\vein_end.cu" />
     <CudaCompile Include="src\utilities\cuda_vec3.cu" />
   </ItemGroup>
@@ -497,6 +497,11 @@
     <ClInclude Include="Libraries\include\glm\vec3.hpp" />
     <ClInclude Include="Libraries\include\glm\vec4.hpp" />
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
+    <ClInclude Include="src\config\blood_cells_definition.hpp" />
+    <ClInclude Include="src\config\graphics.hpp" />
+    <ClInclude Include="src\config\physics.hpp" />
+    <ClInclude Include="src\config\simulation.hpp" />
+    <ClInclude Include="src\config\vein_definition.hpp" />
     <ClInclude Include="src\objects\blood_cells.cuh" />
     <ClInclude Include="src\objects\blood_cells_factory.hpp" />
     <ClInclude Include="src\graphics\spring_lines.hpp" />
@@ -519,7 +524,7 @@
     <ClInclude Include="src\simulation\particle_collisions.cuh" />
     <ClInclude Include="src\grids\uniform_grid.cuh" />
     <ClInclude Include="src\simulation\vein_collisions.cuh" />
-    <ClInclude Include="src\simulation\simulation.cuh" />
+    <ClInclude Include="src\simulation\simulation_controller.cuh" />
     <ClInclude Include="src\simulation\vein_end.cuh" />
     <ClInclude Include="src\utilities\cuda_handle_error.cuh" />
     <ClInclude Include="src\utilities\cuda_vec3.cuh" />

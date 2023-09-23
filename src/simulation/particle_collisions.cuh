@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../grids/uniform_grid.cuh"
 #include "../grids/no_grid.cuh"
+#include "../grids/uniform_grid.cuh"
 #include "../objects/blood_cells.cuh"
 #include "../utilities/math.cuh"
 

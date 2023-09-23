@@ -1,9 +1,10 @@
 #ifndef BLOOD_CELLS_H
 #define BLOOD_CELLS_H
 
+#include "../defines.hpp"
 #include "particles.cuh"
 #include "../utilities/math.cuh"
-#include "../defines.hpp"
+
 
 constexpr auto NO_SPRING = 0;
 

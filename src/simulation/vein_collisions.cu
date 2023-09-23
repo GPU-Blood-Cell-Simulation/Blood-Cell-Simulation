@@ -1,6 +1,7 @@
 #include "vein_collisions.cuh"
-#include "../utilities/vertex_index_enum.h"
+
 #include "../utilities/cuda_handle_error.cuh"
+#include "../utilities/vertex_index_enum.h"
 
 
 namespace sim

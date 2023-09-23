@@ -1,9 +1,10 @@
 #pragma once
+
 #include "../defines.hpp"
-#include "../utilities/cuda_vec3.cuh"
-#include "../utilities/vertex_index_enum.h"
-#include "../utilities/math.cuh"
 #include "../graphics/mesh.hpp"
+#include "../utilities/cuda_vec3.cuh"
+#include "../utilities/math.cuh"
+#include "../utilities/vertex_index_enum.h"
 
 #include <vector>
 #include <tuple>

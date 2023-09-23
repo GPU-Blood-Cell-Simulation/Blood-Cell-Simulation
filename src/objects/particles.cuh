@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../utilities/cuda_vec3.cuh"
 
 /// <summary>
