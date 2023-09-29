@@ -1,7 +1,6 @@
 #pragma once
 
 #include "base_grid.cuh"
-#include "../defines.hpp"
 #include "../objects/particles.cuh"
 
 /// <summary>

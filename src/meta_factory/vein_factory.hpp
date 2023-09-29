@@ -1,14 +1,10 @@
 #pragma once
 
-#include "config/blood_cells_definition.hpp"
-#include "config/graphics.hpp"
-#include "config/physics.hpp"
-#include "config/simulation.hpp"
-#include "config/vein_definition.hpp"
+#include "../config/simulation.hpp"
+#include "../config/vein_definition.hpp"
 
-
-// Camera movement speed
-inline constexpr float cameraMovementSpeed = width * cameraMovementSpeedCoefficient;
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 
 // cylinder model data:
 inline constexpr float cylinderHeight = 0.8 * height;

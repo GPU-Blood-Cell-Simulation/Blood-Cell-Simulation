@@ -1,5 +1,7 @@
 #include "vein_triangles.cuh"
 
+#include "../config/simulation.hpp"
+#include "../config/vein_definition.hpp"
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/math.cuh"
 
@@ -10,7 +12,6 @@
 
 
 __global__ void calculateCentersKernel(cudaVec3 positions, unsigned int* indices, cudaVec3 centers, int triangleCount)
-
 {
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 	if (id >= triangleCount)

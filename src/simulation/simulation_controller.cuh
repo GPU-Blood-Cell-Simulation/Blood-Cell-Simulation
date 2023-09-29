@@ -10,6 +10,8 @@
 
 #include <variant>
 
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 using Grid = std::variant<UniformGrid*, NoGrid*>;
 
@@ -31,7 +33,9 @@ namespace sim
 		CudaThreads veinVerticesThreads;
 		CudaThreads veinTrianglesThreads;
 
-		EndVeinHandler endVeinHandler;
+		//EndVeinHandler endVeinHandler;
+
+		std::array<cudaStream_t, bloodCellTypeCount> streams;
 
 		void generateRandomPositions();
 	};

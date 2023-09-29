@@ -1,6 +1,7 @@
 #include "simulation_controller.cuh"
 
-#include "../defines.hpp"
+#include "../meta_factory/blood_cell_factory.hpp"
+#include "../meta_factory/vein_factory.hpp"
 #include "../objects/particles.cuh"
 #include "particle_collisions.cuh"
 #include "../utilities/cuda_handle_error.cuh"
@@ -10,9 +11,6 @@
 #include <ctime>
 #include <curand.h>
 #include <curand_kernel.h>
-
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
 
 
 namespace sim
@@ -28,6 +26,13 @@ namespace sim
 		veinVerticesThreads(triangles.vertexCount),
 		veinTrianglesThreads(triangles.triangleCount)
 	{
+		// Create streams
+		for (int i = 0; i < bloodCellTypeCount; i++)
+		{
+			streams[i] = cudaStream_t();
+			cudaStreamCreate(&streams[i]);
+		}
+
 		// Generate random particle positions
 		generateRandomPositions();
 	}
@@ -35,7 +40,6 @@ namespace sim
 	// Generate initial positions and velocities of particles
 	void SimulationController::generateRandomPositions()
 	{
-
 		// Set up random seeds
 		curandState* devStates;
 		HANDLE_ERROR(cudaMalloc(&devStates, particleCount * sizeof(curandState)));
@@ -95,7 +99,7 @@ namespace sim
 
 				// 3. Propagate particle forces into neighbors
 
-				bloodCells.gatherForcesFromNeighbors(bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock);
+				bloodCells.gatherForcesFromNeighbors(streams);
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions for particles
@@ -116,11 +120,11 @@ namespace sim
 				triangles.calculateCenters(veinTrianglesThreads.blocks, veinTrianglesThreads.threadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
 
-				if constexpr (useBloodFlow)
+				/*if constexpr (useBloodFlow)
 				{
 					endVeinHandler.Handle(bloodCells);
 					HANDLE_ERROR(cudaPeekAtLastError());
-				}		
+				}		*/
 
 			}, particleGrid, triangleGrid);
 	}

@@ -1,6 +1,6 @@
 #include "model.hpp"
 
-#include "../defines.hpp"
+#include "../meta_factory/blood_cell_factory.hpp"
 #include "textures/texture_loading.hpp"
 
 #include <assimp/Importer.hpp>

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "camera.hpp"
-#include "../defines.hpp"
+#include "../config/graphics.hpp"
+#include "../config/simulation.hpp"
 #include "inputcontroller.hpp"
 #include "light.hpp"
 #include "model.hpp"
@@ -20,7 +21,7 @@ namespace graphics
 	class GLController {
 	public:
 
-		GLController(GLFWwindow* window, Mesh veinMesh, std::vector<unsigned int>&& springLinesData);
+		GLController(GLFWwindow* window, Mesh veinMesh);
 		void calculateOffsets(cudaVec3 positions);
 		void calculateTriangles(VeinTriangles triangles);
 		void draw();

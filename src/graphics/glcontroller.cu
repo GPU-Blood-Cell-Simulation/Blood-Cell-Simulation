@@ -2,6 +2,7 @@
 
 #include "glcontroller.cuh"
 
+#include "../meta_factory/blood_cell_factory.hpp"
 #include "../objects/vein_triangles.cuh"
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/cuda_vec3.cuh"
@@ -65,8 +66,8 @@ namespace graphics
 	}
 
 
-	graphics::GLController::GLController(GLFWwindow* window, Mesh veinMesh, std::vector<unsigned int>&& springLinesData) :
-		veinModel(veinMesh), springLines(std::move(springLinesData), particleModel.getCudaOffsetBuffer())
+	graphics::GLController::GLController(GLFWwindow* window, Mesh veinMesh) :
+		veinModel(veinMesh), springLines(particleModel.getCudaOffsetBuffer())
 	{
 		// Set up GLFW to work with inputController
 		glfwSetWindowUserPointer(window, &inputController);

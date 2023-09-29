@@ -1,69 +1,82 @@
 #include "blood_cells.cuh"
 
-#include "../defines.hpp"
+#include "../meta_factory/blood_cell_factory.hpp"
 #include "../utilities/cuda_handle_error.cuh"
 #include "../utilities/math.cuh"
+#include "../utilities/cuda_threads.hpp"
 
 #include <vector>
 
 #include "cuda_runtime.h"
 
 
-BloodCells::BloodCells(int cellCount, int particlesInCell, const float* graphDesc) :
-	particles(cellCount * particlesInCell)
-{
-	int graphSize = particlesInCell * particlesInCell;
+constexpr int NO_SPRING = 0;
 
-	HANDLE_ERROR(cudaMalloc(&springsGraph, sizeof(float) * graphSize));
-	HANDLE_ERROR(cudaMemcpy(springsGraph, graphDesc, sizeof(float) * graphSize, cudaMemcpyHostToDevice));
+BloodCells::BloodCells()
+{
+	HANDLE_ERROR(cudaMalloc(&dev_springGraph, sizeof(float) * totalGraphSize));
+	HANDLE_ERROR(cudaMemcpy(dev_springGraph, springGraph.data(), sizeof(float) * totalGraphSize, cudaMemcpyHostToDevice));
 }
 
-BloodCells::BloodCells(const BloodCells& other) : isCopy(true), particles(other.particles), springsGraph(other.springsGraph) {}
-
+BloodCells::BloodCells(const BloodCells& other) : isCopy(true), particles(other.particles), dev_springGraph(other.dev_springGraph) {}
 
 BloodCells::~BloodCells()
 {
 	if (!isCopy)
 	{
-		HANDLE_ERROR(cudaFree(springsGraph));
+		HANDLE_ERROR(cudaFree(dev_springGraph));
 	}
 }
 
-
-__global__ static void gatherForcesKernel(BloodCells cells);
-
-
-void BloodCells::gatherForcesFromNeighbors(int blocks, int threadsPerBlock)
+/// <summary>
+/// Adjust the force acting on every particle based on the forces applied to its neighbors connected by springs
+/// </summary>
+template<int bloodCellCount, int particlesInBloodCell, int particlesStart, int springGraphStart>
+__global__ static void gatherForcesKernel(BloodCells bloodCells)
 {
-	gatherForcesKernel << <blocks, threadsPerBlock >> > (*this);
-}
-
-
-__global__ static void gatherForcesKernel(BloodCells cells)
-{
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int inCellIndex = index % particlesInBloodCell;
-
-	if (index >= particleCount)
+	int indexInType = blockIdx.x * blockDim.x + threadIdx.x;
+	if (indexInType >= particlesInBloodCell * bloodCellCount)
 		return;
 
-	float3 pos = cells.particles.positions.get(index);
-	float3 velo = cells.particles.velocities.get(index);
+	int indexInCell = indexInType % particlesInBloodCell;
+	int realIndex = particlesStart + indexInType;
 
+	float3 position = bloodCells.particles.positions.get(realIndex);
+	float3 velocity = bloodCells.particles.velocities.get(realIndex);
+	float3 force{ 0, 0, 0 };
+
+	#pragma unroll
 	for (int neighbourCellindex = 0; neighbourCellindex < particlesInBloodCell; neighbourCellindex++)
 	{
-		float springLen = cells.springsGraph[inCellIndex * particlesInBloodCell + neighbourCellindex];
+		int springLength = bloodCells.dev_springGraph[springGraphStart + neighbourCellindex * particlesInBloodCell + indexInCell];
 
-		if (springLen == NO_SPRING)
-			continue;
+		if (springLength != NO_SPRING)
+		{
+			int neighbourIndex = realIndex - indexInCell + neighbourCellindex;
 
-		int neighbourIndex = index - inCellIndex + neighbourCellindex;
+			float3 neighbourPosition = bloodCells.particles.positions.get(neighbourIndex);
+			float3 neighbourVelocity = bloodCells.particles.velocities.get(neighbourIndex);
 
-		float3 neighbourPos = cells.particles.positions.get(neighbourIndex);
-		float3 neighbourVelo = cells.particles.velocities.get(neighbourIndex);
+			float springForce = bloodCells.calculateParticleSpringForce(position, neighbourPosition, velocity, neighbourVelocity, springLength);
 
-		float springForce = cells.calculateParticleSpringForce(pos, neighbourPos, velo, neighbourVelo, springLen);
-
-		cells.particles.forces.add(index, springForce * normalize(neighbourPos - pos));
+			force = force + springForce * normalize(neighbourPosition - position);
+		}		
 	}
+	bloodCells.particles.forces.add(realIndex, force);
+}
+
+void BloodCells::gatherForcesFromNeighbors(const std::array<cudaStream_t, bloodCellTypeCount>& streams)
+{
+	using IndexList = mp_iota_c<bloodCellTypeCount>;
+	mp_for_each<IndexList>([&](auto i)
+	{
+		using BloodCellDefinition = mp_at_c<BloodCellList, i>;
+		constexpr int particlesStart = particlesStarts[i];
+		constexpr int graphStart = accumulatedGraphSizes[i];
+
+		CudaThreads threads(BloodCellDefinition::count * BloodCellDefinition::particlesInCell);
+		gatherForcesKernel<BloodCellDefinition::count, BloodCellDefinition::particlesInCell, particlesStart, graphStart>
+			<< <threads.blocks, threads.threadsPerBlock, 0, streams[i] >> > (*this);
+	});
+	
 }

@@ -1,6 +1,6 @@
 #include "mesh.hpp"
 
-#include "../defines.hpp"
+#include "../meta_factory/blood_cell_factory.hpp"
 
 #include <glad/glad.h>
 #include <memory>

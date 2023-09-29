@@ -1,11 +1,12 @@
 ﻿#include <glad/glad.h>
 
-#include "defines.hpp"
+#include "config/simulation.hpp"
 #include "graphics/glcontroller.cuh"
 #include "grids/uniform_grid.cuh"
 #include "grids/no_grid.cuh"
+#include "meta_factory/blood_cell_factory.hpp"
+#include "meta_factory/vein_factory.hpp"
 #include "objects/blood_cells.cuh"
-#include "objects/blood_cells_factory.hpp"
 #include "objects/vein_triangles.cuh"
 #include "objects/cylindermesh.hpp"
 #include "simulation/simulation_controller.cuh"
@@ -14,6 +15,7 @@
 #include <curand.h>
 #include <curand_kernel.h>
 #include <GLFW/glfw3.h>
+#include <iostream> // for debugging purposes
 #include <sstream>
 
 #include "cuda_runtime.h"
@@ -85,12 +87,11 @@ int main()
 // Main simulation loop - upon returning from this function all memory-freeing destructors are called
 void programLoop(GLFWwindow* window)
 {
-    double lastTime = glfwGetTime();
+     double lastTime = glfwGetTime();
     int frameCount = 0;
 
-    // Create dipols
-    BloodCellsFactory factory;
-    BloodCells bloodCells = factory.createBloodCells<particlesInBloodCell>();
+    // Create blood cells
+    BloodCells bloodCells;
 
     // Create vein mesh
     CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);
@@ -111,7 +112,7 @@ void programLoop(GLFWwindow* window)
     sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
 
     // Create a graphics controller
-    graphics::GLController glController(window, veinMesh, factory.getSpringIndices());
+    graphics::GLController glController(window, veinMesh);
 
     // MAIN LOOP HERE - dictated by glfw
 
