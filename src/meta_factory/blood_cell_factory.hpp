@@ -93,8 +93,8 @@ inline constexpr auto springGraphGenerator = [&]()
 			static_assert(SpringDefinition::end < BloodCellDefinition::particlesInCell);
 
 			// Fill the graph
-			arr[graphStart + SpringDefinition::start * particlesInThisCell + SpringDefinition::end] = SpringDefinition::length;
-			arr[graphStart + SpringDefinition::end * particlesInThisCell + SpringDefinition::start] = SpringDefinition::length;
+			arr[graphStart + SpringDefinition::start * particlesInThisCell + SpringDefinition::end] = SpringDefinition::length * springLengthCoefficient;
+			arr[graphStart + SpringDefinition::end * particlesInThisCell + SpringDefinition::start] = SpringDefinition::length * springLengthCoefficient;
 		});
 	});
 	return arr;

@@ -48,7 +48,7 @@ __global__ static void gatherForcesKernel(BloodCells bloodCells)
 	#pragma unroll
 	for (int neighbourCellindex = 0; neighbourCellindex < particlesInBloodCell; neighbourCellindex++)
 	{
-		int springLength = bloodCells.dev_springGraph[springGraphStart + neighbourCellindex * particlesInBloodCell + indexInCell];
+		float springLength = bloodCells.dev_springGraph[springGraphStart + neighbourCellindex * particlesInBloodCell + indexInCell];
 
 		if (springLength != NO_SPRING)
 		{

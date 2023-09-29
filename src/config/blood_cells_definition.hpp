@@ -11,6 +11,7 @@ using namespace boost::mp11;
 // BLOOD CELL PARAMETERS
 
 inline constexpr float particleRadius = 5;
+inline constexpr float springLengthCoefficient = 1.0f;
 
 // Please always double check your commas!
 using BloodCellList = mp_list<
