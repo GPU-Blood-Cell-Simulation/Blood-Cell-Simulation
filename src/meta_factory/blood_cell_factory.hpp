@@ -87,6 +87,12 @@ inline constexpr auto springGraphGenerator = [&]()
 		mp_for_each<IndexListPerBloodCell>([&](auto j)
 		{
 			using SpringDefinition = mp_at_c<SpringList, j>;
+
+			// Check if the spring definition is well formed
+			static_assert(SpringDefinition::start >= 0);
+			static_assert(SpringDefinition::end < BloodCellDefinition::particlesInCell);
+
+			// Fill the graph
 			arr[graphStart + SpringDefinition::start * particlesInThisCell + SpringDefinition::end] = SpringDefinition::length;
 			arr[graphStart + SpringDefinition::end * particlesInThisCell + SpringDefinition::start] = SpringDefinition::length;
 		});
