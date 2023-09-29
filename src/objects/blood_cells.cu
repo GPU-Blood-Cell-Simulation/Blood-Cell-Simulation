@@ -10,7 +10,7 @@
 #include "cuda_runtime.h"
 
 
-constexpr int NO_SPRING = 0;
+constexpr float NO_SPRING = 0;
 
 BloodCells::BloodCells()
 {
