@@ -2,7 +2,7 @@
 
 #include "../src/utilities/cuda_threads.hpp"
 
-TEST(OneInstance, CudaThreadsTests) {
+TEST(CudaThreadsTests, OneInstance) {
 	CudaThreads threads(1);
 
 	EXPECT_EQ(1, threads.blocks);
@@ -10,7 +10,7 @@ TEST(OneInstance, CudaThreadsTests) {
 }
 
 
-TEST(LessThanMaxThreads, CudaThreadsTests) {
+TEST(CudaThreadsTests, LessThanMaxThreads) {
 	const int instances = CudaThreads::maxThreadsInBlock / 2;
 
 	CudaThreads threads(instances);
@@ -20,7 +20,7 @@ TEST(LessThanMaxThreads, CudaThreadsTests) {
 }
 
 
-TEST(MaxThreads, CudaThreadsTests) {
+TEST(CudaThreadsTests, MaxThreads) {
 	CudaThreads threads(CudaThreads::maxThreadsInBlock);
 
 	EXPECT_EQ(1, threads.blocks);
@@ -28,7 +28,7 @@ TEST(MaxThreads, CudaThreadsTests) {
 }
 
 
-TEST(TwoTimesMaxThreads, CudaThreadsTests) {
+TEST(CudaThreadsTests, TwoTimesMaxThreads) {
 	CudaThreads threads(CudaThreads::maxThreadsInBlock * 2);
 
 	EXPECT_EQ(2, threads.blocks);
@@ -36,7 +36,7 @@ TEST(TwoTimesMaxThreads, CudaThreadsTests) {
 }
 
 
-TEST(TwoAndAHalfTimesMaxThreads, CudaThreadsTests) {
+TEST(CudaThreadsTests, TwoAndAHalfTimesMaxThreads) {
 	CudaThreads threads(CudaThreads::maxThreadsInBlock * 2.5);
 
 	EXPECT_EQ(3, threads.blocks);
