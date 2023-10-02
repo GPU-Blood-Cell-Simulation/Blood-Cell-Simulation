@@ -71,5 +71,5 @@ __global__ void constructBinaryRadixTree(binary_radix_tree tree)
     int lambda = id + s*d + custom_min(d, 0);
 
     tree.internalNodesLeftId[id] = lambda;
-    tree.internalNodesChildFlag[id] = unsigned char(( custom_min(id,j) != lambda ) << 1) | (custom_max(id, j) != lambda + 1);
+    tree.internalNodesChildFlag[id] = unsigned char(( custom_min(id,j) == lambda ) << 1) | (custom_max(id, j) == lambda + 1);
 }
