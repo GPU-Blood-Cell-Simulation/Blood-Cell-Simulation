@@ -518,6 +518,7 @@
     <ClInclude Include="src\grids\uniform_grid.cuh" />
     <ClInclude Include="src\simulation\vein_collisions.cuh" />
     <ClInclude Include="src\simulation\simulation.cuh" />
+    <ClInclude Include="src\structures\binary_radix_tree.cuh" />
     <ClInclude Include="src\utilities\cuda_handle_error.cuh" />
     <ClInclude Include="src\utilities\cuda_vec3.cuh" />
     <ClInclude Include="src\utilities\math.cuh" />

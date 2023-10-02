@@ -78,6 +78,10 @@ __host__ __device__ inline float length(float3 v)
 	return sqrtf(length_squared(v));
 }
 
+__host__ __device__ inline int sign(int x) {
+	return (x > 0) - (x < 0);
+}
+
 // TODO: is there a way to compute the inverse square root faster?
 __host__ __device__ inline float3 normalize(float3 v) // versor
 {
