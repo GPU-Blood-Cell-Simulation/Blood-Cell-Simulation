@@ -62,11 +62,9 @@ __global__ void calculateOctreeCellIdKernel(const float* positionX, const float*
 __global__ void calculateCellStarts(const unsigned int* cellIds, const unsigned int* particleIds,
 	unsigned int* treeData, unsigned int cellCount);
  
-__global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsigned int objectCount,
-	const unsigned int cellCountX, const unsigned int cellCountY, const unsigned int cellCountZ,
-	const unsigned int cellWidth, const unsigned int cellHeight, const unsigned int cellDepth, const unsigned int levels
-	, const float width, const float height, const float depth, unsigned char* masks);
+__global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsigned int objectCount, const unsigned int levels
+	, unsigned char* masks, unsigned int* shifts);
 
 void createOctreeGridData(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds,
 	unsigned int* particleIds, float cellWidth, float cellHeight, float cellDepth, unsigned int* treeData, unsigned char* masks,
-	unsigned int levels, unsigned int objectCount);
+	unsigned int* shifts, unsigned int levels, unsigned int objectCount);

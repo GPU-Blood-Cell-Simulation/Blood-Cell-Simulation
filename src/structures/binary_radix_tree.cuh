@@ -13,12 +13,12 @@
 __device__ int __clz(int  x);
 #endif
 
-class binary_radix_tree
+struct binary_radix_tree
 {
-public:
     unsigned int* radixData;
-    unsigned int* internalNodesLeftId; // right is +1
-    unsigned char* internalNodesChildFlag; // 2 bytes, first for left child, second for right, 1 means child is internal node
+    unsigned int* internalNodesLeftRange;
+    unsigned int* internalNodesRightRange;
+    unsigned int* internalNodesLeftChildId; 
     unsigned int differentKeysCount;
     unsigned int treeDepth;
 
@@ -28,8 +28,9 @@ public:
         this->differentKeysCount = differentKeysCount;
         this->treeDepth = treeDepth;
         //this->nodesCount = pow(8, treeDepth + 1)/7;
-        HANDLE_ERROR(cudaMalloc((void**)&internalNodesLeftId, (differentKeysCount - 1) * sizeof(unsigned int)));
-        HANDLE_ERROR(cudaMalloc((void**)&internalNodesChildFlag, (differentKeysCount - 1) * sizeof(unsigned char)));
+        HANDLE_ERROR(cudaMalloc((void**)&internalNodesLeftRange, (differentKeysCount - 1) * sizeof(unsigned int)));
+        HANDLE_ERROR(cudaMalloc((void**)&internalNodesRightRange, (differentKeysCount - 1) * sizeof(unsigned int)));
+        HANDLE_ERROR(cudaMalloc((void**)&internalNodesLeftChildId, (differentKeysCount - 1) * sizeof(unsigned int)));
     }
 
     __device__ int delta(unsigned int i, unsigned int j)
@@ -42,7 +43,7 @@ public:
 };
 
 
-__global__ void constructBinaryRadixTree(binary_radix_tree tree)
+__global__ void constructBinaryRadixTree(binary_radix_tree& tree)
 {
     unsigned int id;
     if(id > tree.differentKeysCount - 1)
@@ -70,6 +71,7 @@ __global__ void constructBinaryRadixTree(binary_radix_tree tree)
 
     int lambda = id + s*d + custom_min(d, 0);
 
-    tree.internalNodesLeftId[id] = lambda;
-    tree.internalNodesChildFlag[id] = unsigned char(( custom_min(id,j) == lambda ) << 1) | (custom_max(id, j) == lambda + 1);
+    tree.internalNodesLeftRange[id] = custom_min(id, j);
+    tree.internalNodesRightRange[id] = custom_max(id, j);
+    tree.internalNodesLeftChildId[id] = lambda;
 }
