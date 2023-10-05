@@ -24,6 +24,7 @@ public:
 
 	unsigned int* gridCellIds = 0;
 	unsigned int* particleIds = 0;
+	unsigned int* shifts;
 	/*unsigned int* gridCellStarts = 0;
 	unsigned int* gridCellEnds = 0;*/
 
