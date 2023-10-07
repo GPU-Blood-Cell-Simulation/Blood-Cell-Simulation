@@ -4,10 +4,11 @@
 
 #include <boost/mp11/list.hpp>
 
-using namespace boost::mp11;
 
 namespace preset
 {
+	using namespace boost::mp11;
+
 	inline constexpr int springLength = 10;
 
 	// TODO: add a full-graph preset

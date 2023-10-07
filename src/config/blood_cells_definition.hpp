@@ -6,30 +6,36 @@
 #include <boost/mp11/list.hpp>
 
 
-using namespace boost::mp11;
+namespace
+{
+	using namespace boost::mp11;
+	// BLOOD CELL PARAMETERS
 
-// BLOOD CELL PARAMETERS
+	inline constexpr float particleRadius = 5;
+	inline constexpr float springLengthCoefficient = 1.0f;
 
-inline constexpr float particleRadius = 5;
-inline constexpr float springLengthCoefficient = 1.0f;
+	// Please always double check your commas!
+	using UserDefinedBloodCellList = mp_list <
 
-// Please always double check your commas!
-using BloodCellList = mp_list<
+		BloodCellDef<1, 2,
+		preset::Dipole
+		>,
 
-	BloodCellDef<10, 2,
-	preset::Dipole
-	>,
+		BloodCellDef<1, 4,
+		preset::Quadrupole
+		>,
 
-	BloodCellDef<2, 4,
-	preset::Quadrupole
-	>,
+		BloodCellDef<3, 2,
+		preset::Dipole
+		>,
 
-	BloodCellDef<10, 3,
-	mp_list<
-	Spring<0, 1, 10>,
-	Spring<1, 2, 10>,
-	Spring<2, 0, 10>
-	>
-	>
+		BloodCellDef<1, 3,
+		mp_list<
+		Spring<0, 1, 10>,
+		Spring<1, 2, 10>,
+		Spring<2, 0, 10>
+		>
+		>
 
->;
+	> ;
+}
