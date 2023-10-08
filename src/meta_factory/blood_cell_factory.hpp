@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../config/blood_cells_definition.hpp"
+#include "../config/simulation.hpp"
 
 #include <array>
 #include <boost/mp11/algorithm.hpp>
@@ -58,6 +59,7 @@ namespace
 			>;
 	};
 
+	// Recursion end
 	template<>
 	struct FoldedBloodCellList<-1>
 	{
@@ -65,7 +67,44 @@ namespace
 	};
 
 	// Filter out duplicated folded types
-	using BloodCellList = mp_unique_if<FoldedBloodCellList<mp_size<UserDefinedBloodCellList>::value - 1>::type, IsDuplicate>;
+	using UniqueBloodCellList = mp_unique_if<FoldedBloodCellList<mp_size<UserDefinedBloodCellList>::value - 1>::type, IsDuplicate>;
+
+	inline constexpr bool isPowerOfTwo(int n)
+	{
+		return n & (n - 1);
+	}
+	
+	// Heuristics: powers of 2 should be at the beginning
+	inline constexpr bool orderBloodCells(int particlesInCell1, int particlesInCell2)
+	{
+		// Power of two?
+		if (isPowerOfTwo(particlesInCell1) && !isPowerOfTwo(particlesInCell2))
+			return true;
+		if (!isPowerOfTwo(particlesInCell1) && isPowerOfTwo(particlesInCell2))
+			return false;
+
+		// Even?
+		if (particlesInCell1 & 0 && particlesInCell2 & 1)
+			return true;
+		if (particlesInCell1 & 1 && particlesInCell2 & 0)
+			return false;
+
+		// Default: we don't change the order
+		return true;
+	}
+
+	// Helper meta-functor for ordering the blood cell definitions
+	template<class Def1, class Def2>
+	struct BloodCellComparator
+	{
+		static constexpr bool value = orderBloodCells(Def1::particlesInCell, Def2::particlesInCell);
+	};
+
+	// Sort the blood cell definitions
+	using BloodCellList = mp_sort<UniqueBloodCellList, BloodCellComparator>;
+
+	// Check the final list
+	static_assert(mp_size<BloodCellList>::value <= maxCudaStreams, "Max number of streams exceeded");
 
 	// Particle count
 	inline constexpr int particleCount = mp_fold<BloodCellList, mp_int<0>, Add>::value;
@@ -140,8 +179,8 @@ namespace
 				using SpringDefinition = mp_at_c<SpringList, j>;
 
 				// Check if the spring definition is well formed
-				static_assert(SpringDefinition::start >= 0);
-				static_assert(SpringDefinition::end < BloodCellDefinition::particlesInCell);
+				static_assert(SpringDefinition::start >= 0, "Ill-formed spring definition");
+				static_assert(SpringDefinition::end < BloodCellDefinition::particlesInCell, "Ill-formed spring definition");
 
 				// Fill the graph
 				arr[graphStart + SpringDefinition::start * particlesInThisCell + SpringDefinition::end] = SpringDefinition::length * springLengthCoefficient;

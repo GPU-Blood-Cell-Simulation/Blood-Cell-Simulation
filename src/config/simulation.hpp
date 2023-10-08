@@ -1,5 +1,7 @@
 #pragma once
 
+inline constexpr int maxCudaStreams = 16;
+
 inline constexpr float width = 300.0f;
 inline constexpr float height = 500.0f;
 inline constexpr float depth = 300.0f;
