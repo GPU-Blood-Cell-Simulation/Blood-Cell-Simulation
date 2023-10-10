@@ -10,9 +10,6 @@ inline constexpr float depth = 300.0f;
 // one frame simulation time span
 inline constexpr float dt = 0.1f;
 
-// initial particle velocity value
-inline constexpr float v0 = 0.1f;
-
 // uniform grid cell count
 
 inline constexpr int cellWidth = 20;

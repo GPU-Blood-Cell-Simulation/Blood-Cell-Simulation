@@ -30,7 +30,7 @@ namespace sim
 		for (int i = 0; i < bloodCellTypeCount; i++)
 		{
 			streams[i] = cudaStream_t();
-			cudaStreamCreate(&streams[i]);
+			HANDLE_ERROR(cudaStreamCreate(&streams[i]));
 		}
 
 		// Generate random particle positions
