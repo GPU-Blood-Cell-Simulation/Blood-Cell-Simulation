@@ -4,13 +4,14 @@
 #include "camera.hpp"
 #include "inputcontroller.hpp"
 #include "light.hpp"
+#include "spring_lines.hpp"
 #include "../defines.hpp"
 #include "../objects/vein_triangles.cuh"
+#include "../objects/cylindermesh.hpp"
 
 #include <memory>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
-#include "../objects/cylindermesh.hpp"
 
 namespace graphics
 {
@@ -18,8 +19,8 @@ namespace graphics
 	class GLController {
 	public:
 
-		explicit GLController(GLFWwindow* window, Mesh veinMesh);
-		void calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount);
+		GLController(GLFWwindow* window, Mesh veinMesh, std::vector<unsigned int>&& springLinesData);
+		void calculateOffsets(cudaVec3 positions);
 		void calculateTriangles(VeinTriangles triangles);
 		void draw();
 		inline void handleInput()
@@ -51,11 +52,14 @@ namespace graphics
 
 		DirLight directionalLight;
 
-		std::shared_ptr<Shader> solidColorShader;
-		std::shared_ptr<Shader> geometryPassShader;
-		std::shared_ptr<Shader> phongDeferredShader;
-		std::shared_ptr<Shader> phongForwardShader;
-		std::shared_ptr<Shader> cylinderSolidColorShader;
+		const SpringLines springLines;
+
+		std::unique_ptr<Shader> solidColorShader;
+		std::unique_ptr<Shader> geometryPassShader;
+		std::unique_ptr<Shader> phongDeferredShader;
+		std::unique_ptr<Shader> phongForwardShader;
+		std::unique_ptr<Shader> cylinderSolidColorShader;
+		std::unique_ptr<Shader> springShader;
 		
 		unsigned int gBuffer;
 

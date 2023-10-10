@@ -24,7 +24,7 @@
 
 namespace graphics
 {
-	__global__ void calculateOffsetsKernel(float* devCudaOffsetBuffer, float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
+	__global__ void calculateOffsetsKernel(float* devCudaOffsetBuffer, cudaVec3 positions)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= particleCount)
@@ -32,9 +32,9 @@ namespace graphics
 
 		// Insert any debug position changes here
 
-		devCudaOffsetBuffer[3 *id] = positionX[id];
-		devCudaOffsetBuffer[3 * id + 1] = positionY[id];
-		devCudaOffsetBuffer[3 * id + 2] = positionZ[id];
+		devCudaOffsetBuffer[3 *id] = positions.x[id];
+		devCudaOffsetBuffer[3 * id + 1] = positions.y[id];
+		devCudaOffsetBuffer[3 * id + 2] = positions.z[id];
 
 	}
 
@@ -50,8 +50,11 @@ namespace graphics
 		devVeinVBOBuffer[8 * id] = v.x;
 		devVeinVBOBuffer[8 * id + 1] = v.y;
 		devVeinVBOBuffer[8 * id + 2] = v.z;
-		devVeinVBOBuffer[8 * id + 3] = devVeinVBOBuffer[8 * id + 4] = devVeinVBOBuffer[8 * id + 5] = 0;
-		devVeinVBOBuffer[8 * id + 6] = devVeinVBOBuffer[8 * id + 7] = 0;
+		devVeinVBOBuffer[8 * id + 3] = 0;
+		devVeinVBOBuffer[8 * id + 4] = 0;
+		devVeinVBOBuffer[8 * id + 5] = 0;
+		devVeinVBOBuffer[8 * id + 6] = 0;
+		devVeinVBOBuffer[8 * id + 7] = 0;
 	}
 
 	void* mapResourceAndGetPointer(cudaGraphicsResource_t resource)
@@ -66,7 +69,8 @@ namespace graphics
 	}
 
 
-	graphics::GLController::GLController(GLFWwindow* window, Mesh veinMesh) : veinModel(veinMesh)
+	graphics::GLController::GLController(GLFWwindow* window, Mesh veinMesh, std::vector<unsigned int>&& springLinesData) :
+		veinModel(veinMesh), springLines(std::move(springLinesData), particleModel.getCudaOffsetBuffer())
 	{
 		// Set up GLFW to work with inputController
 		glfwSetWindowUserPointer(window, &inputController);
@@ -86,26 +90,26 @@ namespace graphics
 			vec3(0, 0, -1.0f)
 		};
 
-		// Set up deferred shading
-		// Set up OpenGL frame buffers
-		glGenFramebuffers(1, &gBuffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+		//// Set up deferred shading
+		//// Set up OpenGL frame buffers
+		//glGenFramebuffers(1, &gBuffer);
+		//glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 
-		unsigned int gPosition, gNormal;
-		// position color buffer
-		glGenTextures(1, &gPosition);
-		glBindTexture(GL_TEXTURE_2D, gPosition);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
-		// normal color buffer
-		glGenTextures(1, &gNormal);
-		glBindTexture(GL_TEXTURE_2D, gNormal);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+		//unsigned int gPosition, gNormal;
+		//// position color buffer
+		//glGenTextures(1, &gPosition);
+		//glBindTexture(GL_TEXTURE_2D, gPosition);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+		//// normal color buffer
+		//glGenTextures(1, &gNormal);
+		//glBindTexture(GL_TEXTURE_2D, gNormal);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
 		
 		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
 		unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -127,14 +131,15 @@ namespace graphics
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// Create the shaders
-		solidColorShader = std::make_shared<Shader>(SolidColorShader());
-		phongForwardShader = std::make_shared<Shader>(PhongForwardShader());
-		geometryPassShader = std::make_shared<Shader>(GeometryPassShader(gBuffer));
-		phongDeferredShader = std::make_shared<Shader>(PhongDeferredShader(gPosition, gNormal));
-		cylinderSolidColorShader = std::make_shared<Shader>(CylinderSolidColorShader());
+		solidColorShader = std::make_unique<Shader>(SolidColorShader());
+		phongForwardShader = std::make_unique<Shader>(PhongForwardShader());
+		//geometryPassShader = std::make_shared<Shader>(GeometryPassShader(gBuffer));
+		//phongDeferredShader = std::make_shared<Shader>(PhongDeferredShader(gPosition, gNormal));
+		cylinderSolidColorShader = std::make_unique<Shader>(CylinderSolidColorShader());
+		springShader = std::make_unique<Shader>(SpringShader());
 	}
 
-	void graphics::GLController::calculateOffsets(float* positionX, float* positionY, float* positionZ, unsigned int particleCount)
+	void graphics::GLController::calculateOffsets(cudaVec3 positions)
 	{
 		// get CUDA a pointer to openGL buffer
 		/*float* devCudaOffsetBuffer = 0;
@@ -150,7 +155,7 @@ namespace graphics
 		// translate our CUDA positions into Vertex offsets
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
-		calculateOffsetsKernel << <blocks, threadsPerBlock >> > (devCudaOffsetBuffer, positionX, positionY, positionZ, particleCount);
+		calculateOffsetsKernel << <blocks, threadsPerBlock >> > (devCudaOffsetBuffer, positions);
 
 		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
 	}
@@ -175,13 +180,15 @@ namespace graphics
 	void graphics::GLController::draw()
 	{
 
+		// Draw particles
+
 		if constexpr (!useLighting) // solidcolor
 		{
 			solidColorShader->use();
 			solidColorShader->setMatrix("model", model);
 			solidColorShader->setMatrix("view", camera.getView());
 			solidColorShader->setMatrix("projection", projection);
-			particleModel.draw(solidColorShader);
+			particleModel.draw(solidColorShader.get());
 		}
 		else
 		{
@@ -197,15 +204,23 @@ namespace graphics
 
 			phongForwardShader->setLighting(directionalLight);
 
-			particleModel.draw(phongForwardShader);
+			particleModel.draw(phongForwardShader.get());
 		}
+
+		// Draw lines
+
+		springShader->use();
+		springShader->setMatrix("projection_view_model", projection * camera.getView());
+		springLines.draw(springShader.get());
+
+		// Draw vein
 
 		cylinderSolidColorShader->use();
 		cylinderSolidColorShader->setMatrix("view", camera.getView());
 		cylinderSolidColorShader->setMatrix("projection", projection);
 
 		glCullFace(GL_FRONT);
-		veinModel.draw(cylinderSolidColorShader, false);
+		veinModel.draw(cylinderSolidColorShader.get(), false);
 		glCullFace(GL_BACK);
 
 		/////////////////////////////////////////////////////////////////////////////////////////////

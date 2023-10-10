@@ -13,7 +13,7 @@ public:
     Model(const char* path);
     Model(Mesh mesh);
 
-    void draw(const std::shared_ptr<Shader> shader, bool instanced = true) const;
+    void draw(const Shader* shader, bool instanced = true) const;
     unsigned int getCudaOffsetBuffer();
     Mesh getTopMesh();
     unsigned int getTopVboBuffer();

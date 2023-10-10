@@ -16,8 +16,6 @@ class BloodCells
 
 public:
 	Particles particles;
-	int particlesInCell;
-	int particleCount;
 	float* springsGraph;
 
 	BloodCells(int cellsCount, int particlesInCell, const float* graphDesc);
@@ -25,7 +23,8 @@ public:
 
 	~BloodCells();
 
-	void gatherForcesFromNeighbors(unsigned int blocks, unsigned int threadsPerBlock);
+	void gatherForcesFromNeighbors(int blocks, int threadsPerBlock);
+
 
 	__device__ inline float calculateParticleSpringForce(float3 p1, float3 p2, float3 v1, float3 v2, float springLength)
 	{

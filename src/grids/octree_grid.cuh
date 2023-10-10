@@ -12,10 +12,12 @@ private:
 	bool isCopy = false;
 
 public:
+	unsigned int debugFrames = 0;
+	bool done = false;
 
-	unsigned int cellWidth;
-	unsigned int cellHeight;
-	unsigned int cellDepth;
+	float cellWidth;
+	float cellHeight;
+	float cellDepth;
 	unsigned int cellCountX;
 	unsigned int cellCountY;
 	unsigned int cellCountZ;
@@ -28,6 +30,9 @@ public:
 	/*unsigned int* gridCellStarts = 0;
 	unsigned int* gridCellEnds = 0;*/
 
+	// liczba podzialow grida
+	// jesli np. levels = 2 to w kazdym wymiarze mamy 4 komorki 
+	// na najnizszym poziomie
 	unsigned int levels;
 	unsigned int treeNodesCount;
 	unsigned int leafLayerCount;
@@ -62,7 +67,7 @@ __global__ void calculateOctreeCellIdKernel(const float* positionX, const float*
 __global__ void calculateCellStarts(const unsigned int* cellIds, const unsigned int* particleIds,
 	unsigned int* treeData, unsigned int cellCount);
  
-__global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsigned int objectCount, const unsigned int levels
+__global__ void calculateTreeLeafsCells(const unsigned int* cellIds, const unsigned int* gridCellStarts, const unsigned int objectCount, const unsigned int levels
 	, unsigned char* masks, unsigned int* shifts);
 
 void createOctreeGridData(const float* positionX, const float* positionY, const float* positionZ, unsigned int* gridCellIds,

@@ -92,3 +92,11 @@ __host__ __device__ inline float3 normalize(float3 v) // versor
 	}
 	return vn;
 }
+
+// constexpr version of ceil function - normal one is notavaiable in constexpr functions
+constexpr int constCeil(float num)
+{
+	return (static_cast<float>(static_cast<int>(num)) == num)
+		? static_cast<int>(num)
+		: static_cast<int>(num) + ((num > 0) ? 1 : 0);
+}

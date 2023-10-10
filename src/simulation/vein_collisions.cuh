@@ -10,7 +10,6 @@
 
 
 #include <cmath>
-
 #include "cuda_runtime.h"
 #include "cuda_runtime_api.h"
 #include "device_launch_parameters.h"
@@ -28,7 +27,7 @@ namespace sim
 
 		// rays may be used to determine intersection with objects
 		// so its easy to store object index inside ray
-		unsigned int objectIndex = 0;
+		int objectIndex = 0;
 
 		__device__ ray(float3 origin, float3 direction);
 	};
@@ -36,17 +35,17 @@ namespace sim
 	__device__ float3 calculateBaricentric(float3 point, float3 v1, float3 v2, float3 v3);
 
 	#pragma region Main Collision Template Kernels
-	template<typename T1, typename T2>
-	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, VeinTriangles triangles, T1 particleGrid, T2 triangleGrid) {}
+	template<typename T>
+	__global__ void detectVeinCollisionsAndPropagateParticles(BloodCells cells, VeinTriangles triangles, T triangleGrid) {}
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid);
+	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells bloodCells, VeinTriangles triangles, NoGrid triangleGrid);
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid);
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid triangleGrid);
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, OctreeGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, OctreeGrid triangleGrid);
+	__global__ void detectVeinCollisionsAndPropagateParticles<OctreeGrid>(BloodCells cells, VeinTriangles triangles, OctreeGrid triangleGrid);
 	#pragma endregion
 
 	template<int xMin, int xMax, int yMin, int yMax, int zMin, int zMax>

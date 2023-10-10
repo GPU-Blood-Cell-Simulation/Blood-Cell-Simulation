@@ -22,6 +22,8 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
+#define UNIFORM_TRIANGLES_GRID
+
 //#pragma float_control( except, on )
 //// NVIDIA GPU selector for devices with multiple GPUs (e.g. laptops)
 //extern "C"
@@ -30,6 +32,7 @@
 //}
 
 void programLoop(GLFWwindow* window);
+
 
 int main()
 {
@@ -89,7 +92,8 @@ void programLoop(GLFWwindow* window)
     int frameCount = 0;
 
     // Create dipols
-    BloodCells bloodCells = BloodCellsFactory::createDipols(PARTICLE_COUNT / 2, springsInCellsLength);
+    BloodCellsFactory factory;
+    BloodCells bloodCells = factory.createBloodCells<particlesInBloodCell>();
 
     // Create vein mesh
     CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);
@@ -99,15 +103,18 @@ void programLoop(GLFWwindow* window)
     VeinTriangles triangles(veinMesh, veinMeshDefinition.getSpringLengths());
 
     // Create grids
-    UniformGrid particleGrid(PARTICLE_COUNT, 20, 20, 20);
-    OctreeGrid triangleCentersGrid(triangles.triangleCount, 5);
-    //NoGrid particleGrid, triangleCentersGrid;
+    UniformGrid particleGrid(particleCount, 20, 20, 20);
+#ifdef UNIFORM_TRIANGLES_GRID
+    OctreeGrid triangleCentersGrid(triangles.triangleCount, 2);
+#else
+    NoGrid triangleCentersGrid;
+#endif
 
     // Create the main simulation controller and inject its dependencies
     sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
 
     // Create a graphics controller
-    graphics::GLController glController(window, veinMesh);
+    graphics::GLController glController(window, veinMesh, factory.getSpringIndices());
 
     // MAIN LOOP HERE - dictated by glfw
 
@@ -122,10 +129,7 @@ void programLoop(GLFWwindow* window)
 
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(bloodCells.particles.positions.x,
-            bloodCells.particles.positions.y,
-            bloodCells.particles.positions.z,
-            bloodCells.particleCount);
+        glController.calculateOffsets(bloodCells.particles.positions);
         glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering

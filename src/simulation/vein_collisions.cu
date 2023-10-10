@@ -211,11 +211,11 @@ namespace sim
 
 
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, OctreeGrid>(BloodCells cells, VeinTriangles triangles, UniformGrid particleGrid, OctreeGrid triangleGrid)
+	__global__ void detectVeinCollisionsAndPropagateParticles<OctreeGrid>(BloodCells cells, VeinTriangles triangles,  OctreeGrid triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (particleId >= cells.particleCount)
+		if (particleId >= particleCount)
 			return;
 
 		float3 F = cells.particles.forces.get(particleId);
@@ -292,23 +292,16 @@ set_particle_values_octree:
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, UniformGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid particleGrid, UniformGrid triangleGrid )
+	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (particleId >= bloodCells.particleCount)
+		if (particleId >= particleCount)
 			return;
 
 		float3 F = bloodCells.particles.forces.get(particleId);
 		float3 velocity = bloodCells.particles.velocities.get(particleId);
 		float3 pos = bloodCells.particles.positions.get(particleId);
-
-		// upper and lower bound
-		if (pos.y >= 0.9f * height)
-			velocity.y -= 5;
-
-		if (pos.y <= 0.1f * height)
-			velocity.y += 5;
 
 		// TEST
 		//velocity = velocity + float3{ 0, 0.1f , 0 };
@@ -517,7 +510,7 @@ set_particle_values_octree:
 
 		// propagate velocities into positions
 		bloodCells.particles.positions.add(particleId, dt * velocity);
-
+		
 		// zero forces
 		bloodCells.particles.forces.set(particleId, make_float3(0, 0, 0));
 	}
@@ -525,11 +518,11 @@ set_particle_values_octree:
 	// 1. Calculate collisions between particles and vein triangles
 	// 2. Propagate forces into velocities and velocities into positions. Reset forces to 0 afterwards
 	template<>
-	__global__ void detectVeinCollisionsAndPropagateParticles<UniformGrid, NoGrid>(BloodCells bloodCells, VeinTriangles triangles, UniformGrid particleGrid, NoGrid triangleGrid)
+	__global__ void detectVeinCollisionsAndPropagateParticles<NoGrid>(BloodCells bloodCells, VeinTriangles triangles, NoGrid triangleGrid)
 	{
 		int particleId = blockDim.x * blockIdx.x + threadIdx.x;
 
-		if (particleId >= bloodCells.particleCount)
+		if (particleId >= particleCount)
 			return;
 
 		// propagate force into velocities
@@ -569,6 +562,7 @@ set_particle_values_octree:
 			const float3 s = r.origin - v0;
 			const float u = f * dot(s, h);
 			if (u < 0 || u > 1)
+				continue;
 			if (!realCollisionDetection(v0, v1, v2, r, reflectedVelociy))
 				continue;
 
@@ -577,7 +571,7 @@ set_particle_values_octree:
 			break;
 		}
 
-		if (collicionOccured)
+		if (collicionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;

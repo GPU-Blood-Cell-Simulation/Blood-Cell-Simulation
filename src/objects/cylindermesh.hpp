@@ -66,7 +66,7 @@ public:
 		);
 	}
 
-	std::tuple<int, int, int> getSpringLengths()
+	std::tuple<float, float, float> getSpringLengths()
 	{
 		return springLengths;
 	}

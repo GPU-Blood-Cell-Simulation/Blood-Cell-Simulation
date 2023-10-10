@@ -12,31 +12,34 @@ inline constexpr float depth = 300.0f;
 inline constexpr float cylinderHeight = 0.8 * height;
 inline constexpr float cylinderRadius = 0.2 * width;
 inline glm::vec3 cylinderBaseCenter = glm::vec3(width / 2.0f, 0.1f * height, depth / 2.0f);
-inline constexpr unsigned int cylinderVerticalLayers = 100;
-inline constexpr unsigned int cylinderHorizontalLayers = 30;
+inline constexpr int cylinderVerticalLayers = 10;
+inline constexpr int cylinderHorizontalLayers = 5;
 
-inline constexpr unsigned int veinHeight = static_cast<unsigned int>(cylinderHeight);
-inline constexpr unsigned int veinRadius = static_cast<unsigned int>(cylinderRadius);
+inline constexpr int veinHeight = static_cast<int>(cylinderHeight);
+inline constexpr int veinRadius = static_cast<int>(cylinderRadius);
 
-inline constexpr unsigned int cellWidth = 20;
-inline constexpr unsigned int cellHeight = 20;
-inline constexpr unsigned int cellDepth = 20;
+inline constexpr int cellWidth = 20;
+inline constexpr int cellHeight = 20;
+inline constexpr int cellDepth = 20;
 
-inline constexpr unsigned int cellCountX = static_cast<unsigned int>(width / cellWidth);
-inline constexpr unsigned int cellCountY = static_cast<unsigned int>(height / cellHeight);
-inline constexpr unsigned int cellCountZ = static_cast<unsigned int>(depth / cellDepth);
+inline constexpr int cellCountX = static_cast<int>(width / cellWidth);
+inline constexpr int cellCountY = static_cast<int>(height / cellHeight);
+inline constexpr int cellCountZ = static_cast<int>(depth / cellDepth);
 
 // octree
 inline constexpr unsigned int maxOctreeDepth = 10;
 
 // blood cell parameters
-inline constexpr unsigned int PARTICLE_COUNT = 1000;
+inline constexpr unsigned int particlesInBloodCell = 4;
+inline constexpr unsigned int bloodCellsCount = 250;
+inline constexpr unsigned int particleCount = bloodCellsCount * particlesInBloodCell;
+
 inline constexpr float springsInCellsLength = 10;
-inline constexpr float particleRadious = 5;
+inline constexpr float particleRadius = 5;
 
 // debug
-inline unsigned int FRAME = 0;
-inline unsigned int VEIN_POLYGON_MODE = 0;
+inline int FRAME = 0;
+inline int VEIN_POLYGON_MODE = 0;
 
 // ! this value should be determined experimentally !
 // one frame simulation time span
@@ -71,11 +74,17 @@ inline constexpr float collisionSpringCoeff = 0.2f;
 inline constexpr float collisionDampingCoeff = 0.02f;
 inline constexpr float collistionShearCoeff = 0.05f;
 
+// Initial velocity of particles
+inline constexpr float initVelocityX = 0.0f;
+inline constexpr float initVelocityY = -10.0f;
+inline constexpr float initVelocityZ = 0.0f;
+
+// Blood flow
+inline constexpr bool useBloodFlow = true;
+
 // Lighting
 inline constexpr bool useLighting = true;
 
 // Camera movement constants
 inline constexpr float cameraMovementSpeed = width / 100;
 inline constexpr float cameraRotationSpeed = 0.02f;
-
-

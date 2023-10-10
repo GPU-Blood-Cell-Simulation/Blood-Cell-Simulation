@@ -8,24 +8,69 @@
 class BloodCellsFactory
 {
 public:
-	BloodCellsFactory(int cellCount, int particlesInSingleCell);
+	BloodCellsFactory();
 
-	void addSpring(int cellId1, int cellId2, float springLength);
+	void addSpring(int cellId1, int cellId2, float springsInCellLength);
 
-	BloodCells createBloodCells() const;
+	BloodCells getBloodCells() const;
 
-	static BloodCells createMonopols(int cellCount);
+	template<int particlesInCell>
+	BloodCells createBloodCells() = delete;
 
-	static BloodCells createDipols(int cellCount, float springLength);
+	template<>
+	BloodCells createBloodCells<1>()
+	{
+		return getBloodCells();
+	}
 
-	static BloodCells createQuadrupole(int cellCount, float springLength);
+	template<>
+	BloodCells createBloodCells<2>()
+	{
+		addSpring(0, 1, springsInCellsLength);
 
-	static BloodCells createOctuple(int cellCount, float springLength);
+		return getBloodCells();
+	}
+
+	template<>
+	BloodCells createBloodCells<4>()
+	{
+		addSpring(0, 1, springsInCellsLength);
+		addSpring(1, 2, springsInCellsLength);
+		addSpring(2, 3, springsInCellsLength);
+		addSpring(3, 0, springsInCellsLength);
+
+		return getBloodCells();
+	}
+
+	template<>
+	BloodCells createBloodCells<8>()
+	{
+		addSpring(0, 1, springsInCellsLength);
+		addSpring(1, 2, springsInCellsLength);
+		addSpring(2, 3, springsInCellsLength);
+		addSpring(3, 0, springsInCellsLength);
+
+		addSpring(4, 5, springsInCellsLength);
+		addSpring(5, 6, springsInCellsLength);
+		addSpring(6, 7, springsInCellsLength);
+		addSpring(7, 4, springsInCellsLength);
+
+		addSpring(0, 4, springsInCellsLength);
+		addSpring(1, 5, springsInCellsLength);
+		addSpring(2, 6, springsInCellsLength);
+		addSpring(3, 7, springsInCellsLength);
+
+		return getBloodCells();
+	}
+
+	inline std::vector<unsigned int> getSpringIndices() const
+	{
+		return springIndices;
+	}
 
 private:
 	std::vector<float> springGraph;
-	int particlesInCell;
-	int cellCount;
+	std::vector<unsigned int> springIndices;
 };
 
 #endif

@@ -17,9 +17,9 @@ public:
     {
         static_cast<Derived*>(this)->calculateGrid(particles);
     }
-    inline void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, unsigned int particleCount)
+    inline void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount)
     {
-        static_cast<Derived*>(this)->calculateGrid(positionX, positionY, positionZ, particleCount);;
+        static_cast<Derived*>(this)->calculateGrid(positionX, positionY, positionZ, objectCount);
     }
     inline unsigned int calculateCellId(float3 positions)
     {

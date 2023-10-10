@@ -68,7 +68,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)Libraries\include</Include>
-      <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" --expt-relaxed-constexpr --ptxas-options=-v %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" --expt-relaxed-constexpr --ptxas-options=-v -maxrregcount 68 %(AdditionalOptions)</AdditionalOptions>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
     <CudaLink>
@@ -97,7 +97,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)Libraries\include</Include>
-      <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" --expt-relaxed-constexpr --ptxas-options=-v %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" --expt-relaxed-constexpr --ptxas-options=-v -maxrregcount 68 %(AdditionalOptions)</AdditionalOptions>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <CodeGeneration>compute_60,sm_60</CodeGeneration>
     </CudaCompile>
@@ -115,6 +115,7 @@
     <CudaCompile Include="src\grids\uniform_grid.cu" />
     <CudaCompile Include="src\main.cu" />
     <CudaCompile Include="src\simulation\simulation.cu" />
+    <CudaCompile Include="src\simulation\vein_end.cu" />
     <CudaCompile Include="src\utilities\cuda_vec3.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +128,7 @@
     <ClCompile Include="src\graphics\model.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\graphics\textures\texture_loading.cpp" />
+    <ClCompile Include="src\graphics\spring_lines.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\assimp\aabb.h" />
@@ -498,6 +500,9 @@
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp" />
     <ClInclude Include="src\objects\blood_cells.cuh" />
     <ClInclude Include="src\objects\blood_cells_factory.hpp" />
+    <ClInclude Include="src\graphics\spring_lines.hpp" />
+    <ClInclude Include="src\utilities\cuda_threads.hpp" />
+    <ClInclude Include="src\objects\cylindermesh.hpp" />
     <ClInclude Include="src\objects\vein_triangles.cuh" />
     <ClInclude Include="src\objects\particles.cuh" />
     <ClInclude Include="src\defines.hpp" />
@@ -519,6 +524,7 @@
     <ClInclude Include="src\simulation\vein_collisions.cuh" />
     <ClInclude Include="src\simulation\simulation.cuh" />
     <ClInclude Include="src\structures\binary_radix_tree.cuh" />
+    <ClInclude Include="src\simulation\vein_end.cuh" />
     <ClInclude Include="src\utilities\cuda_handle_error.cuh" />
     <ClInclude Include="src\utilities\cuda_vec3.cuh" />
     <ClInclude Include="src\utilities\math.cuh" />
@@ -681,6 +687,8 @@
     <None Include="Shaders\phong_forward.vert" />
     <None Include="Shaders\solidcolor.frag" />
     <None Include="Shaders\solidcolor.vert" />
+    <None Include="Shaders\spring.frag" />
+    <None Include="Shaders\spring.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Libraries\lib\assimp-vc143-mt.lib" />
