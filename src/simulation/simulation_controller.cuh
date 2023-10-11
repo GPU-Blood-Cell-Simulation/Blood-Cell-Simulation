@@ -6,7 +6,6 @@
 #include "../objects/blood_cells.cuh"
 #include "../objects/vein_triangles.cuh"
 #include "../utilities/cuda_threads.hpp"
-#include "vein_end.cuh"
 
 #include <variant>
 
@@ -32,8 +31,6 @@ namespace sim
 		CudaThreads bloodCellsThreads;
 		CudaThreads veinVerticesThreads;
 		CudaThreads veinTrianglesThreads;
-
-		//EndVeinHandler endVeinHandler;
 
 		std::array<cudaStream_t, bloodCellTypeCount> streams;
 

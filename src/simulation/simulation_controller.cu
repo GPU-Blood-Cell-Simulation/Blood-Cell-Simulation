@@ -6,6 +6,7 @@
 #include "particle_collisions.cuh"
 #include "../utilities/cuda_handle_error.cuh"
 #include "vein_collisions.cuh"
+#include "vein_end.cuh"
 
 #include <cmath>
 #include <ctime>
@@ -120,11 +121,11 @@ namespace sim
 				triangles.calculateCenters(veinTrianglesThreads.blocks, veinTrianglesThreads.threadsPerBlock);
 				HANDLE_ERROR(cudaPeekAtLastError());
 
-				/*if constexpr (useBloodFlow)
+				if constexpr (useBloodFlow)
 				{
-					endVeinHandler.Handle(bloodCells);
+					HandleVeinEnd(bloodCells, streams);
 					HANDLE_ERROR(cudaPeekAtLastError());
-				}		*/
+				}
 
 			}, particleGrid, triangleGrid);
 	}
