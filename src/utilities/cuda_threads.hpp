@@ -7,10 +7,6 @@
 class CudaThreads
 {
 public:
-	// TODO :
-	// anything above 768 threads (25 warps) trigger an error
-	// 'too many resources requested for launch'
-	// maybe possible to solve
 	static constexpr int maxThreadsInBlock = 1024;
 	static constexpr int threadsInWarp = 32;
 
