@@ -24,9 +24,21 @@ namespace sim
 		veinVerticesThreads(triangles.vertexCount),
 		veinTrianglesThreads(triangles.triangleCount)
 	{
+		// Create execution streams
+		cudaStreamCreate(&particleGridStream);
+		cudaStreamCreate(&trianglesGridStream);
+
 		// Generate random particle positions
 		generateRandomPositions();
 	}
+
+
+	sim::SimulationController::~SimulationController()
+	{
+		cudaStreamDestroy(particleGridStream);
+		cudaStreamDestroy(trianglesGridStream);
+	}
+
 
 	// Generate initial positions and velocities of particles
 	void SimulationController::generateRandomPositions()
@@ -82,8 +94,10 @@ namespace sim
 			{
 				// 1. Calculate grids
 				// TODO: possible optimization - these grisds can be calculated simultaneously
-				g1->calculateGrid(bloodCells.particles, particleCount);
-				g2->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
+				g1->calculateGrid(bloodCells.particles, particleCount, particleGridStream);
+				g2->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount, trianglesGridStream);
+
+				HANDLE_ERROR(cudaDeviceSynchronize());
 
 				// 2. Detect particle collisions
 				calculateParticleCollisions << < bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock >> > (bloodCells, *g1);

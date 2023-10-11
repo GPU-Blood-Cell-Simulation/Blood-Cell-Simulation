@@ -20,6 +20,7 @@ namespace sim
 	{
 	public:
 		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid);
+		~SimulationController();
 
 		void calculateNextFrame();
 	private:
@@ -31,6 +32,9 @@ namespace sim
 		CudaThreads bloodCellsThreads;
 		CudaThreads veinVerticesThreads;
 		CudaThreads veinTrianglesThreads;
+
+		cudaStream_t particleGridStream;
+		cudaStream_t trianglesGridStream;
 
 		EndVeinHandler endVeinHandler;
 

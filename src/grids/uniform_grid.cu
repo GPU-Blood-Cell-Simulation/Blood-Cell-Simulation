@@ -113,7 +113,7 @@ UniformGrid::~UniformGrid()
 	}
 }
 
-void UniformGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount)
+void UniformGrid::calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount, const cudaStream_t& stream)
 {
 	// Calculate launch parameters
 
@@ -121,7 +121,7 @@ void UniformGrid::calculateGrid(const float* positionX, const float* positionY, 
 	const int blocks = (objectCount + threadsPerBlock - 1) / threadsPerBlock;
 
 	// 1. Calculate cell id for every particle and store as pair (cell id, particle id) in two buffers
-	calculateCellIdKernel << <blocks, threadsPerBlock >> >
+	calculateCellIdKernel << <blocks, threadsPerBlock , 0, stream>> >
 		(positionX, positionY, positionZ, gridCellIds, particleIds, objectCount, cellWidth, cellHeight, cellDepth);
 
 	// 2. Sort particle ids by cell id
@@ -129,11 +129,11 @@ void UniformGrid::calculateGrid(const float* positionX, const float* positionY, 
 	thrust::device_ptr<int> keys = thrust::device_pointer_cast<int>(gridCellIds);
 	thrust::device_ptr<int> values = thrust::device_pointer_cast<int>(particleIds);
 
-	thrust::stable_sort_by_key(keys, keys + objectCount, values);
+	thrust::stable_sort_by_key(thrust::cuda::par.on(stream), keys, keys + objectCount, values);
 
 	// 3. Find the start and end of every cell
 
-	calculateStartAndEndOfCellKernel << <blocks, threadsPerBlock >> >
+	calculateStartAndEndOfCellKernel << <blocks, threadsPerBlock , 0, stream>> >
 		(positionX, positionY, positionZ, gridCellIds, particleIds, gridCellStarts, gridCellEnds, objectCount);
 }
 

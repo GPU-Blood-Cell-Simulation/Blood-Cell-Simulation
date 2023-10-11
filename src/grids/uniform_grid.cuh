@@ -32,12 +32,12 @@ public:
 	UniformGrid(const UniformGrid& other);
 	~UniformGrid();
 
-	inline void calculateGrid(const Particles& particles, int objectCount)
+	inline void calculateGrid(const Particles& particles, int objectCount,const cudaStream_t& stream)
 	{
-		calculateGrid(particles.positions.x, particles.positions.y, particles.positions.z, objectCount);
+		calculateGrid(particles.positions.x, particles.positions.y, particles.positions.z, objectCount, stream);
 	}
 
-	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount);
+	void calculateGrid(const float* positionX, const float* positionY, const float* positionZ, int objectCount, const cudaStream_t& stream);
 
 	__device__ int calculateCellId(float3 position);
 };
