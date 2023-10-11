@@ -157,6 +157,6 @@ void HandleVeinEnd(BloodCells& cells, const std::array<cudaStream_t, bloodCellTy
 				handleVeinEndsBlockSync<BloodCellDefinition::count, BloodCellDefinition::particlesInCell, particlesStart>
 				<< <blocksCnt, threadsPerBlock, 0, streams[i] >> > (cells);
 			else
-				static_assert(false, "Unknown synchrnization type");
+				static_assert(false, "Unknown synchronization type");
 		});
 }
