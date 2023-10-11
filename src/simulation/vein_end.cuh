@@ -1,16 +1,7 @@
-//#pragma once
-//
-//#include "../objects/blood_cells.cuh"
-//#include "../utilities/cuda_threads.hpp"
-//
-//
-//class EndVeinHandler
-//{
-//public:
-//	EndVeinHandler();
-//
-//	void Handle(BloodCells& cells);
-//
-//private:
-//	CudaThreads threads;
-//};
+#pragma once
+
+#include "../objects/blood_cells.cuh"
+#include "../utilities/cuda_threads.hpp"
+
+
+void HandleVeinEnd(BloodCells& cells, const std::array<cudaStream_t, bloodCellTypeCount>& streams);
