@@ -37,6 +37,14 @@ namespace sim
 		generateRandomPositions();
 	}
 
+	sim::SimulationController::~SimulationController()
+	{
+		for (int i = 0; i < bloodCellTypeCount; i++)
+		{
+			HANDLE_ERROR(cudaStreamDestroy(streams[i]));
+		}
+	}
+
 	// Generate initial positions and velocities of particles
 	void SimulationController::generateRandomPositions()
 	{

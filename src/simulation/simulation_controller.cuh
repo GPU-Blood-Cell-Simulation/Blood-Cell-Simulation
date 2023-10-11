@@ -21,6 +21,7 @@ namespace sim
 	{
 	public:
 		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid);
+		~SimulationController();
 
 		void calculateNextFrame();
 	private:
