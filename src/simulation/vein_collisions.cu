@@ -1,6 +1,7 @@
 #include "vein_collisions.cuh"
-#include "../utilities/vertex_index_enum.h"
+
 #include "../utilities/cuda_handle_error.cuh"
+#include "../utilities/vertex_index_enum.h"
 
 
 namespace sim
@@ -314,7 +315,7 @@ namespace sim
 		ray r(pos, velocityDir);
 		float3 reflectedVelociy = make_float3(0, 0, 0);
 
-		bool collicionOccured = false;
+		bool collisionOccured = false;
 		for (int triangleId = 0; triangleId < triangles.triangleCount; ++triangleId)
 		{
 			constexpr float EPS = 1e-7f;
@@ -339,11 +340,11 @@ namespace sim
 				continue;
 
 			r.objectIndex = triangleId;
-			collicionOccured = true;
+			collisionOccured = true;
 			break;
 		}
 
-		if (collicionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		if (collisionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
 		{
 			// triangles move vector, 2 is experimentall constant
 			float3 ds = 0.8f * velocityDir;

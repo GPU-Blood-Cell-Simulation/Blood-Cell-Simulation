@@ -1,12 +1,14 @@
 #pragma once
 
-#include <vector>
+#include <assimp/scene.h>
 #include <memory>
 #include <string>
-#include <assimp/scene.h>
+#include <vector>
 
-#include "shader.hpp"
 #include "mesh.hpp"
+#include "shader.hpp"
+
+
 class Model
 {
 public:

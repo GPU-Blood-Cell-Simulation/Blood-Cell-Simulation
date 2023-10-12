@@ -1,17 +1,19 @@
 #pragma once
 
-#include "model.hpp"
 #include "camera.hpp"
+#include "../config/graphics.hpp"
+#include "../config/simulation.hpp"
 #include "inputcontroller.hpp"
 #include "light.hpp"
-#include "spring_lines.hpp"
-#include "../defines.hpp"
+#include "model.hpp"
 #include "../objects/vein_triangles.cuh"
 #include "../objects/cylindermesh.hpp"
+#include "spring_lines.hpp"
 
-#include <memory>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <memory>
+
 
 namespace graphics
 {
@@ -19,7 +21,7 @@ namespace graphics
 	class GLController {
 	public:
 
-		GLController(GLFWwindow* window, Mesh veinMesh, std::vector<unsigned int>&& springLinesData);
+		GLController(GLFWwindow* window, Mesh veinMesh);
 		void calculateOffsets(cudaVec3 positions);
 		void calculateTriangles(VeinTriangles triangles);
 		void draw();

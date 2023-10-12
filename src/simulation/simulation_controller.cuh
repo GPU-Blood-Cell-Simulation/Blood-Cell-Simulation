@@ -1,16 +1,16 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
-#include "../utilities/cuda_threads.hpp"
+#include "../grids/no_grid.cuh"
+#include "../grids/uniform_grid.cuh"
 #include "../objects/blood_cells.cuh"
 #include "../objects/vein_triangles.cuh"
-#include "../grids/uniform_grid.cuh"
-#include "../grids/no_grid.cuh"
-#include "vein_end.cuh"
+#include "../utilities/cuda_threads.hpp"
 
-#include <curand.h>
-#include <curand_kernel.h>
 #include <variant>
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 using Grid = std::variant<UniformGrid*, NoGrid*>;
 
@@ -20,6 +20,7 @@ namespace sim
 	{
 	public:
 		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid);
+		~SimulationController();
 
 		void calculateNextFrame();
 	private:
@@ -32,7 +33,7 @@ namespace sim
 		CudaThreads veinVerticesThreads;
 		CudaThreads veinTrianglesThreads;
 
-		EndVeinHandler endVeinHandler;
+		std::array<cudaStream_t, bloodCellTypeCount> streams;
 
 		void generateRandomPositions();
 	};

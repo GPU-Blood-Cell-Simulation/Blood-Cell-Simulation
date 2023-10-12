@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../objects/particles.cuh"
+
 /// <summary>
 /// Base grid class - uses the Curiously Recurring Template Pattern to provide compile-time inheritance. Use it with std::variant and std::visit
 /// 

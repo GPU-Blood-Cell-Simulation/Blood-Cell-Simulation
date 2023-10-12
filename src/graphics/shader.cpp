@@ -1,12 +1,11 @@
 #include "shader.hpp"
 
 #include <fstream>
-#include <sstream>
+#include <glad/glad.h> // include glad to get all the required OpenGL headers
 #include <iostream>
-//#include <format>
+#include <sstream>
 #include <string_view>
 
-#include <glad/glad.h> // include glad to get all the required OpenGL headers
 
 std::string getShaderCode(const char* filePath)
 {

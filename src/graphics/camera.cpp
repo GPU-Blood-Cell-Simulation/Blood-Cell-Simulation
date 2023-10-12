@@ -1,6 +1,11 @@
 #include "camera.hpp"
 
+#include "../config/graphics.hpp"
+#include "../config/simulation.hpp"
+
 #include <glm/ext/matrix_transform.hpp>
+
+inline constexpr float cameraMovementSpeed = width * cameraMovementSpeedCoefficient;
 
 graphics::Camera::Camera()
 {

@@ -1,19 +1,19 @@
 #include "model.hpp"
 
-#include <iostream>
-#include <vector>
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
+#include "../meta_factory/blood_cell_factory.hpp"
 #include "textures/texture_loading.hpp"
 
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
 #include <glad/glad.h>
-#include "../defines.hpp"
+#include <iostream>
+#include <vector>
+
 
 Model::Model(const char* path)
 {
     loadModel(path);
 }
-
 
 Model::Model(Mesh mesh)
 {

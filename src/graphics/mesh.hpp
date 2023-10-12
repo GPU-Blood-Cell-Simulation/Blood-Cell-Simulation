@@ -1,11 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <memory>
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
-
 #include "shader.hpp"
+
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
+#include <memory>
+#include <vector>
+
 
 struct Vertex {
     // position

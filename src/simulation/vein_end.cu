@@ -1,5 +1,8 @@
 #include "vein_end.cuh"
-#include "../defines.hpp"
+
+#include "../config/physics.hpp"
+#include "../config/simulation.hpp"
+#include "../meta_factory/blood_cell_factory.hpp"
 #include "../utilities/math.cuh"
 
 #include "cuda_runtime.h"
@@ -11,14 +14,24 @@ constexpr float targetTeleportHeight = 0.85f * height;
 
 enum SynchronizationType { warpSync, blockSync };
 
-constexpr SynchronizationType veinEndSyncType =
-	(CudaThreads::threadsInWarp % particlesInBloodCell == 0) ? warpSync : blockSync;
 
-constexpr int CalculateThreadsPerBlock()
+constexpr SynchronizationType SelectSynchronizationType(int bloodCellsCnt, int particlesInBloodCell)
 {
-	switch (veinEndSyncType)
+	if (bloodCellsCnt * particlesInBloodCell <= CudaThreads::threadsInWarp ||
+		CudaThreads::threadsInWarp % particlesInBloodCell == 0)
+		return warpSync;
+
+	return blockSync;
+}
+
+constexpr int CalculateThreadsPerBlock(SynchronizationType syncType, int bloodCellsCnt, int particlesInBloodCell)
+{
+	switch (syncType)
 	{
 	case warpSync:
+		if (bloodCellsCnt * particlesInBloodCell < CudaThreads::threadsInWarp)
+			return bloodCellsCnt * particlesInBloodCell;
+
 		// Max number of full warps
 		return (CudaThreads::maxThreadsInBlock / CudaThreads::threadsInWarp) * CudaThreads::threadsInWarp;
 
@@ -31,30 +44,27 @@ constexpr int CalculateThreadsPerBlock()
 	}
 }
 
-constexpr int CalculateBlocksCount()
+constexpr int CalculateBlocksCount(SynchronizationType syncType, int particleCount, int particlesInBloodCell)
 {
-	return constCeil(static_cast<float>(particleCount) / CalculateThreadsPerBlock());
+	return constCeil(static_cast<float>(particleCount) / CalculateThreadsPerBlock(syncType, particleCount, particlesInBloodCell));
 }
 
 
-EndVeinHandler::EndVeinHandler():
-	threads(CalculateThreadsPerBlock(), CalculateBlocksCount())
-{}
-
-
+template <int bloodCellsCount, int particlesInBloodCell, int particlesStart>
 __global__ void handleVeinEndsBlockSync(BloodCells bloodCells)
 {
-	__shared__ bool belowVein[CalculateThreadsPerBlock()];
-	int particleId = blockDim.x * blockIdx.x + threadIdx.x;
+	__shared__ bool belowVein[CalculateThreadsPerBlock(blockSync, bloodCellsCount, particlesInBloodCell)];
+	int indexInType = blockDim.x * blockIdx.x + threadIdx.x;
 	 
-	if (particleId >= particleCount)
+	if (indexInType >= bloodCellsCount * particlesInBloodCell)
 		return;
 
-	float posY = bloodCells.particles.positions.y[particleId]; 
+	int realIndex = particlesStart + indexInType;
+	float posY = bloodCells.particles.positions.y[realIndex]; 
 
 	if (posY >= upperBoundTreshold) {
 		// Bounce particle off upper bound
-		bloodCells.particles.velocities.y[particleId] -= 5;
+		bloodCells.particles.velocities.y[realIndex] -= 5;
 	}
 
 	// Check lower bound
@@ -63,7 +73,7 @@ __global__ void handleVeinEndsBlockSync(BloodCells bloodCells)
 
 	__syncthreads();
 
-	int particleInCellIndex = particleId % particlesInBloodCell;
+	int particleInCellIndex = realIndex % particlesInBloodCell;
 	int numberOfParticlesInThread = threadIdx.x / particlesInBloodCell * particlesInBloodCell;
 
 	// Algorithm goes through all neighbours and checks if any of them is low enought to be teleported
@@ -76,29 +86,32 @@ __global__ void handleVeinEndsBlockSync(BloodCells bloodCells)
 	if (teleport)
 	{
 		// TODO: add some randomnes to velocity and change positivon to one which is always inside the vein
-		bloodCells.particles.positions.y[particleId] = targetTeleportHeight;
-		bloodCells.particles.velocities.set(particleId, make_float3(initVelocityX, initVelocityY, initVelocityZ));
+		bloodCells.particles.positions.y[realIndex] = targetTeleportHeight;
+		bloodCells.particles.velocities.set(realIndex, make_float3(initVelocityX, initVelocityY, initVelocityZ));
 	}
 }
 
-
-constexpr int initSyncBitMask = (particlesInBloodCell == 32) ? 0xffffffff : (1 << (particlesInBloodCell)) - 1;
-
-
+# include <stdio.h>
+template <int bloodCellsCount, int particlesInBloodCell, int particlesStart>
 __global__ void handleVeinEndsWarpSync(BloodCells bloodCells)
 {
-	int particleId = blockDim.x * blockIdx.x + threadIdx.x;
-	if (particleId >= particleCount)
+  	int indexInType = blockDim.x * blockIdx.x + threadIdx.x;
+
+	//printf("%d\n", indexInType);
+	if (indexInType >= bloodCellsCount * particlesInBloodCell)
 		return;
 
 	int threadInWarpID = threadIdx.x % CudaThreads::threadsInWarp;
-	float posY = bloodCells.particles.positions.y[particleId];
+
+	int realIndex = particlesStart + indexInType;
+	float posY = bloodCells.particles.positions.y[realIndex];
 
 	if (posY >= upperBoundTreshold) {
 		// Bounce particle off upper bound
-		bloodCells.particles.velocities.y[particleId] -= 5;
+		bloodCells.particles.velocities.y[realIndex] -= 5;
 	}
 
+	static constexpr int initSyncBitMask = (particlesInBloodCell == 32) ? 0xffffffff : (1 << (particlesInBloodCell)) - 1;
 	int syncBitMask = initSyncBitMask << static_cast<int>(std::floor(static_cast<float>(threadInWarpID)/particlesInBloodCell)) * particlesInBloodCell;
 
 	// Bit mask of particles, which are below treshold
@@ -106,18 +119,44 @@ __global__ void handleVeinEndsWarpSync(BloodCells bloodCells)
 
 	if (particlesBelowTreshold != 0) {
 		// TODO: add some randomnes to velocity and change positivon to one which is always inside the vein
-		bloodCells.particles.positions.y[particleId] = targetTeleportHeight;
-		bloodCells.particles.velocities.set(particleId, make_float3(initVelocityX, initVelocityY, initVelocityZ));
+		bloodCells.particles.positions.y[realIndex] = targetTeleportHeight;
+		bloodCells.particles.velocities.set(realIndex, make_float3(initVelocityX, initVelocityY, initVelocityZ));
 	}
 }
 
 
-void EndVeinHandler::Handle(BloodCells& cells)
+void HandleVeinEnd(BloodCells& cells, const std::array<cudaStream_t, bloodCellTypeCount>& streams)
 { 
-	if constexpr (veinEndSyncType == warpSync)
-		handleVeinEndsWarpSync << <threads.blocks, threads.threadsPerBlock >> > (cells);
-	else if constexpr (veinEndSyncType == blockSync)
-		handleVeinEndsBlockSync << <threads.blocks, threads.threadsPerBlock >> > (cells);
-	else
-		throw std::domain_error("Unknown synchronization type");
+	using IndexList = mp_iota_c<bloodCellTypeCount>;
+	mp_for_each<IndexList>([&](auto i)
+		{
+			using BloodCellDefinition = mp_at_c<BloodCellList, i>;
+			constexpr int particlesStart = particlesStarts[i];
+
+			constexpr SynchronizationType syncType = SelectSynchronizationType(
+				BloodCellDefinition::count,
+				BloodCellDefinition::particlesInCell
+			);
+
+			constexpr int threadsPerBlock = CalculateThreadsPerBlock(
+				syncType,
+				BloodCellDefinition::count,
+				BloodCellDefinition::particlesInCell
+			);
+
+			constexpr int blocksCnt = CalculateBlocksCount(
+				syncType,
+				BloodCellDefinition::count * BloodCellDefinition::particlesInCell,
+				BloodCellDefinition::particlesInCell
+			);
+
+			if constexpr (syncType == warpSync)
+				handleVeinEndsWarpSync<BloodCellDefinition::count, BloodCellDefinition::particlesInCell, particlesStart>
+				<< <blocksCnt, threadsPerBlock, 0, streams[i] >> > (cells);
+			else if constexpr (syncType == blockSync)
+				handleVeinEndsBlockSync<BloodCellDefinition::count, BloodCellDefinition::particlesInCell, particlesStart>
+				<< <blocksCnt, threadsPerBlock, 0, streams[i] >> > (cells);
+			else
+				static_assert(false, "Unknown synchronization type");
+		});
 }

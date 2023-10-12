@@ -1,9 +1,11 @@
 #pragma once
+
 #include "light.hpp"
 
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include <vector>
-#include <glm/gtc/type_ptr.hpp>
+
 
 // https://learnopengl.com/Getting-started/Shaders
 class Shader

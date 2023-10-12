@@ -1,5 +1,7 @@
 #include "inputcontroller.hpp"
 
+#include "../config/graphics.hpp"
+
 namespace graphics
 {
 	// GLFW keyboard callback function

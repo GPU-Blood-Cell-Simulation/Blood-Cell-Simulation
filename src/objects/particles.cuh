@@ -1,4 +1,6 @@
 #pragma once
+
+#include "../meta_factory/blood_cell_factory.hpp"
 #include "../utilities/cuda_vec3.cuh"
 
 /// <summary>
@@ -10,5 +12,5 @@ struct Particles
 	cudaVec3 velocities;
 	cudaVec3 forces;
 
-	Particles(int n) : positions(n), velocities(n), forces(n) {}
+	Particles() : positions(particleCount), velocities(particleCount), forces(particleCount) {}
 };

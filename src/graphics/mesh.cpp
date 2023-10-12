@@ -1,8 +1,10 @@
 #include "mesh.hpp"
 
+#include "../meta_factory/blood_cell_factory.hpp"
+
 #include <glad/glad.h>
 #include <memory>
-#include "../defines.hpp"
+
 
 Mesh::Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures) :
 	vertices(vertices), indices(indices), textures(textures)
