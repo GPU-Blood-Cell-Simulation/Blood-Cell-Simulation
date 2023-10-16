@@ -101,6 +101,7 @@ __global__ void propagateForcesIntoPositionsKernel(VeinTriangles triangles)
 /// </summary>
 void VeinTriangles::propagateForcesIntoPositions(int blocks, int threadsPerBlock)
 {
+	printGpuVec3(this->forces, particleCount, "Forces before propagation:");
 	propagateForcesIntoPositionsKernel << <blocks, threadsPerBlock >> > (*this);
 }
 

@@ -87,29 +87,35 @@ namespace sim
 				g2->calculateGrid(triangles.centers.x, triangles.centers.y, triangles.centers.z, triangles.triangleCount);
 				// 2. Detect particle collisions
 				calculateParticleCollisions << < bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock >> > (bloodCells, *g1);
+				HANDLE_ERROR(cudaDeviceSynchronize());
 				HANDLE_ERROR(cudaPeekAtLastError());
 
 				// 3. Propagate particle forces into neighbors
 
 				bloodCells.gatherForcesFromNeighbors(bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock);
+				HANDLE_ERROR(cudaDeviceSynchronize());
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 4. Detect vein collisions and propagate forces -> velocities, velocities -> positions for particles
-
+				//printGpuVec3(triangles.positions, triangles.vertexCount, "Triangle vertices before collision detection:");
 				detectVeinCollisionsAndPropagateParticles << < bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock >> > (bloodCells, triangles, *g2);
+				HANDLE_ERROR(cudaDeviceSynchronize());
 				HANDLE_ERROR(cudaPeekAtLastError());
-    
+				//printGpuVec3(triangles.positions, triangles.vertexCount, "Triangle vertices after collision detection:");
 				// 5. Propagate triangle forces into neighbors
 
 				triangles.gatherForcesFromNeighbors(veinVerticesThreads.blocks, veinVerticesThreads.threadsPerBlock);
+				HANDLE_ERROR(cudaDeviceSynchronize());
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 6. Propagate forces -> velocities, velocities -> positions for vein triangles
 				triangles.propagateForcesIntoPositions(veinVerticesThreads.blocks, veinVerticesThreads.threadsPerBlock);
+				HANDLE_ERROR(cudaDeviceSynchronize());
 				HANDLE_ERROR(cudaPeekAtLastError());
     
 				// 7. Recalculate triangles centers
 				triangles.calculateCenters(veinTrianglesThreads.blocks, veinTrianglesThreads.threadsPerBlock);
+				HANDLE_ERROR(cudaDeviceSynchronize());
 				HANDLE_ERROR(cudaPeekAtLastError());
 
 				if constexpr (useBloodFlow)

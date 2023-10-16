@@ -11,8 +11,6 @@
 #include <thrust/device_ptr.h>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
-#include <fstream>
-#include <iostream>
 ////
 ////#ifndef __CUDA_ARCH__
 ////#define __CUDA_ARCH__
@@ -33,90 +31,7 @@ unsigned int __byte_perm(unsigned int, unsigned int, unsigned int);
 void __syncthreads();
 #endif
 
-
-void char_bin(unsigned char v, bool newLine = true, bool printNormalNumber = false)
-{
-	if (printNormalNumber)
-		printf("(%d) ", v);
-	for (int i = 7; i >= 0; --i) {
-		printf("%d", (v >> i) & 1);
-	}
-	if (newLine)
-		printf("\n");
-}
-void int_bin(unsigned int v, bool newLine = true, bool printNormalNumber = false)
-{
-	if (printNormalNumber)
-		printf("(%d) ", v);
-	for (int i = 31; i >= 0; --i) {
-		printf("%d", (v >> i) & 1);
-		if (!(i % 8))
-			printf(" ");
-	}
-	if(newLine)
-		printf("\n");
-}
-
-static void printFirstBytesFromGpu(unsigned char* gpuMem, unsigned int count)
-{
-	unsigned char* cpuMem = new unsigned char[count];
-	HANDLE_ERROR(cudaMemcpy(cpuMem, gpuMem, count * sizeof(unsigned char), cudaMemcpyDeviceToHost));
-	HANDLE_ERROR(cudaPeekAtLastError());
-	for (int i = 0; i < count; ++i)
-		char_bin(cpuMem[i]);
-	delete[] cpuMem;
-}
-
-
-static void printGpuArray(unsigned int* gpuMem, unsigned int count)
-{
-	unsigned int* cpuMem = new unsigned int[count];
-	HANDLE_ERROR(cudaMemcpy(cpuMem, gpuMem, count * sizeof(unsigned int), cudaMemcpyDeviceToHost));
-	HANDLE_ERROR(cudaPeekAtLastError());
-	for (int i = 0; i < count; ++i) {
-		printf("[%d] ", i); int_bin(cpuMem[i], true, true);
-	}
-	delete[] cpuMem;
-}
-
-static void printGpuArray(unsigned char* gpuMem, unsigned int count)
-{
-	unsigned char* cpuMem = new unsigned char[count];
-	HANDLE_ERROR(cudaMemcpy(cpuMem, gpuMem, count * sizeof(unsigned char), cudaMemcpyDeviceToHost));
-	HANDLE_ERROR(cudaPeekAtLastError());
-	for (int i = 0; i < count; ++i) {
-		printf("[%d] ", i); char_bin(cpuMem[i], true, true);
-	}
-	delete[] cpuMem;
-}
-
-
-static void printGpuKeyValueArray(unsigned int* gpuMemKey, unsigned int* gpuMemValue, unsigned int count)
-{
-	unsigned int* cpuMemKey = new unsigned int[count];
-	unsigned int* cpuMemValue = new unsigned int[count];
-	HANDLE_ERROR(cudaMemcpy(cpuMemKey, gpuMemKey, count * sizeof(unsigned int), cudaMemcpyDeviceToHost));
-	HANDLE_ERROR(cudaMemcpy(cpuMemValue, gpuMemValue, count * sizeof(unsigned int), cudaMemcpyDeviceToHost));
-	HANDLE_ERROR(cudaPeekAtLastError());
-	for (int i = 0; i < count; ++i) {
-		printf("[%d] key = ", i); int_bin(cpuMemKey[i], false, true); printf(", value = "); int_bin(cpuMemValue[i], true, true);
-	}
-	delete[] cpuMemKey;
-	delete[] cpuMemValue;
-}
-
-static void SaveFirstBytesFromGpuToFile(unsigned char* gpuMem, unsigned int count)
-{
-	unsigned char* cpuMem = new unsigned char[count];
-	HANDLE_ERROR(cudaMemcpy(cpuMem, gpuMem, count * sizeof(unsigned char), cudaMemcpyDeviceToHost));
-	HANDLE_ERROR(cudaPeekAtLastError());
-	std::ofstream fout;
-	fout.open("C:\\Users\\hlaw\\Desktop\\file_bcs_debug.bin", std::ios_base::binary | std::ios_base::out);
-	for (int i = 0; i < count; ++i)
-		fout.write((const char*)(gpuMem + i * sizeof(unsigned char)), sizeof(unsigned char));
-	fout.close();
-
-}/*
+/*
 __device__ inline char atomicCAS(char* address, char expected, char desired) {
 	size_t long_address_modulo = (size_t)address & 3;
 	auto* base_address = (unsigned int*)((char*)address - long_address_modulo);
@@ -426,7 +341,7 @@ OctreeGrid::OctreeGrid(const unsigned int objectCount, const unsigned int levels
 
 	treeNodesCount = (pow(8, levels + 1) - 1) / 7;
 	leafLayerCount = pow(8, levels );
-	printf("Octree nodes count: %d\n", treeNodesCount);
+	//printf("Octree nodes count: %d\n", treeNodesCount);
 	size_t masksCount = sizeof(unsigned int) * ((treeNodesCount - leafLayerCount) / sizeof(unsigned int) + 1) * sizeof(unsigned char);
 	HANDLE_ERROR(cudaMalloc((void**)&masks, masksCount*sizeof(unsigned char)));
 	HANDLE_ERROR(cudaMalloc((void**)&treeData, leafLayerCount * sizeof(unsigned int)));

@@ -72,7 +72,7 @@ namespace sim
 	/// <param name="treeData">- pointers to leaves</param>
 	/// <param name="maxLevel">- octree depth in levels</param>
 	/// <returns>if collision occured with collision data reference parameter</returns>
-	__device__ bool traverseGrid(ray r, float3 end, OctreeGrid& grid, VeinTriangles& triangles, float3& reflectionVector)
+	__device__ bool traverseGrid(ray r, float3 end, OctreeGrid& grid, VeinTriangles& triangles, float3& reflectionVector, unsigned int id)
 	{
 		// necessary parameters
 		const float3 bounding = make_float3(width, height, depth);
@@ -85,7 +85,6 @@ namespace sim
 
 		const float3 directionSigns = make_float3(!(r.direction.x < 0), !(r.direction.y < 0), !(r.direction.z < 0)); // 1 plus or zero, 0 minus
 		const float3 inversedDirection = make_float3(1.0f / normalizedDirection.x, 1.0f / normalizedDirection.y, 1.0f / normalizedDirection.z);
-
 		// values
 		unsigned int parentId = 0; // root
 		float3 pos = make_float3(0.5f, 0.5f, 0.5f); // initial pos is center of root
@@ -96,6 +95,11 @@ namespace sim
 
 		float3 t = make_float3(0, 0, 0);
 		float tEndSquare = length_squared(normalizedEnd - normalizedOrigin);
+		printf("[%d] origin: x=%.3f ; y=%.3f ; z=%.3f, normalizedOrigin: x=%.3f ; y=%.3f ; z=%.3f, end x=%.3f ; y=%.3f ; z=%.3f, normalizedEnd: x=%.3f ; y=%.3f ; z=%.3f, direction x=%.3f ; y=%.3f ; z=%.3f, normalizedDirection x=%.3f ; y=%.3f ; z=%.3f, inversedDir: x=%.3f ; y=%.3f ; z=%.3f\n",
+			r.origin.x, r.origin.y, r.origin.z, normalizedOrigin.x, normalizedOrigin.y, normalizedOrigin.z, end.x, end.y, end.z, normalizedEnd.x, normalizedEnd.y, normalizedEnd.z, r.direction.x, r.direction.y, r.direction.z,
+			normalizedDirection.x, normalizedDirection.y, normalizedDirection.z, inversedDirection.x, inversedDirection.y, inversedDirection.z);
+		//printf("[%d] triagle position: x=%.5f ; y=%.5f ; z=%.5f, bounding metrics %.5f, end metrics %.5f, s_max %d, leafShift %d dirX=%.5f ; dirY=%.5f ; dirZ=%.5f ; childId %d, tEndSquare %.5f\n",
+		//	id, r.origin.x, r.origin.y, r.origin.z, length(bounding), length(end), s_max, leafShift, r.direction.x, r.direction.y, r.direction.z, childId, tEndSquare);
 
 		while (true) {
 
@@ -130,6 +134,7 @@ namespace sim
 					continue;
 
 				r.objectIndex = triangleId;
+				//printf("[%d] detected hit of particle into triangle [%d] v0x=%.2f ; v0y=%.2f ; v0z=%.2f ; v1x=%.2f ; v1y=%.2f ; v1z=%.2f ; v2x=%.2f ; v2y=%.2f ; v2z=%.2f \n", id, triangleId, v0.x, v0.y, v0.z, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
 				return true;
 			}
 
@@ -250,9 +255,20 @@ namespace sim
 
 		ray r(pos, velocityDir);
 		float3 reflectedVelociy = make_float3(0, 0, 0);
-		bool collisionOccured = traverseGrid(r, pos + dt*velocity, triangleGrid, triangles, reflectedVelociy);
+		bool collisionOccured = traverseGrid(r, pos + dt*velocity, triangleGrid, triangles, reflectedVelociy, particleId);
+		float lenn = length(pos - (pos + r.t * r.direction));
 
-		if (collisionOccured && length(pos - (pos + r.t * r.direction)) <= 5.0f)
+		/*if (isnan(r.t))
+			printf("[%d] Nan in r.t\n", particleId);
+		else if(isnan(r.direction.x))
+			printf("[%d] Nan in r.direction.x\n", particleId);
+		else if (isnan(r.direction.y))
+			printf("[%d] Nan in r.direction.y\n", particleId);
+		else if (isnan(r.direction.z))
+			printf("[%d] Nan in r.direction.z\n", particleId);*/
+
+		//printf("[%d] After collision t=%.5f ; dirX=%.5f ; dirY=%.5f ; dirZ=%.5f \n", particleId, r.t, r.direction.x, r.direction.y, r.direction.z);
+		if (collisionOccured && lenn <= 5.0f)
 		{
 			float3 ds = 0.8f * velocityDir;
 			float speed = length(velocity);
