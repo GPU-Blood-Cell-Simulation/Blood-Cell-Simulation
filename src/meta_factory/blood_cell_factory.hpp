@@ -2,7 +2,7 @@
 
 #include "../config/blood_cells_definition.hpp"
 #include "../config/simulation.hpp"
-
+#include <glm/vec3.hpp>
 #include <array>
 #include <boost/mp11/algorithm.hpp>
 #include <boost/mp11/list.hpp>
@@ -203,7 +203,7 @@ namespace
 
 	inline constexpr auto bloodCellModelsGenerator = [&]()
 		{
-			std::array<std::vector<float3>, bloodCellTypeCount> bloodCellModels;
+			std::array<std::vector<glm::vec3>, bloodCellTypeCount> bloodCellModels;
 			using IndexList = mp_iota<mp_size<BloodCellList>>;
 			mp_for_each<IndexList>([&](auto i)
 				{
@@ -219,8 +219,7 @@ namespace
 						{
 							using VertexDefinition = mp_at_c<VerticesList, j>;
 
-							bloodCellmodels[]
-
+							bloodCellmodels[i].add(make_float3(VertexDefinition::x, VertexDefinition::y, VertexDefinition::z));
 						});
 
 				});
@@ -228,4 +227,8 @@ namespace
 		};
 
 	inline constexpr auto bloodCellModels = bloodCellModelsGenerator();
+
+	// inline constexpr auto bloodCellModelSizeLambda = [&](int i) {
+	// 	return bloodCellModels[i].size();
+	// }
 }
