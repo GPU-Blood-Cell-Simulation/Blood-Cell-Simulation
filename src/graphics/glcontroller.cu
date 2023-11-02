@@ -66,7 +66,7 @@ namespace graphics
 	}
 
 
-	graphics::GLController::GLController(GLFWwindow* window, Mesh veinMesh) :
+	graphics::GLController::GLController(GLFWwindow* window, Mesh* veinMesh) :
 		veinModel(veinMesh), springLines(particleModel.getCudaOffsetBuffer())
 	{
 		// Set up GLFW to work with inputController
@@ -75,8 +75,8 @@ namespace graphics
 
 		// Register OpenGL buffer in CUDA
 		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaOffsetResource, particleModel.getCudaOffsetBuffer(), cudaGraphicsRegisterFlagsNone));
-		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinVBOResource, veinModel.getTopVboBuffer(), cudaGraphicsRegisterFlagsNone));
-		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinEBOResource, veinModel.getTopEboBuffer(), cudaGraphicsRegisterFlagsNone));
+		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinVBOResource, veinModel.getVboBuffer(0), cudaGraphicsRegisterFlagsNone));
+		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinEBOResource, veinModel.getEboBuffer(0), cudaGraphicsRegisterFlagsNone));
 		
 		// Create a directional light
 		directionalLight = DirLight
@@ -217,7 +217,7 @@ namespace graphics
 		cylinderSolidColorShader->setMatrix("projection", projection);
 
 		glCullFace(GL_FRONT);
-		veinModel.draw(cylinderSolidColorShader.get(), false);
+		veinModel.draw(cylinderSolidColorShader.get());
 		glCullFace(GL_BACK);
 
 		/////////////////////////////////////////////////////////////////////////////////////////////

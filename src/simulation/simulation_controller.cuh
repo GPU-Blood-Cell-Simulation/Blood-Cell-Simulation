@@ -19,7 +19,7 @@ namespace sim
 	class SimulationController
 	{
 	public:
-		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid);
+		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, std::vector<glm::vec3> bloodCellVertices, unsigned int bloodCellSize, Grid particleGrid, Grid triangleGrid);
 		~SimulationController();
 
 		void calculateNextFrame();
@@ -28,6 +28,9 @@ namespace sim
 		VeinTriangles& triangles;
 		Grid particleGrid;
 		Grid triangleGrid;
+
+		cudaVec3 bloodCellModel;
+		unsigned int bloodCellSize;
 
 		CudaThreads bloodCellsThreads;
 		CudaThreads veinVerticesThreads;

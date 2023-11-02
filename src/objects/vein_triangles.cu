@@ -31,8 +31,8 @@ void VeinTriangles::calculateCenters(int blocks, int threadsPerBlock)
 	calculateCentersKernel << <blocks, threadsPerBlock >> > (positions, indices, centers, triangleCount);
 }
 
-VeinTriangles::VeinTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths) :
-	triangleCount(mesh.indices.size() / 3), vertexCount(mesh.vertices.size()),
+VeinTriangles::VeinTriangles(const Mesh* mesh, const std::tuple<float, float, float>& springLengths) :
+	triangleCount(mesh->indices.size() / 3), vertexCount(mesh->vertices.size()),
 	centers(triangleCount), positions(vertexCount), velocities(vertexCount), forces(vertexCount),
 	veinVertexHorizontalDistance(std::get<0>(springLengths)),
 	veinVertexNonHorizontalDistances{ std::get<2>(springLengths), std::get<1>(springLengths), std::get<2>(springLengths) }
@@ -40,14 +40,14 @@ VeinTriangles::VeinTriangles(const Mesh& mesh, const std::tuple<float, float, fl
 	// allocate
 	HANDLE_ERROR(cudaMalloc((void**)&indices, 3 * triangleCount * sizeof(int)));
 
-	std::vector<unsigned int> indicesMem = mesh.indices;
+	std::vector<unsigned int> indicesMem = mesh->indices;
 
 	std::vector<float> vx(vertexCount);
 	std::vector<float> vy(vertexCount);
 	std::vector<float> vz(vertexCount);
 
 	int iter = 0;
-	std::for_each(mesh.vertices.begin(), mesh.vertices.end(), [&](auto& v)
+	std::for_each(mesh->vertices.begin(), mesh->vertices.end(), [&](auto& v)
 		{
 		vx[iter] = v.position.x;
 		vy[iter] = v.position.y;

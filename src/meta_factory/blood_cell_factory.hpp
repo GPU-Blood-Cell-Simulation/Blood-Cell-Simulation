@@ -17,6 +17,10 @@ namespace
 	template<class State, class Def>
 	using Add = mp_int<State::value + Def::count * Def::particlesInCell>;
 
+	// Helper meta-function for adding blood Cells
+	template<class State, class Def>
+	using AddCells = mp_int<State::value + Def::count>;
+
 	// Helper meta-function for calculating the graph size
 	template<class State, class Def>
 	using AddSquared = mp_int<State::value + Def::particlesInCell * Def::particlesInCell>;
@@ -34,7 +38,8 @@ namespace
 		<
 		IsDuplicate<State, Def>::value ? State::count + Def::count : State::count,
 		State::particlesInCell,
-		typename State::List
+		typename State::List,
+		typename State::Vertices
 		>;
 
 	// In order to merge all definitions of the same type, we first fold the list for every definitions using
@@ -52,7 +57,8 @@ namespace
 					<
 					0,
 					mp_at_c<UserDefinedBloodCellList, i>::particlesInCell,
-					typename mp_at_c<UserDefinedBloodCellList, i>::List
+					typename mp_at_c<UserDefinedBloodCellList, i>::List,
+					typename mp_at_c<UserDefinedBloodCellList, i>::Vertices
 					>,
 				AddDistinctTypes
 				>
@@ -108,6 +114,9 @@ namespace
 
 	// Particle count
 	inline constexpr int particleCount = mp_fold<BloodCellList, mp_int<0>, Add>::value;
+
+	// Blood cell count
+	inline constexpr int bloodCellCount = mp_fold<BloodCellList, mp_int<0>, AddCells>::value;
 
 	// Total particle graph size
 	inline constexpr int totalGraphSize = mp_fold<BloodCellList, mp_int<0>, AddSquared>::value;
@@ -191,4 +200,32 @@ namespace
 	};
 
 	inline constexpr auto springGraph = springGraphGenerator();
+
+	inline constexpr auto bloodCellModelsGenerator = [&]()
+		{
+			std::array<std::vector<float3>, bloodCellTypeCount> bloodCellModels;
+			using IndexList = mp_iota<mp_size<BloodCellList>>;
+			mp_for_each<IndexList>([&](auto i)
+				{
+					using BloodCellDefinition = mp_at_c<BloodCellList, i>;
+					constexpr int particlesInThisCell = BloodCellDefinition::particlesInCell;
+
+					using VerticesList = typename BloodCellDefinition::Vertices;
+					constexpr int verticesCount = mp_size<VerticesList>::value;
+					constexpr int particleStart = particlesStarts[i];
+
+					using IndexListPerBloodCell = mp_iota_c<particlesInThisCell>;
+					mp_for_each<IndexListPerBloodCell>([&](auto j)
+						{
+							using VertexDefinition = mp_at_c<VerticesList, j>;
+
+							bloodCellmodels[]
+
+						});
+
+				});
+			return bloodCellModels;
+		};
+
+	inline constexpr auto bloodCellModels = bloodCellModelsGenerator();
 }

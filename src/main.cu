@@ -95,7 +95,7 @@ void programLoop(GLFWwindow* window)
 
     // Create vein mesh
     CylinderMesh veinMeshDefinition(cylinderBaseCenter, cylinderHeight, cylinderRadius, cylinderVerticalLayers, cylinderHorizontalLayers);
-    Mesh veinMesh = veinMeshDefinition.CreateMesh();
+    SingleObjectMesh* veinMesh = veinMeshDefinition.CreateMesh();
 
     // Create vein triangles
     VeinTriangles triangles(veinMesh, veinMeshDefinition.getSpringLengths());

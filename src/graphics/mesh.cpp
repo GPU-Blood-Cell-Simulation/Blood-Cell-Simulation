@@ -4,13 +4,10 @@
 
 #include <glad/glad.h>
 #include <memory>
-
+#include <algorithm>
 
 Mesh::Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures) :
-	vertices(vertices), indices(indices), textures(textures)
-{
-	setupMesh();
-}
+	vertices(vertices), indices(indices), textures(textures) {}
 
 void Mesh::setupMesh()
 {
@@ -40,21 +37,6 @@ void Mesh::setupMesh()
 	glBindVertexArray(0);
 }
 
-void Mesh::draw(const Shader* shader, bool instanced) const
-{
-	// draw mesh
-	glBindVertexArray(VAO);
-	if (instanced)
-	{
-		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, particleCount);
-	}
-	else
-	{
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
-	}
-	glBindVertexArray(0);
-}
-
 unsigned int Mesh::getVBO()
 {
 	return VBO;
@@ -75,4 +57,47 @@ void Mesh::setVertexOffsetAttribute()
 	glVertexAttribDivisor(3, 1);
 
 	glBindVertexArray(0);
+}
+
+SingleObjectMesh::SingleObjectMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
+	: Mesh(std::move(vertices), std::move(indices), std::move(textures))
+{
+	setupMesh();
+}
+
+void Mesh::draw(const Shader* shader) const
+{
+	// draw mesh
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+}
+
+void SingleObjectMesh::drawInstanced(const Shader* shader, unsigned int instancesCount) const
+{
+	// draw mesh
+	glBindVertexArray(VAO);
+	glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, particleCount);
+	glBindVertexArray(0);
+}
+
+MultiObjectMesh::MultiObjectMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures, unsigned int objectCount)
+	: Mesh(std::move(vertices), std::move(indices), std::move(textures))
+{
+	this->objectCount = objectCount;
+	prepareMultipleObjects();
+	setupMesh();
+}
+
+void MultiObjectMesh::prepareMultipleObjects()
+{
+	for (int i = 0; i < objectCount; ++i) {
+		std::copy(vertices.begin(), vertices.end(), vertices.end());
+		std::copy(indices.begin(), indices.end(), indices.end());
+	}
+	for (int i = 1; i < objectCount; ++i) {
+		std::for_each(indices.begin(), indices.end(), [](auto& indice) {
+			indice += i * objectCount;
+		});
+	}
 }

@@ -13,49 +13,72 @@
 Model::Model(const char* path)
 {
     loadModel(path);
-}
-
-Model::Model(Mesh mesh)
-{
-    meshes.push_back(mesh);
-
-    // Set up offset buffer for the model
-    glGenBuffers(1, &cudaOffsetBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
-    glBufferData(GL_ARRAY_BUFFER, particleCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
-
+    
     // Set up vertex attrubute
-    for (Mesh& mesh : meshes)
+    for (Mesh* mesh : meshes)
     {
-        mesh.setVertexOffsetAttribute();
+        mesh->setVertexOffsetAttribute();
     }
 }
 
-void Model::draw(const Shader* shader, bool instanced) const
+Model::Model(Mesh* mesh)
 {
-    for (const Mesh& mesh : meshes)
-        mesh.draw(shader, instanced);
+    meshes.push_back(mesh);
+
+    // Set up vertex attrubute
+    for (Mesh* mesh : meshes)
+    {
+        mesh->setVertexOffsetAttribute();
+    }
 }
 
-unsigned int Model::getCudaOffsetBuffer()
+void SingleObjectModel::draw(const Shader* shader)
+{
+    for (Mesh* mesh : meshes)
+        mesh->draw(shader);
+}
+
+Mesh* SingleObjectModel::createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
+{
+    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
+}
+
+void InstancedModel::draw(const Shader* shader)
+{
+    for (Mesh* mesh : meshes)
+        ((SingleObjectMesh*)mesh)->drawInstanced(shader, this->instancesCount);
+}
+
+unsigned int InstancedModel::getCudaOffsetBuffer()
 {
     return cudaOffsetBuffer;
 }
 
-unsigned int Model::getTopVboBuffer()
+Mesh* InstancedModel::createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
 {
-    return meshes[0].getVBO();
+    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
 }
 
-unsigned int Model::getTopEboBuffer()
+unsigned int Model::getVboBuffer(unsigned int index)
 {
-    return meshes[0].getEBO();
+    if(index < meshes.size())
+        return meshes[index]->getVBO();
+    return 0;
+}
+
+unsigned int Model::getEboBuffer(unsigned int index)
+{
+    if (index < meshes.size())
+        return meshes[index]->getEBO();
+    return 0;
 }
 
 
-Mesh Model::getTopMesh()
+Mesh* Model::getMesh(unsigned int index)
 {
-    return meshes[0];
+    if (index < meshes.size())
+        return meshes[index];
+    return nullptr;
 }
 
 
@@ -73,17 +96,6 @@ void Model::loadModel(std::string path)
 
     // Process assimp nodes to load all Meshes
     processNode(scene->mRootNode, scene);
-
-    // Set up offset buffer for the model
-    glGenBuffers(1, &cudaOffsetBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
-    glBufferData(GL_ARRAY_BUFFER, particleCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
-
-    // Set up vertex attrubute
-    for (Mesh& mesh : meshes)
-    {
-        mesh.setVertexOffsetAttribute();
-    }
 }
 
 void Model::processNode(aiNode* node, const aiScene* scene)
@@ -101,7 +113,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
     }
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+Mesh* Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
     // data to fill
     std::vector<Vertex> vertices;
@@ -167,7 +179,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
     // return a mesh object created from the extracted mesh data
-    return Mesh(std::move(vertices), std::move(indices), std::move(textures));
+    return this->createMesh(vertices, indices, textures);
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
@@ -198,4 +210,53 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
         }
     }
     return textures;
+}
+
+InstancedModel::InstancedModel(const char* path, unsigned int instancesCount): Model(path)
+{
+    loadModel(path);
+
+    this->instancesCount = instancesCount;
+    glGenBuffers(1, &cudaOffsetBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
+    glBufferData(GL_ARRAY_BUFFER, instancesCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+
+    //glm::vec3 origin = meshes[0]->vertices[0].position;
+    // Set up vertex attrubute
+    for (Mesh* mesh : meshes)
+    {
+        mesh->setVertexOffsetAttribute();
+        //mesh.vertices
+    }
+}
+
+InstancedModel::InstancedModel(Mesh* mesh, unsigned int instancesCount) : Model(mesh)
+{
+    meshes.push_back(mesh);
+    this->instancesCount = instancesCount;
+    glGenBuffers(1, &cudaOffsetBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
+    glBufferData(GL_ARRAY_BUFFER, instancesCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+
+    // Set up vertex attrubute
+    for (Mesh* mesh : meshes)
+    {
+        mesh->setVertexOffsetAttribute();
+    }
+}
+
+MultipleObjectModel::MultipleObjectModel(const char* path, unsigned int objectCount): Model(path)
+{
+    this->objectCount = objectCount;
+}
+
+void MultipleObjectModel::draw(const Shader* shader)
+{
+    for (Mesh* mesh : meshes)
+        mesh->draw(shader);
+}
+
+Mesh* MultipleObjectModel::createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
+{
+    return new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(textures), objectCount);
 }

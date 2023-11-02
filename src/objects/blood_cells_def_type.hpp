@@ -1,9 +1,10 @@
 #pragma once
 
-template<int Count, int ParticlesInCell, typename L>
+template<int Count, int ParticlesInCell, typename L, typename V>
 struct BloodCellDef
 {
 	using List = L;
+	using Vertices = V;
 	inline static constexpr int count = Count;
 	inline static constexpr int particlesInCell = ParticlesInCell;
 };

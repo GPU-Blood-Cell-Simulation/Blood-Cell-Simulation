@@ -33,7 +33,7 @@ public:
 	const float veinVertexHorizontalDistance;
 	const float veinVertexNonHorizontalDistances[3];
 
-	VeinTriangles(const Mesh& mesh, const std::tuple<float, float, float>& springLengths);
+	VeinTriangles(const Mesh* mesh, const std::tuple<float, float, float>& springLengths);
 	VeinTriangles(const VeinTriangles& other);
 	~VeinTriangles();
 
