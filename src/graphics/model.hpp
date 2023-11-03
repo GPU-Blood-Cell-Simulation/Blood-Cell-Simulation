@@ -32,7 +32,7 @@ protected:
     Mesh* processMesh(aiMesh* mesh, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
-    virtual Mesh* createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures) = 0;
+    virtual Mesh* createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures) = 0;
 
 };
 
@@ -44,7 +44,7 @@ public:
 
     void draw(const Shader* shader) override;
 protected:
-    Mesh* createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures) override;
+    Mesh* createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures) override;
 };
 
 class InstancedModel : public Model
@@ -62,7 +62,7 @@ protected:
     unsigned int cudaOffsetBuffer;
     unsigned int instancesCount;
 
-    Mesh* createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures) override;
+    Mesh* createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures) override;
 };
 
 class MultipleObjectModel : public Model
@@ -77,5 +77,5 @@ protected:
     unsigned int objectCount;
     std::vector<glm::vec3> initialPositions;
 
-    Mesh* createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures) override;
+    Mesh* createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures) override;
 };

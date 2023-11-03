@@ -4,6 +4,8 @@
 #include "../config/simulation.hpp"
 #include <glm/vec3.hpp>
 #include <array>
+#include <span>
+#include <iostream>
 #include <boost/mp11/algorithm.hpp>
 #include <boost/mp11/list.hpp>
 #include <boost/mp11/utility.hpp>
@@ -200,33 +202,76 @@ namespace
 	};
 
 	inline constexpr auto springGraph = springGraphGenerator();
+	//
+	//template<int index>
+	//inline constexpr auto bloodCellModelsGenerator = [&]()
+	//	{
+	//		using BloodCellDefinition = mp_at_c<BloodCellList, index>;
+	//		constexpr std::array<glm::vec3, bloodCellTypeCount> bloodCellModels;
+	//		/*using IndexList = mp_iota<mp_size<BloodCellList>>;
+	//		mp_for_each<IndexList>([&](auto i)
+	//			{*/
+	//				
+	//				constexpr int particlesInThisCell = BloodCellDefinition::particlesInCell;
 
-	inline constexpr auto bloodCellModelsGenerator = [&]()
-		{
-			std::array<std::vector<glm::vec3>, bloodCellTypeCount> bloodCellModels;
-			using IndexList = mp_iota<mp_size<BloodCellList>>;
-			mp_for_each<IndexList>([&](auto i)
-				{
-					using BloodCellDefinition = mp_at_c<BloodCellList, i>;
-					constexpr int particlesInThisCell = BloodCellDefinition::particlesInCell;
+	//				using VerticesList = typename BloodCellDefinition::Vertices;
+	//				constexpr int verticesCount = mp_size<VerticesList>::value;
+	//				constexpr int particleStart = particlesStarts[i];
 
-					using VerticesList = typename BloodCellDefinition::Vertices;
-					constexpr int verticesCount = mp_size<VerticesList>::value;
-					constexpr int particleStart = particlesStarts[i];
+	//				using IndexListPerBloodCell = mp_iota_c<particlesInThisCell>;
+	//				mp_for_each<IndexListPerBloodCell>([&](auto j)
+	//					{
+	//						using VertexDefinition = mp_at_c<VerticesList, j>;
 
-					using IndexListPerBloodCell = mp_iota_c<particlesInThisCell>;
-					mp_for_each<IndexListPerBloodCell>([&](auto j)
-						{
-							using VertexDefinition = mp_at_c<VerticesList, j>;
+	//						bloodCellmodels[i].add(glm::vec3(VertexDefinition::x, VertexDefinition::y, VertexDefinition::z));
+	//					});
 
-							bloodCellmodels[i].add(make_float3(VertexDefinition::x, VertexDefinition::y, VertexDefinition::z));
-						});
+	//			//});
+	//		return bloodCellModels;
+	//	};
 
-				});
-			return bloodCellModels;
-		};
+	//inline constexpr auto bloodCellGivenModel = bloodCellModelsGenerator<1>();
 
-	inline constexpr auto bloodCellModels = bloodCellModelsGenerator();
+	//template<int i>
+	//struct FoldedBloodCellModels
+	//{
+	//	using element = mp_push_back
+	//		<
+	//		typename FoldedBloodCellModels<i - 1>::element,
+	//		mp_fold
+	//		<
+
+	//		>
+	//		>;
+	//};
+
+	//template<int i>
+	//struct FoldedBloodCellList
+	//{
+	//	using type = mp_push_back
+	//		<
+	//		typename FoldedBloodCellList<i - 1>::type,
+	//		mp_fold
+	//		<
+	//		UserDefinedBloodCellList,
+	//		BloodCellDef
+	//		<
+	//		0,
+	//		mp_at_c<UserDefinedBloodCellList, i>::particlesInCell,
+	//		typename mp_at_c<UserDefinedBloodCellList, i>::List,
+	//		typename mp_at_c<UserDefinedBloodCellList, i>::Vertices
+	//		>,
+	//		AddDistinctTypes
+	//		>
+	//		>;
+	//};
+
+	//// Recursion end
+	//template<>
+	//struct FoldedBloodCellList<-1>
+	//{
+	//	using type = mp_list<>;
+	//};
 
 	// inline constexpr auto bloodCellModelSizeLambda = [&](int i) {
 	// 	return bloodCellModels[i].size();

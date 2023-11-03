@@ -6,10 +6,10 @@
 #include "grids/no_grid.cuh"
 #include "meta_factory/blood_cell_factory.hpp"
 #include "meta_factory/vein_factory.hpp"
+#include "simulation/simulation_controller.cuh"
 #include "objects/blood_cells.cuh"
 #include "objects/vein_triangles.cuh"
 #include "objects/cylindermesh.hpp"
-#include "simulation/simulation_controller.cuh"
 #include "utilities/cuda_handle_error.cuh"
 
 #include <curand.h>

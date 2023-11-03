@@ -1,6 +1,7 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 
+#include "../meta_factory/blood_cell_factory.hpp"
 #include "../grids/no_grid.cuh"
 #include "../grids/uniform_grid.cuh"
 #include "../objects/blood_cells.cuh"
@@ -19,7 +20,7 @@ namespace sim
 	class SimulationController
 	{
 	public:
-		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, std::vector<glm::vec3> bloodCellVertices, unsigned int bloodCellSize, Grid particleGrid, Grid triangleGrid);
+		SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid);
 		~SimulationController();
 
 		void calculateNextFrame();
@@ -28,9 +29,6 @@ namespace sim
 		VeinTriangles& triangles;
 		Grid particleGrid;
 		Grid triangleGrid;
-
-		cudaVec3 bloodCellModel;
-		unsigned int bloodCellSize;
 
 		CudaThreads bloodCellsThreads;
 		CudaThreads veinVerticesThreads;

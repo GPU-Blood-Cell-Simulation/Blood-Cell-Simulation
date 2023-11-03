@@ -38,7 +38,7 @@ void SingleObjectModel::draw(const Shader* shader)
         mesh->draw(shader);
 }
 
-Mesh* SingleObjectModel::createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
+Mesh* SingleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
 {
     return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
 }
@@ -54,7 +54,7 @@ unsigned int InstancedModel::getCudaOffsetBuffer()
     return cudaOffsetBuffer;
 }
 
-Mesh* InstancedModel::createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
+Mesh* InstancedModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
 {
     return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
 }
@@ -179,7 +179,8 @@ Mesh* Model::processMesh(aiMesh* mesh, const aiScene* scene)
     textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
     // return a mesh object created from the extracted mesh data
-    return this->createMesh(vertices, indices, textures);
+    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
+    //return this->createMesh(std::move(vertices), std::move(indices), std::move(textures));
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
@@ -256,7 +257,7 @@ void MultipleObjectModel::draw(const Shader* shader)
         mesh->draw(shader);
 }
 
-Mesh* MultipleObjectModel::createMesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures)
+Mesh* MultipleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
 {
     return new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(textures), objectCount);
 }

@@ -15,20 +15,20 @@ namespace preset
 	inline constexpr int springLengthDiagonal = 1.7 * 30;
 	inline constexpr int springLengthDiagonalSmall = 1.41 * 30;
 
-	template<int x, int y, int z>
+	template<int X, int Y, int Z>
 	struct mpInt3
 	{
-		inline static constexpr int x;
-		inline static constexpr int y;
-		inline static constexpr int z;
+		inline static constexpr int x = X;
+		inline static constexpr int y = Y;
+		inline static constexpr int z = Z;
 	};
 
-	template <int x, int y, int z, int decimalPrecision = 1>
+	template <int X, int Y, int Z, int decimalPrecision = 1>
 	struct mpFloat3
 	{
-		inline static constexpr float x = float(x)/decimalPrecision;
-		inline static constexpr float y = float(y)/decimalPrecision;
-		inline static constexpr float z = float(z)/decimalPrecision;
+		inline static constexpr float x = float(X)/decimalPrecision;
+		inline static constexpr float y = float(Y)/decimalPrecision;
+		inline static constexpr float z = float(Z)/decimalPrecision;
 	};
 
 	// TODO: add a full-graph preset
@@ -102,12 +102,12 @@ namespace preset
 	using CubeVertices =
 		mp_list<
 		mpFloat3<0, 0, 0, 1>,
-		mpFloat3<1, 0, 0, 1>,
-		mpFloat3<1, 1, 0, 1>,
-		mpFloat3<0, 1, 0, 1>,
-		mpFloat3<0, 0, 1, 1>,
-		mpFloat3<1, 0, 1, 1>,
-		mpFloat3<1, 1, 1, 1>,
-		mpFloat3<0, 1, 1, 1>,
+		mpFloat3<10, 0, 0, 1>,
+		mpFloat3<10, 10, 0, 1>,
+		mpFloat3<0, 10, 0, 1>,
+		mpFloat3<0, 0, 10, 1>,
+		mpFloat3<10, 0, 10, 1>,
+		mpFloat3<10, 10, 10, 1>,
+		mpFloat3<0, 10, 10, 1>
 		>;
 }

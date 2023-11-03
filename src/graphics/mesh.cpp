@@ -96,7 +96,7 @@ void MultiObjectMesh::prepareMultipleObjects()
 		std::copy(indices.begin(), indices.end(), indices.end());
 	}
 	for (int i = 1; i < objectCount; ++i) {
-		std::for_each(indices.begin(), indices.end(), [](auto& indice) {
+		std::for_each(indices.begin(), indices.end(), [&](auto& indice) {
 			indice += i * objectCount;
 		});
 	}

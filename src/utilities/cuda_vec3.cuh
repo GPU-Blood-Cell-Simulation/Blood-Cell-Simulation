@@ -27,6 +27,7 @@ public:
 	// allocated on host
 	cudaVec3(int n);
 	cudaVec3(const cudaVec3& other);
+	cudaVec3() {}
 	~cudaVec3();
 
 	// to use only on device

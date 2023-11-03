@@ -36,7 +36,7 @@ namespace
 		Spring<2, 0, 3>
 		> >,*/
 
-		BloodCellDef<1, 8,
+		BloodCellDef<20, 8,
 			preset::Cube,
 			preset::CubeVertices
 		>
