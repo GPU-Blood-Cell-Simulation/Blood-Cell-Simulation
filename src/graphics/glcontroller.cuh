@@ -43,7 +43,7 @@ namespace graphics
 		float particleSpecular = 0.6f;
 
 		// Uniform matrices
-		glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(4 * 0.5f, 4 * 0.5f, 4 * 0.5f));
+		glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), static_cast<float>(windowWidth) / windowHeight, 0.1f, depth * 10);
 
 		//Model particleModel = Model("Models/Earth/low_poly_earth.fbx");
