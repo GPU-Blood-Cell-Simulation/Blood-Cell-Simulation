@@ -10,6 +10,8 @@
 #include <vector>
 
 
+#pragma region Model
+
 Model::Model(const char* path)
 {
     loadModel(path);
@@ -30,33 +32,6 @@ Model::Model(Mesh* mesh)
     {
         mesh->setVertexOffsetAttribute();
     }
-}
-
-void SingleObjectModel::draw(const Shader* shader)
-{
-    for (Mesh* mesh : meshes)
-        mesh->draw(shader);
-}
-
-Mesh* SingleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
-{
-    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
-}
-
-void InstancedModel::draw(const Shader* shader)
-{
-    for (Mesh* mesh : meshes)
-        ((SingleObjectMesh*)mesh)->drawInstanced(shader, this->instancesCount);
-}
-
-unsigned int InstancedModel::getCudaOffsetBuffer()
-{
-    return cudaOffsetBuffer;
-}
-
-Mesh* InstancedModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
-{
-    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
 }
 
 unsigned int Model::getVboBuffer(unsigned int index)
@@ -212,9 +187,32 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
     }
     return textures;
 }
+#pragma endregion
+
+#pragma region Instanced model
+
+void InstancedModel::draw(const Shader* shader)
+{
+    for (Mesh* mesh : meshes)
+        ((SingleObjectMesh*)mesh)->drawInstanced(shader, this->instancesCount);
+}
+
+unsigned int InstancedModel::getCudaOffsetBuffer()
+{
+    return cudaOffsetBuffer;
+}
+
+//Mesh* InstancedModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
+//{
+//    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
+//}
 
 InstancedModel::InstancedModel(const char* path, unsigned int instancesCount): Model(path)
 {
+    createMesh = [&](auto vertices, auto indices, auto textures)->Mesh* {
+        return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
+    };
+
     loadModel(path);
 
     this->instancesCount = instancesCount;
@@ -233,6 +231,10 @@ InstancedModel::InstancedModel(const char* path, unsigned int instancesCount): M
 
 InstancedModel::InstancedModel(Mesh* mesh, unsigned int instancesCount) : Model(mesh)
 {
+    createMesh = [&](auto vertices, auto indices, auto textures)->Mesh* {
+        return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
+    };
+
     meshes.push_back(mesh);
     this->instancesCount = instancesCount;
     glGenBuffers(1, &cudaOffsetBuffer);
@@ -245,10 +247,63 @@ InstancedModel::InstancedModel(Mesh* mesh, unsigned int instancesCount) : Model(
         mesh->setVertexOffsetAttribute();
     }
 }
+#pragma endregion
 
-MultipleObjectModel::MultipleObjectModel(const char* path, unsigned int objectCount): Model(path)
+#pragma region Multiple object model
+
+//MultipleObjectModel::MultipleObjectModel(const char* path, unsigned int objectCount): Model(path)
+//{
+//    createMesh = [&](auto vertices, auto indices, auto textures)->Mesh* {
+//        return new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(textures), objectCount);
+//        };
+//
+//    loadModel(path);
+//
+//    this->objectCount = objectCount;
+//    glGenBuffers(1, &cudaOffsetBuffer);
+//    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
+//    glBufferData(GL_ARRAY_BUFFER, objectCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+//
+//    // Set up vertex attrubute
+//    for (Mesh* mesh : meshes)
+//    {
+//        mesh->setVertexOffsetAttribute();
+//    }
+//}
+
+//MultipleObjectModel::MultipleObjectModel(Mesh* mesh, unsigned int objectCount): Model(mesh)
+//{
+//    createMesh = [&](auto vertices, auto indices, auto textures)->Mesh* {
+//        return new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(textures), objectCount);
+//        };
+//    this->objectCount = objectCount;
+//}
+
+
+MultipleObjectModel::MultipleObjectModel(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<glm::vec3>& initialPositions, unsigned int objectCount)
 {
+    createMesh = [&](auto vertices, auto indices, auto textures)->Mesh* {
+            return mesh;
+        };
+    this->mesh = new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(std::vector<Texture>()), initialPositions, objectCount);
     this->objectCount = objectCount;
+    this->modelVerticesCount = mesh->vertices.size();
+
+    meshes.push_back(mesh);
+    glGenBuffers(1, &cudaOffsetBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, cudaOffsetBuffer);
+    glBufferData(GL_ARRAY_BUFFER, objectCount * modelVerticesCount * sizeof(glm::vec3), NULL, GL_DYNAMIC_DRAW);
+
+    /*for (Mesh* mesh : meshes)
+    {
+        mesh->setVertexOffsetAttribute();
+    }*/
+}
+
+void MultipleObjectModel::DuplicateObjects(std::vector<glm::vec3>& initialPositions)
+{
+
+    this->mesh->DuplicateObjects(initialPositions);
 }
 
 void MultipleObjectModel::draw(const Shader* shader)
@@ -257,7 +312,28 @@ void MultipleObjectModel::draw(const Shader* shader)
         mesh->draw(shader);
 }
 
-Mesh* MultipleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
+unsigned int MultipleObjectModel::getCudaOffsetBuffer()
 {
-    return new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(textures), objectCount);
+    return cudaOffsetBuffer;
 }
+
+//Mesh* MultipleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
+//{
+//    return new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(textures), objectCount);
+//}
+#pragma endregion
+
+#pragma region Single object Model
+
+void SingleObjectModel::draw(const Shader* shader)
+{
+    for (Mesh* mesh : meshes)
+        mesh->draw(shader);
+}
+
+//Mesh* SingleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
+//{
+//    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
+//}
+
+#pragma endregion

@@ -21,8 +21,9 @@ namespace graphics
 	class GLController {
 	public:
 
-		GLController(GLFWwindow* window, Mesh* veinMesh);
+		GLController(GLFWwindow* window, Mesh* veinMesh, std::vector<glm::vec3>& initialPositions);
 		void calculateOffsets(cudaVec3 positions);
+		void calculatePositions(cudaVec3 positions);
 		void calculateTriangles(VeinTriangles triangles);
 		void draw();
 		inline void handleInput()
@@ -46,8 +47,15 @@ namespace graphics
 		glm::mat4 projection = glm::perspective(glm::radians<float>(45.0f), static_cast<float>(windowWidth) / windowHeight, 0.1f, depth * 10);
 
 		//Model particleModel = Model("Models/Earth/low_poly_earth.fbx");
-		InstancedModel particleModel = InstancedModel("Models/BloodCell/bloodcell.obj", particleCount);
-		MultipleObjectModel bloodCellModel = MultipleObjectModel("Models/BloodCell/bloodcell.obj", bloodCellCount);
+		
+		// instanced vertices commented
+		// InstancedModel particleModel = InstancedModel("Models/BloodCell/bloodcell.obj", particleCount);
+		
+		// old way
+		//MultipleObjectModel bloodCellModel = MultipleObjectModel("Models/BloodCell/bloodcell.obj", bloodCellCount);
+
+		// new way
+		MultipleObjectModel bloodCellmodel;// = MultipleObjectModel(new PredefinedMesh<0>(), bloodCellCount);
 
 		SingleObjectModel veinModel;
 
@@ -67,7 +75,8 @@ namespace graphics
 		
 		unsigned int gBuffer;
 
-		cudaGraphicsResource_t cudaOffsetResource;
+		//cudaGraphicsResource_t cudaOffsetResource;
+		cudaGraphicsResource_t cudaPositionsResource;
 		cudaGraphicsResource_t cudaVeinVBOResource;
 		cudaGraphicsResource_t cudaVeinEBOResource;
 

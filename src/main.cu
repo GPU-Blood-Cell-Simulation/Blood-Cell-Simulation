@@ -112,7 +112,7 @@ void programLoop(GLFWwindow* window)
     sim::SimulationController simulationController(bloodCells, triangles, &particleGrid, &triangleCentersGrid);
 
     // Create a graphics controller
-    graphics::GLController glController(window, veinMesh);
+    graphics::GLController glController(window, veinMesh, simulationController.initialCellPositions);
 
     // MAIN LOOP HERE - dictated by glfw
 
@@ -127,7 +127,7 @@ void programLoop(GLFWwindow* window)
 
 
         // Pass positions to OpenGL
-        glController.calculateOffsets(bloodCells.particles.positions);
+        glController.calculatePositions(bloodCells.particles.positions);
         glController.calculateTriangles(triangles);
         // OpenGL render
 #pragma region rendering

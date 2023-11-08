@@ -24,6 +24,8 @@ namespace sim
 		~SimulationController();
 
 		void calculateNextFrame();
+		std::vector<glm::vec3> initialCellPositions;
+
 	private:
 		BloodCells& bloodCells;
 		VeinTriangles& triangles;

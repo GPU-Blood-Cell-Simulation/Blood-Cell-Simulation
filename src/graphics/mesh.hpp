@@ -57,9 +57,25 @@ public:
 class MultiObjectMesh : public Mesh
 {
 public:
-    MultiObjectMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures, unsigned int objectCount);
+    MultiObjectMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures, std::vector<glm::vec3>& initialPositions, unsigned int objectCount);
+    void DuplicateObjects(std::vector<glm::vec3>& initialPositions);
 
 protected:
-    void prepareMultipleObjects();
+    void prepareMultipleObjects(std::vector<glm::vec3>& initialPositions);
     unsigned int objectCount;
 };
+
+
+//template<int index>
+//class PredefinedMesh : public Mesh
+//{   
+//    int cellIndex;
+//    int _verticesCount;
+//    int _indicesCount;
+//public:
+//
+//    PredefinedMesh();
+//
+//    void DuplicateObjects(std::vector<glm::vec3>& initialPositions);
+//
+//};

@@ -18,9 +18,11 @@ namespace sim
 {
 	__global__ void setupCurandStatesKernel(curandState* states, unsigned long seed);
 
-	template<int bloodCellCount, int particlesInBloodCell, int particlesStart>
-	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, glm::vec3 cylinderBaseCenter, cudaVec3 bloodCellModelPosition);
+	template<int bloodCellCount, int particlesInBloodCell, int particlesStart, int bloodCellStart>
+	__global__ void setBloodCellsPositionsFromRandom(Particles particles, cudaVec3 bloodCellModelPosition, cudaVec3 initialPositions);
 
+	template<int totalBloodCellCount>
+	__global__ void generateRandomPositonskernel(curandState* states, glm::vec3 cylinderBaseCenter, cudaVec3 initialPositions);
 
 	SimulationController::SimulationController(BloodCells& bloodCells, VeinTriangles& triangles, Grid particleGrid, Grid triangleGrid) :
 		bloodCells(bloodCells), triangles(triangles), particleGrid(particleGrid), triangleGrid(triangleGrid),
@@ -55,10 +57,31 @@ namespace sim
 		HANDLE_ERROR(cudaMalloc(&devStates, particleCount * sizeof(curandState)));
 		srand(static_cast<unsigned int>(time(0)));
 		int seed = rand();
+
 		setupCurandStatesKernel << <bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock >> > (devStates, seed);
 		HANDLE_ERROR(cudaThreadSynchronize());
-		// Generate random positions and velocity vectors
+		
 		std::vector<cudaVec3> models;
+		cudaVec3 initialPositions(bloodCellCount);
+		generateRandomPositonskernel<bloodCellCount> << <  bloodCellsThreads.blocks, bloodCellsThreads.threadsPerBlock >> > (devStates, cylinderBaseCenter, initialPositions);
+		HANDLE_ERROR(cudaThreadSynchronize());
+
+		float* xpos = new float[bloodCellCount];
+		float* ypos = new float[bloodCellCount];
+		float* zpos = new float[bloodCellCount];
+		
+		HANDLE_ERROR(cudaMemcpy(xpos, initialPositions.x, bloodCellCount * sizeof(float), cudaMemcpyDeviceToHost));
+		HANDLE_ERROR(cudaMemcpy(ypos, initialPositions.y, bloodCellCount * sizeof(float), cudaMemcpyDeviceToHost));
+		HANDLE_ERROR(cudaMemcpy(zpos, initialPositions.z, bloodCellCount * sizeof(float), cudaMemcpyDeviceToHost));
+		
+		for (int i = 0; i < bloodCellCount; ++i) 
+			initialCellPositions.push_back(glm::vec3(xpos[i], ypos[i], zpos[i]));
+		
+		delete[] xpos;
+		delete[] ypos;
+		delete[] zpos;
+
+		// Generate random positions and velocity vectors
 		using IndexList = mp_iota_c<bloodCellTypeCount>;
 		mp_for_each<IndexList>([&](auto i)
 			{
@@ -88,11 +111,12 @@ namespace sim
 		{
 			using BloodCellDefinition = mp_at_c<BloodCellList, i>;
 			constexpr int particlesStart = particlesStarts[i];
+			constexpr int bloodCellTypeStart = bloodCellTypesStarts[i];
 			constexpr int modelSize = BloodCellDefinition::particlesInCell;
 
 			CudaThreads threads(BloodCellDefinition::count * BloodCellDefinition::particlesInCell);
-			generateRandomPositionsKernel<BloodCellDefinition::count, BloodCellDefinition::particlesInCell, particlesStart>
-				<< <threads.blocks, threads.threadsPerBlock, 0, streams[i] >> >(devStates, bloodCells.particles, cylinderBaseCenter, models[i]);
+			setBloodCellsPositionsFromRandom<BloodCellDefinition::count, BloodCellDefinition::particlesInCell, particlesStart, bloodCellTypeStart>
+				<< <threads.blocks, threads.threadsPerBlock, 0, streams[i] >> >( bloodCells.particles, models[i], initialPositions);
 		});
 		HANDLE_ERROR(cudaDeviceSynchronize());
 		HANDLE_ERROR(cudaFree(devStates));
@@ -106,17 +130,38 @@ namespace sim
 		curand_init(seed, id, 0, &states[id]);
 	}
 
-	template<int bloodCellCount, int particlesInBloodCell, int particlesStart>
+
+	template<int totalBloodCellCount>
+	__global__ void generateRandomPositonskernel(curandState* states, glm::vec3 cylinderBaseCenter, cudaVec3 initialPositions)
+	{
+		int id = blockIdx.x * blockDim.x + threadIdx.x;
+		if(id >= totalBloodCellCount)
+			return;
+		initialPositions.x[id] = cylinderBaseCenter.x - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
+		initialPositions.y[id] = cylinderBaseCenter.y - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius + cylinderHeight / 2;
+		initialPositions.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
+
+		printf("[%d] initialPos.x=%.5f, initialPos.y=%.5f, initialPos.z=%.5f\n", id, initialPositions.x[id], initialPositions.y[id], initialPositions.z[id]);
+	}
+
+	//template<int totalBloodCellCount, int bloodCellCount, int particlesInBloodCell, int particlesStart>
 	// Generate random positions and velocities at the beginning
-	__global__ void generateRandomPositionsKernel(curandState* states, Particles particles, glm::vec3 cylinderBaseCenter, 
-		cudaVec3 bloodCellModelPosition/*, unsigned int bloodCellModelSize, float cylinderRadius, float cylinderHeight*/)
+	template<int bloodCellCount, int particlesInBloodCell, int particlesStart, int bloodCellTypeStart>
+	__global__ void setBloodCellsPositionsFromRandom(Particles particles, cudaVec3 bloodCellModelPosition, cudaVec3 initialPositions)
 	{
 		int relativeId = blockIdx.x * blockDim.x + threadIdx.x;
 		if (relativeId >= particlesInBloodCell * bloodCellCount)
 		return;
 		int id = particlesStart + relativeId;
 
-		if (!(id % particlesInBloodCell)) {
+		particles.positions.x[id] = initialPositions.x[bloodCellTypeStart + relativeId / particlesInBloodCell] + bloodCellModelPosition.x[id % particlesInBloodCell];
+		particles.positions.y[id] = initialPositions.y[bloodCellTypeStart + relativeId / particlesInBloodCell] + bloodCellModelPosition.y[id % particlesInBloodCell];
+		particles.positions.z[id] = initialPositions.z[bloodCellTypeStart + relativeId / particlesInBloodCell] + bloodCellModelPosition.z[id % particlesInBloodCell];
+		//particles.positions.x[id] = particles.positions.x[(id / particlesInBloodCell) * particlesInBloodCell] + bloodCellModelPosition.x[id % particlesInBloodCell] - bloodCellModelPosition.x[0];
+		//particles.positions.y[id] = particles.positions.y[(id / particlesInBloodCell) * particlesInBloodCell] + bloodCellModelPosition.y[id % particlesInBloodCell] - bloodCellModelPosition.y[0];
+		//particles.positions.z[id] = particles.positions.z[(id / particlesInBloodCell) * particlesInBloodCell] + bloodCellModelPosition.z[id % particlesInBloodCell] - bloodCellModelPosition.z[0];
+
+		/*if (!(id % particlesInBloodCell)) {
 			particles.positions.x[id] = cylinderBaseCenter.x - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
 			particles.positions.y[id] = cylinderBaseCenter.y - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius + cylinderHeight / 2;
 			particles.positions.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
@@ -125,9 +170,9 @@ namespace sim
 			particles.positions.x[id] = particles.positions.x[(id / particlesInBloodCell)*particlesInBloodCell] + bloodCellModelPosition.x[id % particlesInBloodCell] - bloodCellModelPosition.x[0];
 			particles.positions.y[id] = particles.positions.y[(id / particlesInBloodCell)*particlesInBloodCell] + bloodCellModelPosition.y[id % particlesInBloodCell] - bloodCellModelPosition.y[0];
 			particles.positions.z[id] = particles.positions.z[(id / particlesInBloodCell)*particlesInBloodCell] + bloodCellModelPosition.z[id % particlesInBloodCell] - bloodCellModelPosition.z[0];
-		}
+		}*/
 
-		printf("[%d][%d] particle position: x = %.5f, y = %.5f, z = %.5f\n", id, particlesInBloodCell, particles.positions.x[id], particles.positions.y[id], particles.positions.z[id]);
+		printf("[%d][%d][%d][%d][%d] particle position: x = %.5f, y = %.5f, z = %.5f\n", id, relativeId, bloodCellTypeStart, particlesStart, particlesInBloodCell, particles.positions.x[id], particles.positions.y[id], particles.positions.z[id]);
 
 		particles.velocities.x[id] = 0;
 		particles.velocities.y[id] = -10;

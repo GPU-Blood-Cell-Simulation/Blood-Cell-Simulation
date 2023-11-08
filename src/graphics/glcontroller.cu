@@ -17,6 +17,7 @@
 #include "device_launch_parameters.h"
 #include "cudaGL.h"
 #include "cuda_gl_interop.h"
+#include <functional>
 
 
 namespace graphics
@@ -29,9 +30,28 @@ namespace graphics
 
 		// Insert any debug position changes here
 
-		devCudaOffsetBuffer[3 *id] = positions.x[id];
+		devCudaOffsetBuffer[3 * id] = positions.x[id];
 		devCudaOffsetBuffer[3 * id + 1] = positions.y[id];
 		devCudaOffsetBuffer[3 * id + 2] = positions.z[id];
+
+	}
+
+	__global__ void calculatePositionsKernel(float* devCudaPositionsBuffer, cudaVec3 positions)
+	{
+		int id = blockIdx.x * blockDim.x + threadIdx.x;
+		if (id >= particleCount)
+			return;
+
+		// Insert any debug position changes here
+		printf("[%d] POSITIONS particle position: x = %.5f, y = %.5f, z = %.5f\n", id, positions.x[id], positions.y[id], positions.z[id]);
+		devCudaPositionsBuffer[8 * id] = positions.x[id];
+		devCudaPositionsBuffer[8 * id + 1] = positions.y[id];
+		devCudaPositionsBuffer[8 * id + 2] = positions.z[id];
+		devCudaPositionsBuffer[8 * id + 3] = 0;
+		devCudaPositionsBuffer[8 * id + 4] = 0;
+		devCudaPositionsBuffer[8 * id + 5] = 0;
+		devCudaPositionsBuffer[8 * id + 6] = 0;
+		devCudaPositionsBuffer[8 * id + 7] = 0;
 
 	}
 
@@ -66,18 +86,54 @@ namespace graphics
 	}
 
 
-	graphics::GLController::GLController(GLFWwindow* window, Mesh* veinMesh) :
-		veinModel(veinMesh), springLines(particleModel.getCudaOffsetBuffer())
+	graphics::GLController::GLController(GLFWwindow* window, Mesh* veinMesh, std::vector<glm::vec3>& initialPositions) :
+		veinModel(veinMesh), springLines(bloodCellmodel.getCudaOffsetBuffer())
 	{
+		// index = 0;
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+		using BloodCellDefinition = mp_at_c<BloodCellList, 0>;
+		constexpr int verticesCount = BloodCellDefinition::particlesInCell;
+		constexpr int indicesCount = BloodCellDefinition::indicesInCell; //mp_fold<mp_list<mp_int<6>, mp_int<verticesCount>>, mp_int<1>, MultiplyMpInts>::value;
+
+		using verticeIndexList = mp_iota_c<verticesCount>;
+
+		using VerticeList = typename BloodCellDefinition::Vertices;
+		using NormalList = typename BloodCellDefinition::Normals;
+		using IndiceList = typename BloodCellDefinition::Indices;
+
+		mp_for_each<verticeIndexList>([&](auto i)
+			{
+				Vertex v = Vertex();
+				v.position = glm::vec3(
+					mp_at_c<VerticeList, i>::x,
+					mp_at_c<VerticeList, i>::y,
+					mp_at_c<VerticeList, i>::z
+				);
+				v.normal = glm::vec3(
+					mp_at_c<NormalList, i>::x,
+					mp_at_c<NormalList, i>::y,
+					mp_at_c<NormalList, i>::z
+				);
+				vertices.push_back(v);
+			});
+
+		using indiceIndexList = mp_iota_c<mp_size<IndiceList>::value>;
+		mp_for_each<indiceIndexList>([&](auto i)
+			{
+				indices.push_back(mp_at_c<IndiceList, i>::value);
+			});
+
+		bloodCellmodel = MultipleObjectModel(std::move(vertices), std::move(indices), initialPositions, bloodCellCount);
 		// Set up GLFW to work with inputController
 		glfwSetWindowUserPointer(window, &inputController);
 		glfwSetKeyCallback(window, InputController::handleUserInput);
 
 		// Register OpenGL buffer in CUDA
-		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaOffsetResource, particleModel.getCudaOffsetBuffer(), cudaGraphicsRegisterFlagsNone));
+		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaPositionsResource, bloodCellmodel.getVboBuffer(0), cudaGraphicsRegisterFlagsNone));
 		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinVBOResource, veinModel.getVboBuffer(0), cudaGraphicsRegisterFlagsNone));
-		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinEBOResource, veinModel.getEboBuffer(0), cudaGraphicsRegisterFlagsNone));
-		
+		//HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaVeinEBOResource, veinModel.getEboBuffer(0), cudaGraphicsRegisterFlagsNone));
+
 		// Create a directional light
 		directionalLight = DirLight
 		{
@@ -107,7 +163,7 @@ namespace graphics
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
-		
+
 		// tell OpenGL which color attachments we'll use (of this framebuffer) for rendering 
 		unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		glDrawBuffers(2, attachments);
@@ -147,14 +203,37 @@ namespace graphics
 
 
 		// get CUDA a pointer to openGL buffer
-		float* devCudaOffsetBuffer = (float*)mapResourceAndGetPointer(cudaOffsetResource);
+		// jak cos to to do odkomentowania
+		//////////////////////float* devCudaOffsetBuffer = (float*)mapResourceAndGetPointer(cudaOffsetResource);
+		//////////////////////
+		//////////////////////// translate our CUDA positions into Vertex offsets
+		//////////////////////int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
+		//////////////////////int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
+		//////////////////////calculateOffsetsKernel << <blocks, threadsPerBlock >> > (devCudaOffsetBuffer, positions);
+
+		//////////////////////HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
+	}
+
+	void graphics::GLController::calculatePositions(cudaVec3 positions)
+	{
+		// get CUDA a pointer to openGL buffer
+		/*float* devCudaOffsetBuffer = 0;
+		size_t numBytes;
+
+		HANDLE_ERROR(cudaGraphicsMapResources(1, &cudaOffsetResource, 0));
+		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devCudaOffsetBuffer, &numBytes, cudaOffsetResource));*/
+
+
+		// get CUDA a pointer to openGL buffer
+		// jak cos to to do odkomentowania
+		float* devCudaPositionBuffer = (float*)mapResourceAndGetPointer(cudaPositionsResource);
 		
 		// translate our CUDA positions into Vertex offsets
 		int threadsPerBlock = particleCount > 1024 ? 1024 : particleCount;
 		int blocks = (particleCount + threadsPerBlock - 1) / threadsPerBlock;
-		calculateOffsetsKernel << <blocks, threadsPerBlock >> > (devCudaOffsetBuffer, positions);
+		calculatePositionsKernel << <blocks, threadsPerBlock >> > (devCudaPositionBuffer, positions);
 
-		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaOffsetResource, 0));
+		HANDLE_ERROR(cudaGraphicsUnmapResources(1, &cudaPositionsResource, 0));
 	}
 
 	void graphics::GLController::calculateTriangles(VeinTriangles triangles)
@@ -185,7 +264,7 @@ namespace graphics
 			solidColorShader->setMatrix("model", model);
 			solidColorShader->setMatrix("view", camera.getView());
 			solidColorShader->setMatrix("projection", projection);
-			particleModel.draw(solidColorShader.get());
+			bloodCellmodel.draw(solidColorShader.get());
 		}
 		else
 		{
@@ -201,7 +280,7 @@ namespace graphics
 
 			phongForwardShader->setLighting(directionalLight);
 
-			particleModel.draw(phongForwardShader.get());
+			bloodCellmodel.draw(phongForwardShader.get());
 		}
 
 		// Draw lines
