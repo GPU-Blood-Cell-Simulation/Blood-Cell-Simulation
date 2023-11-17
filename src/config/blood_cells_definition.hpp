@@ -36,18 +36,18 @@ namespace
 		Spring<2, 0, 3>
 		> >,*/
 
-		BloodCellDef<1, 8, 48,
+		/*BloodCellDef<1, 8, 48,
 			preset::Cube,
 			preset::CubeVertices,
 			preset::CubeIndices,
 			preset::CubeNormals
-		>
+		>*/
 
-		/*BloodCellDef<1, 92, 540,
-		preset::Cube,
+		BloodCellDef<5, 92, 540,
+		preset::BloodCellSprings,
 		preset::BloodCellVertices,
 		preset::BloodCellIndices,
 		preset::BloodCellNormals
-		>*/
+		>
 	> ;
 }

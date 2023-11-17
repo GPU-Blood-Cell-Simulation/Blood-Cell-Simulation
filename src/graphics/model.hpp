@@ -78,7 +78,6 @@ protected:
 
 class MultipleObjectModel : public Model
 {
-	int modelVerticesCount;
 public:
 	MultipleObjectModel() : Model() {}
 	MultipleObjectModel(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<glm::vec3>& initialPositions, unsigned int objectCount);
@@ -87,10 +86,11 @@ public:
 	void draw(const Shader* shader) override;
 	unsigned int getCudaOffsetBuffer();
 
+	unsigned int modelVerticesCount;
+	unsigned int objectCount;
 protected:
 	MultiObjectMesh* mesh;
 	unsigned int cudaOffsetBuffer;
-	unsigned int objectCount;
 	//std::vector<glm::vec3> initialPositions;
 
 	//Mesh* createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures) override;

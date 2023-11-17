@@ -92,36 +92,38 @@ MultiObjectMesh::MultiObjectMesh(std::vector<Vertex>&& vertices, std::vector<uns
 
 void MultiObjectMesh::prepareMultipleObjects(std::vector<glm::vec3>& initialPositions)
 {
-	/*for (int i = 0; i < objectCount; ++i) {
-		std::copy(vertices.begin(), vertices.end(), vertices.end());
-		std::copy(indices.begin(), indices.end(), indices.end());
+	unsigned int indicesCount = indices.size() * initialPositions.size();
+	std::vector<unsigned int> newIndices(indicesCount);
+	for (int i = 0; i < initialPositions.size(); ++i) {
+		std::transform(indices.cbegin(), indices.cend(), newIndices.begin() + i * indices.size(),
+			[&](unsigned int indice) {
+
+				// if switch order of transforming indices (after vertices), remember to handle this vertices.size()
+				return indice + i * vertices.size();
+
+			});
 	}
-	for (int i = 1; i < objectCount; ++i) {
-		std::for_each(indices.begin(), indices.end(), [&](auto& indice) {
-			indice += i * objectCount;
-		});
-	}*/
+	indices = std::vector<unsigned int>(indicesCount);
+	std::move(newIndices.begin(), newIndices.end(), indices.begin());
+
+	unsigned int verticesCount = vertices.size() * initialPositions.size();
+	std::vector<Vertex> newVertices(verticesCount);
 	for (int i = 0; i < initialPositions.size(); ++i) {
 		std::transform(vertices.cbegin(), vertices.cend(),
-			(!i ? vertices.begin() : vertices.end()),
+			(newVertices.begin() + i*vertices.size()),
 			[&](Vertex v) {
+
 				Vertex v2;
 				v2.normal = v.normal;
 				v2.texCoords = v.texCoords;
 				v2.position = v.position + initialPositions[i];
 				return v2;
+
 			});
 	}
-	/*std::transform(indices.cbegin(), indices.cend(), indices.begin(),
-		[&](unsigned int indice) {
-			return indice + 1;
-		});*/
-	for (int i = 1; i < initialPositions.size(); ++i) {
-		std::transform(indices.cbegin(), indices.cend(), indices.end(),
-			[&](unsigned int indice) {
-				return indice + i * objectCount;
-			});
-	}
+	vertices = std::vector<Vertex>(verticesCount);
+	std::move(newVertices.begin(), newVertices.end(), vertices.begin());
+
 }
 
 void MultiObjectMesh::DuplicateObjects(std::vector<glm::vec3>& initialPositions)

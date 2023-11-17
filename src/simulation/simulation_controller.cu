@@ -140,8 +140,8 @@ namespace sim
 		initialPositions.x[id] = cylinderBaseCenter.x - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
 		initialPositions.y[id] = cylinderBaseCenter.y - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius + cylinderHeight / 2;
 		initialPositions.z[id] = cylinderBaseCenter.z - cylinderRadius * 0.5f + curand_uniform(&states[id]) * cylinderRadius;
-
-		printf("[%d] initialPos.x=%.5f, initialPos.y=%.5f, initialPos.z=%.5f\n", id, initialPositions.x[id], initialPositions.y[id], initialPositions.z[id]);
+		
+		//printf("[%d] initialPos.x=%.5f, initialPos.y=%.5f, initialPos.z=%.5f\n", id, initialPositions.x[id], initialPositions.y[id], initialPositions.z[id]);
 	}
 
 	//template<int totalBloodCellCount, int bloodCellCount, int particlesInBloodCell, int particlesStart>
@@ -171,9 +171,8 @@ namespace sim
 			particles.positions.y[id] = particles.positions.y[(id / particlesInBloodCell)*particlesInBloodCell] + bloodCellModelPosition.y[id % particlesInBloodCell] - bloodCellModelPosition.y[0];
 			particles.positions.z[id] = particles.positions.z[(id / particlesInBloodCell)*particlesInBloodCell] + bloodCellModelPosition.z[id % particlesInBloodCell] - bloodCellModelPosition.z[0];
 		}*/
-
-		printf("[%d][%d][%d][%d][%d] particle position: x = %.5f, y = %.5f, z = %.5f\n", id, relativeId, bloodCellTypeStart, particlesStart, particlesInBloodCell, particles.positions.x[id], particles.positions.y[id], particles.positions.z[id]);
-
+		//printf("[%d][%d][%d][%d][%d] particle position: x = %.5f, y = %.5f, z = %.5f\n", id, relativeId, bloodCellTypeStart, particlesStart, particlesInBloodCell, particles.positions.x[id], particles.positions.y[id], particles.positions.z[id]);
+		
 		particles.velocities.x[id] = 0;
 		particles.velocities.y[id] = -10;
 		particles.velocities.z[id] = 0;

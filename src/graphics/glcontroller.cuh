@@ -64,7 +64,7 @@ namespace graphics
 
 		DirLight directionalLight;
 
-		const SpringLines springLines;
+		SpringLines springLines;
 
 		std::unique_ptr<Shader> solidColorShader;
 		std::unique_ptr<Shader> geometryPassShader;

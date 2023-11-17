@@ -4,8 +4,9 @@
 
 #include <boost/mp11/algorithm.hpp>
 #include <glad/glad.h>
+#include "mesh.hpp";
 
-SpringLines::SpringLines(unsigned int VBO)
+void SpringLines::constructSprings(unsigned int VBO)
 {
 	int accumulatedParticles = 0;
 	using IndexList = mp_iota_c<bloodCellTypeCount>;
@@ -37,9 +38,22 @@ SpringLines::SpringLines(unsigned int VBO)
 		// setup VAO and EBO (VBO is shared with cuda-mapped position buffer
 		glGenVertexArrays(1, &VAOs[i]);
 		glBindVertexArray(VAOs[i]);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		/*glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);*/
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		// vertex positions
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+		// vertex normals
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		// vertex texture coords
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
+
 		unsigned int EBO;
 		glGenBuffers(1, &EBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);

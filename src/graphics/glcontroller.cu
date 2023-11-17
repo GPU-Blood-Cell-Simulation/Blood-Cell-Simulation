@@ -43,13 +43,14 @@ namespace graphics
 			return;
 
 		// Insert any debug position changes here
-		printf("[%d] POSITIONS particle position: x = %.5f, y = %.5f, z = %.5f\n", id, positions.x[id], positions.y[id], positions.z[id]);
+		//printf("[%d] POSITIONS particle position: x = %.5f, y = %.5f, z = %.5f\n", id, positions.x[id], positions.y[id], positions.z[id]);
+
 		devCudaPositionsBuffer[8 * id] = positions.x[id];
 		devCudaPositionsBuffer[8 * id + 1] = positions.y[id];
 		devCudaPositionsBuffer[8 * id + 2] = positions.z[id];
-		devCudaPositionsBuffer[8 * id + 3] = 0;
+		/*devCudaPositionsBuffer[8 * id + 3] = 0;
 		devCudaPositionsBuffer[8 * id + 4] = 0;
-		devCudaPositionsBuffer[8 * id + 5] = 0;
+		devCudaPositionsBuffer[8 * id + 5] = 0;*/
 		devCudaPositionsBuffer[8 * id + 6] = 0;
 		devCudaPositionsBuffer[8 * id + 7] = 0;
 
@@ -87,7 +88,7 @@ namespace graphics
 
 
 	graphics::GLController::GLController(GLFWwindow* window, Mesh* veinMesh, std::vector<glm::vec3>& initialPositions) :
-		veinModel(veinMesh), springLines(bloodCellmodel.getCudaOffsetBuffer())
+		veinModel(veinMesh)
 	{
 		// index = 0;
 		std::vector<Vertex> vertices;
@@ -125,6 +126,7 @@ namespace graphics
 			});
 
 		bloodCellmodel = MultipleObjectModel(std::move(vertices), std::move(indices), initialPositions, bloodCellCount);
+		springLines.constructSprings(bloodCellmodel.getVboBuffer(0));
 		// Set up GLFW to work with inputController
 		glfwSetWindowUserPointer(window, &inputController);
 		glfwSetKeyCallback(window, InputController::handleUserInput);

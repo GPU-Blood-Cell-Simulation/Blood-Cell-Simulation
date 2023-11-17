@@ -10,7 +10,8 @@
 class SpringLines
 {
 public:
-	SpringLines(unsigned int VBO);
+	SpringLines() {};
+	void constructSprings(unsigned int VBO);
 	void draw(const Shader* shader) const;
 private:
 	std::array<unsigned int, bloodCellTypeCount> VAOs;

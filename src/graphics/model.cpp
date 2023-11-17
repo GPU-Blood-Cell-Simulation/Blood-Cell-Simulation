@@ -317,10 +317,6 @@ unsigned int MultipleObjectModel::getCudaOffsetBuffer()
     return cudaOffsetBuffer;
 }
 
-//Mesh* MultipleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
-//{
-//    return new MultiObjectMesh(std::move(vertices), std::move(indices), std::move(textures), objectCount);
-//}
 #pragma endregion
 
 #pragma region Single object Model
@@ -330,10 +326,5 @@ void SingleObjectModel::draw(const Shader* shader)
     for (Mesh* mesh : meshes)
         mesh->draw(shader);
 }
-
-//Mesh* SingleObjectModel::createMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures)
-//{
-//    return new SingleObjectMesh(std::move(vertices), std::move(indices), std::move(textures));
-//}
 
 #pragma endregion

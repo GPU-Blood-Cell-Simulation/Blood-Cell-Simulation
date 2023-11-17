@@ -21,7 +21,6 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-
 #define UNIFORM_TRIANGLES_GRID
 
 //#pragma float_control( except, on )
