@@ -20,6 +20,7 @@ target_link_libraries(
     GLFW
     glm
     KHR
+    ${PROJECT_SOURCE_DIR}/Libraries/lib/libglfw3.a
 )
 
 # target_compile_features(Simulation_server PUBLIC cxx_std_17)
@@ -27,4 +28,4 @@ target_link_libraries(
 # set_target_properties(Simulation_server PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(Simulation_server PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-#target_compile_options(Simulation_server PRIVATE --expt-relaxed-constexpr)
+
